@@ -1,52 +1,68 @@
 #include "scheduler.h"
 
 #include "log.h"
+#include "mmblock.h"
 #include "system.h"
 #include "work.h"
 
 #include <chrono>
 #include <condition_variable>
 #include <forward_list>
+#include <list>
 #include <thread>
 
-static std::forward_list<kp::sch_work>	list;
-static std::thread			thr;
-static std::mutex			mtx;
-static std::condition_variable		cond;
-static bool				running = false;
+namespace kp{
+struct sch_entry{
+	int64 time;
+	kp::work wrk;
+	sch_entry *next;
+};
+} //namespace
+
+#define SCH_MAX_LIST_SIZE 4096
+static kp::sch_entry		*head;
+static kp::mmblock<kp::sch_entry, SCH_MAX_LIST_SIZE> blk;
+
+static std::thread		thr;
+static std::mutex		mtx;
+static std::condition_variable	cond;
+static bool			running = false;
 
 static void scheduler(void)
 {
-	long delta;
-	kp::sch_work work;
-	std::unique_lock<std::mutex> ulock(mtx, std::defer_lock);
+	int64 delta;
+	kp::work wrk;
+	kp::sch_entry *tmp;
 
+	std::unique_lock<std::mutex> ulock(mtx, std::defer_lock);
 	while(running){
 		ulock.lock();
-		if(list.empty()){
+		if(head == nullptr){
 			cond.wait(ulock);
-			if(list.empty()){
+			if(head == nullptr){
 				ulock.unlock();
 				continue;
 			}
 		}
 
-		delta = list.front().time - sys_get_tick_count();
+		delta = head->time - sys_get_tick_count();
 		if(delta > 0){
 			cond.wait_for(ulock, std::chrono::milliseconds(delta));
-			if(list.empty() || list.front().time > sys_get_tick_count()){
+			if(head == nullptr || head->time > sys_get_tick_count()){
 				ulock.unlock();
 				continue;
 			}
 		}
 
-		// copy and pop head
-		work = list.front();
-		list.pop_front();
+		// get work and remove head
+		wrk = std::move(head->wrk);
+		tmp = head;
+		head = head->next;
+		blk.free(tmp);
 		ulock.unlock();
 
-		// dispatch to worker threads
-		work_dispatch(work.wrk);
+		// dispatch work
+		work_dispatch(wrk);
 	}
 }
 
@@ -68,100 +84,99 @@ void scheduler_shutdown(void)
 	thr.join();
 }
 
-kp::sch_entry scheduler_add(long delay, kp::work work_)
+kp::sch_entry *scheduler_add(long delay, kp::work work_)
 {
-	long time = delay + sys_get_tick_count();
-	kp::sch_work work{time, std::move(work_)};
+	kp::sch_entry *entry, **it;
+	int64 time = delay + sys_get_tick_count();
 
 	std::lock_guard<std::mutex> lguard(mtx);
-	if(list.empty())
-		cond.notify_one();
-
-	auto cur = list.cbefore_begin();
-	auto prev = cur++;
-	while(cur != list.end() && cur->time < time){
-		++prev; ++cur;
+	// allocate entry
+	entry = blk.alloc();
+	if(entry == nullptr){
+		LOG_ERROR("scheduler_add: list is at maximum capacity (%d)", SCH_MAX_LIST_SIZE);
+		return nullptr;
 	}
-	return list.insert_after(prev, std::move(work));
+	// insert entry, ordered by time
+	it = &head;
+	while(*it != nullptr && (*it)->time < time)
+		it = &(*it)->next;
+	entry->time = time;
+	entry->wrk = std::move(work_);
+	entry->next = *it;
+	*it = entry;
+	// signal scheduler if head has changed
+	if(head == entry)
+		cond.notify_one();
+	return entry;
 }
 
-bool scheduler_remove(const kp::sch_entry &entry)
+bool scheduler_remove(kp::sch_entry *entry)
 {
-	std::lock_guard<std::mutex> lguard(mtx);
-	auto cur = list.cbefore_begin();
-	auto prev = cur++;
-	while(cur != list.end() && cur != entry){
-		++prev; ++cur;
-	}
+	kp::sch_entry **it;
 
-	if(cur == list.end()){
+	std::lock_guard<std::mutex> lguard(mtx);
+	// check if entry is still valid
+	it = &head;
+	while(*it != nullptr && (*it) != entry)
+		it = &(*it)->next;
+	if(*it == nullptr){
 		LOG_WARNING("scheduler_remove: trying to remove invalid entry");
 		return false;
 	}
-
-	list.erase_after(prev);
+	// remove entry
+	*it = (*it)->next;
+	blk.free(entry);
 	return true;
 }
 
-bool scheduler_reschedule(long delay, kp::sch_entry &entry)
+bool scheduler_reschedule(long delay, kp::sch_entry *entry)
 {
-	long time = delay + sys_get_tick_count();
-	kp::sch_work work;
+	kp::sch_entry **it;
+	int64 time = delay + sys_get_tick_count();
 
 	std::lock_guard<std::mutex> lguard(mtx);
-	// retrieve entry from the list
-	auto cur = list.cbefore_begin();
-	auto prev = cur++;
-	while(cur != list.end() && cur != entry){
-		++prev; ++cur;
-	}
-	if(cur == list.end()){
+	// check if entry is still valid
+	it = &head;
+	while(*it != nullptr && *it != entry)
+		it = &(*it)->next;
+	if(*it == nullptr){
 		LOG_WARNING("scheduler_reschedule: trying to reschedule invalid entry");
 		return false;
 	}
-
-	// remove entry
-	work = std::move(*cur);
-	list.erase_after(prev);
-
-	// reset iteration if new time is lower
-	if(work.time > time){
-		cur = list.cbefore_begin();
-		prev = cur++;
-	}
-
-	// re-insert work
-	while(cur != list.end() && cur->time < time){
-		++prev; ++cur;
-	}
-	work.time = time;
-	entry = list.insert_after(prev, std::move(work));
-	if(entry == list.begin())
+	// re-insert entry with new time
+	*it = (*it)->next;
+	if(entry->time > time)
+		it = &head;
+	while(*it != nullptr && (*it)->time < time)
+		it = &(*it)->next;
+	entry->time = time;
+	entry->next = *it;
+	*it = entry;
+	// signal scheduler if head has changed
+	if(head == entry)
 		cond.notify_one();
 	return true;
 }
 
-bool scheduler_pop(kp::sch_entry &entry)
+bool scheduler_pop(kp::sch_entry *entry)
 {
-	kp::sch_work work;
+	kp::sch_entry **it;
 
 	std::lock_guard<std::mutex> lguard(mtx);
-	auto cur = list.cbefore_begin();
-	auto prev = cur++;
-	while(cur != list.end() && cur != entry){
-		++prev; ++cur;
-	}
-	if(cur == list.end()){
+	// check if entry is still valid
+	it = &head;
+	while(*it != nullptr && *it != entry)
+		it = &(*it)->next;
+	if(*it == nullptr){
 		LOG_WARNING("scheduler_pop: trying to pop invalid entry");
 		return false;
 	}
-
-	work = std::move(*cur);
-	list.erase_after(prev);
-
-	work.time = 0;
-	list.push_front(std::move(work));
-	entry = list.cbegin();
+	// re-insert entry at the start
+	*it = (*it)->next;
+	entry->time = 0;
+	entry->next = head;
+	head = entry;
+	// signal scheduler
 	cond.notify_one();
-	return false;
+	return true;
 }

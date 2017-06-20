@@ -22,8 +22,8 @@
     <ClCompile Include="..\src\scheduler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\win32\system.cpp">
-      <Filter>Source Files\win32</Filter>
+    <ClCompile Include="..\src\system.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -48,13 +48,13 @@
     <ClInclude Include="..\src\def.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\list.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\mmblock.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\system.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\queue.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

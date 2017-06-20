@@ -1,7 +1,7 @@
-#ifndef MMBLOCK_H_
+﻿#ifndef MMBLOCK_H_
 #define MMBLOCK_H_
 
-namespace kpl{
+namespace kp{
 
 template<typename T, int N>
 class mmblock{
@@ -13,7 +13,7 @@ private:
 	T *freelist;
 
 	// i'm assuming the compiler will properly align
-	// this buffer to the word boundary
+	// this buffer to the processor word boundary
 	T base[N];
 
 public:

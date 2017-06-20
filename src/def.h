@@ -1,5 +1,10 @@
-#ifndef DEF_H_
+﻿#ifndef DEF_H_
 #define DEF_H_
+
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL nullptr
 
 #ifdef _MSC_VER
 	using int8	= __int8;

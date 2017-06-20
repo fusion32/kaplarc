@@ -130,11 +130,11 @@
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
-    <ClCompile Include="..\src\win32\system.cpp" />
+    <ClCompile Include="..\src\system.cpp" />
     <ClCompile Include="..\src\work.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\list.h" />
+    <ClInclude Include="..\src\queue.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\mmblock.h" />
     <ClInclude Include="..\src\scheduler.h" />

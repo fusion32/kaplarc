@@ -1,10 +1,12 @@
-#ifndef WORK_H_
+﻿#ifndef WORK_H_
 #define WORK_H_
 
 #include <functional>
 
 namespace kp{
+
 using work = std::function<void(void)>;
+
 } //namespace
 
 void work_init(void);
