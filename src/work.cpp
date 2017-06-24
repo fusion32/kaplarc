@@ -1,11 +1,13 @@
 #include "work.h"
-#include "ringbuffer.h"
+
 #include "log.h"
+#include "ringbuffer.h"
+#include "system.h"
 
 #include <vector>
-#include <thread>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
+#include <thread>
 
 #define MAX_WORK 4096
 static kp::ringbuffer<kp::work, MAX_WORK>	rb;
@@ -37,7 +39,9 @@ static void worker(void)
 
 void work_init(void)
 {
-	int count = 1; // sys_get_cpu_count() - 1;
+	int count = sys_get_cpu_count() - 1;
+	if(count <= 0)
+		count = 1;
 	running = true;
 	for(int i = 0; i < count; i++)
 		//thread_pool.push_back(std::thread(worker));

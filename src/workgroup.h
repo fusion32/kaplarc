@@ -1,4 +1,4 @@
-#ifndef WORKGROUP_H_
+﻿#ifndef WORKGROUP_H_
 #define WORKGROUP_H_
 
 #include "work.h"
@@ -15,6 +15,7 @@ private:
 
 public:
 	workgroup(void){}
+	workgroup(int count) : vec(count) {}
 	~workgroup(void){}
 
 	void add(kp::work wrk){

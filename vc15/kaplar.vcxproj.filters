@@ -54,7 +54,7 @@
     <ClInclude Include="..\src\system.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\queue.h">
+    <ClInclude Include="..\src\avl_tree.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

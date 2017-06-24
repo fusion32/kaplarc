@@ -7,8 +7,6 @@
 
 #include <chrono>
 #include <condition_variable>
-#include <forward_list>
-#include <list>
 #include <thread>
 
 namespace kp{
@@ -19,6 +17,12 @@ struct sch_entry{
 };
 } //namespace
 
+//	- maybe a priority queue would be better here
+//	  but with vectors, the iterators wouldn't last
+//
+//	- a binary tree might be a good choice also as
+//	  it would reduce the search at inserting and other
+//	  functions
 #define SCH_MAX_LIST_SIZE 4096
 static kp::sch_entry		*head;
 static kp::mmblock<kp::sch_entry, SCH_MAX_LIST_SIZE> blk;

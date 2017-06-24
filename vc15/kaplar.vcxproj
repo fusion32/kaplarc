@@ -134,7 +134,7 @@
     <ClCompile Include="..\src\work.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\queue.h" />
+    <ClInclude Include="..\src\avl_tree.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\mmblock.h" />
     <ClInclude Include="..\src\scheduler.h" />
