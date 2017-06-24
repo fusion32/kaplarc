@@ -58,6 +58,13 @@ private:
 		//assert(a->left == b);
 		LOG("rotate right");
 
+		// check if node needs a double rotation
+		int balance = balance_factor(b);
+		if(balance >= 1)
+			rotate_left(b, b->right);
+		else if(balance <= -1)
+			rotate_right(b, b->left);
+
 		b->parent = a->parent;
 		a->parent = b;
 		if(b->parent != nullptr){
@@ -122,6 +129,7 @@ private:
 		while(x != nullptr){
 			fix_height(x);
 			balance = balance_factor(x);
+			LOG("retrace: key = %d, balance = %d", x->key, balance);
 			if(balance >= 2)
 				rotate_left(x, x->right);
 			else if(balance <= -2)
@@ -162,7 +170,7 @@ public:
 		else{
 			node *y = root;
 			while(1){
-				if(x < y){
+				if(*x < *y){
 					if(y->left == nullptr){
 						y->left = x;
 						break;
@@ -189,20 +197,23 @@ public:
 		// check if key is still valid
 	}
 
+	static void print_node(node *n){
+		if(n == nullptr) return;
+		if(n->height > 2){
+			print_node(n->left);
+			print_node(n->right);
+		}
+		else{
+			if(n->left != nullptr)
+				LOG("%d", n->left->key);
+			LOG("%d", n->key);
+			if(n->right != nullptr)
+				LOG("%d", n->right->key);
+		}
+	}
+
 	void print(void){
-		node *x;
-
-		LOG("root: %d, %d, %d", root->key, root->left->key, root->right->key);
-
-		x = root;
-		while(x != nullptr && x->left != nullptr)
-			x = x->left;
-		LOG("min: %d, %d", x->key, x->parent->key);
-
-		x = root;
-		while(x != nullptr && x->right != nullptr)
-			x = x->right;
-		LOG("max: %d, %d", x->key, x->parent->key);
+		print_node(root);
 	}
 };
 

@@ -5,14 +5,15 @@
 #include <stdio.h>
 
 #include "avl_tree.h"
+#include <list>
 
 int main(int argc, char **argv)
 {
 	kp::avl_tree<int, 256> tree;
 	LOG("inserting");
 	for(int i = 0; i < 64; i++){
-		LOG("inserting %d", (i + 1337) % 256);
-		tree.insert((i + 1337) % 256);
+		LOG("inserting %d", (i * 1337) % 256);
+		tree.insert((i * 1337) % 256);
 	}
 	LOG("ok");
 
