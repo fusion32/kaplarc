@@ -54,16 +54,15 @@ private:
 	//   / \     =>      / \
 	//  d  (e)         (e)  c
 	//
-	static void rotate_right(node *a, node *b){
+	static node *rotate_right(node *a, node *b){
 		//assert(a->left == b);
-		LOG("rotate right");
 
 		// check if node needs a double rotation
 		int balance = balance_factor(b);
 		if(balance >= 1)
-			rotate_left(b, b->right);
+			b = rotate_left(b, b->right);
 		else if(balance <= -1)
-			rotate_right(b, b->left);
+			b = rotate_right(b, b->left);
 
 		b->parent = a->parent;
 		a->parent = b;
@@ -84,6 +83,8 @@ private:
 		fix_height(b);
 		if(b->parent != nullptr)
 			fix_height(b->parent);
+
+		return b;
 	}
 
 	//
@@ -95,9 +96,15 @@ private:
 	//     / \   =>   / \
 	//   (d)  e      b  (d)
 	//
-	static void rotate_left(node *a, node *c){
+	static node *rotate_left(node *a, node *c){
 		//assert(a->right == c);
-		LOG("rotate left");
+
+		// check if node needs a double rotation
+		int balance = balance_factor(c);
+		if(balance >= 1)
+			c = rotate_left(c, c->right);
+		else if(balance <= -1)
+			c = rotate_right(c, c->left);
 
 		c->parent = a->parent;
 		a->parent = c;
@@ -118,6 +125,8 @@ private:
 		fix_height(c);
 		if(c->parent != nullptr)
 			fix_height(c->parent);
+
+		return c;
 	}
 
 	// retrace from node `x` (this is assuming `x` has the correct height)
@@ -129,7 +138,6 @@ private:
 		while(x != nullptr){
 			fix_height(x);
 			balance = balance_factor(x);
-			LOG("retrace: key = %d, balance = %d", x->key, balance);
 			if(balance >= 2)
 				rotate_left(x, x->right);
 			else if(balance <= -2)
@@ -143,6 +151,11 @@ private:
 	}
 
 public:
+	// delete copy and move operations
+	avl_tree(const avl_tree&) = delete;
+	avl_tree &operator=(const avl_tree&) = delete;
+	avl_tree(avl_tree&&) = delete;
+	avl_tree &operator=(avl_tree&&) = delete;
 
 	avl_tree(void) : root(nullptr), count(0), blk() {}
 	~avl_tree(void){}
@@ -195,25 +208,6 @@ public:
 	void remove(const T *value){
 		node **it;
 		// check if key is still valid
-	}
-
-	static void print_node(node *n){
-		if(n == nullptr) return;
-		if(n->height > 2){
-			print_node(n->left);
-			print_node(n->right);
-		}
-		else{
-			if(n->left != nullptr)
-				LOG("%d", n->left->key);
-			LOG("%d", n->key);
-			if(n->right != nullptr)
-				LOG("%d", n->right->key);
-		}
-	}
-
-	void print(void){
-		print_node(root);
 	}
 };
 

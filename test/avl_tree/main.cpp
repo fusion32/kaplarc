@@ -1,11 +1,8 @@
-#include "log.h"
-#include "scheduler.h"
-#include "work.h"
-#include "system.h"
-#include <stdio.h>
+#include "../../src/avl_tree.h"
 
-#include "avl_tree.h"
-
+//
+// hack to retrieve the private tree root
+//
 template<typename T>
 struct node{
 	T key;
@@ -37,38 +34,10 @@ static void print_node(node<T> *n)
 
 int main(int argc, char **argv)
 {
-	// hack to retrieve the tree root
 	kp::avl_tree<int, 256> tree;
 	auto ptr = (avl_tree_struct<int>*)&tree;
 	for(int i = 0; i < 256; ++i)
-		tree.insert((i*1337)%64);
+		tree.insert((i*1337)%256);
 	print_node(ptr->root);
-	getchar();
 	return 0;
 }
-
-/*
-
-int main(int argc, char **argv)
-{
-	work_init();
-	scheduler_init();
-
-	kp::sch_entry *entry[4096];
-	for(int i = 0; i < 4096; ++i){
-		entry[i] = scheduler_add((i+1)*1000, [](void){
-			LOG("hello");
-		});
-	}
-
-	for(int i = 0; i < 4096; ++i){
-		scheduler_pop(entry[i]);
-	}
-
-	getchar();
-	scheduler_shutdown();
-	work_shutdown();
-	return 0;
-}
-
-*/
