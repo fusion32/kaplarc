@@ -3,20 +3,17 @@
 
 #include "def.h"
 #include "work.h"
-#include <list>
 
 namespace kp{
-
-// define sch_entry as an opaque type
-struct sch_entry;
-
-} //namespace
+struct schref{
+	int64 id;
+	int64 time;
+};
+} // namespace
 
 void		scheduler_init(void);
 void		scheduler_shutdown(void);
-kp::sch_entry	*scheduler_add(long delay, kp::work work_);
-bool		scheduler_remove(kp::sch_entry *entry);
-bool		scheduler_reschedule(long delay, kp::sch_entry *entry);
-bool		scheduler_pop(kp::sch_entry *entry);
+kp::schref	scheduler_add(int64 delay, kp::work work_);
+bool		scheduler_remove(const kp::schref &ref);
 
 #endif //SCHEDULER_H_

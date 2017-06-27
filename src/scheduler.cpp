@@ -1,7 +1,7 @@
 #include "scheduler.h"
 
+#include "avl_tree.h"
 #include "log.h"
-#include "mmblock.h"
 #include "system.h"
 #include "work.h"
 
@@ -10,59 +10,92 @@
 #include <thread>
 
 namespace kp{
-struct sch_entry{
+struct schentry{
+	int64 id;
 	int64 time;
 	kp::work wrk;
-	sch_entry *next;
+
+	// constructors
+	schentry(void){}
+
+	template<typename G>
+	schentry(int64 id_, int64 time_, G &&wrk_)
+		: id(id_), time(time_), wrk(std::forward<G>(wrk_)) {}
+
+	// comparisson with `schentry`
+	bool operator==(const schentry &rhs) const{
+		return id == rhs.id;
+	}
+	bool operator!=(const schentry &rhs) const{
+		return id != rhs.id;
+	}
+	bool operator<(const schentry &rhs) const{
+		return time < rhs.time;
+	}
+	bool operator>(const schentry &rhs) const{
+		return time > rhs.time;
+	}
+
+	// comparisson with `schref`
+	bool operator==(const schref &rhs) const{
+		return id == rhs.id;
+	}
+	bool operator!=(const schref &rhs) const{
+		return id != rhs.id;
+	}
+	bool operator<(const schref &rhs) const{
+		return time < rhs.time;
+	}
+	bool operator>(const schref &rhs) const{
+		return time > rhs.time;
+	}
 };
 } //namespace
 
-//	- maybe a priority queue would be better here
-//	  but with vectors, the iterators wouldn't last
-//
-//	- a binary tree might be a good choice also as
-//	  it would reduce the search at inserting and other
-//	  functions
-#define SCH_MAX_LIST_SIZE 4096
-static kp::sch_entry		*head;
-static kp::mmblock<kp::sch_entry, SCH_MAX_LIST_SIZE> blk;
+// scheduler entries
+#define SCH_MAX_ENTRIES 4096
+static kp::avl_tree<kp::schentry, SCH_MAX_ENTRIES> tree;
 
+// scheduler control
 static std::thread		thr;
 static std::mutex		mtx;
 static std::condition_variable	cond;
+static int64			next_id = 1;
 static bool			running = false;
 
 static void scheduler(void)
 {
 	int64 delta;
 	kp::work wrk;
-	kp::sch_entry *tmp;
+	kp::schentry *entry;
 
 	std::unique_lock<std::mutex> ulock(mtx, std::defer_lock);
 	while(running){
 		ulock.lock();
-		if(head == nullptr){
+		entry = tree.min();
+		if(entry == nullptr){
 			cond.wait(ulock);
-			if(head == nullptr){
+			entry = tree.min();
+			if(entry == nullptr){
 				ulock.unlock();
 				continue;
 			}
 		}
 
-		delta = head->time - sys_get_tick_count();
+		delta = entry->time - sys_get_tick_count();
 		if(delta > 0){
 			cond.wait_for(ulock, std::chrono::milliseconds(delta));
-			if(head == nullptr || head->time > sys_get_tick_count()){
+			entry = tree.min();
+			if(entry == nullptr || entry->time > sys_get_tick_count()){
 				ulock.unlock();
 				continue;
 			}
 		}
 
-		// get work and remove head
-		wrk = std::move(head->wrk);
-		tmp = head;
-		head = head->next;
-		blk.free(tmp);
+		// get work and remove entry
+		LOG("entry: %d", entry->id);
+		wrk = std::move(entry->wrk);
+		tree.remove(*entry);
 		ulock.unlock();
 
 		// dispatch work
@@ -88,99 +121,24 @@ void scheduler_shutdown(void)
 	thr.join();
 }
 
-kp::sch_entry *scheduler_add(long delay, kp::work work_)
+kp::schref scheduler_add(int64 delay, kp::work work_)
 {
-	kp::sch_entry *entry, **it;
 	int64 time = delay + sys_get_tick_count();
+	kp::schentry *entry;
 
 	std::lock_guard<std::mutex> lguard(mtx);
-	// allocate entry
-	entry = blk.alloc();
-	if(entry == nullptr){
-		LOG_ERROR("scheduler_add: list is at maximum capacity (%d)", SCH_MAX_LIST_SIZE);
-		return nullptr;
-	}
-	// insert entry, ordered by time
-	it = &head;
-	while(*it != nullptr && (*it)->time < time)
-		it = &(*it)->next;
-	entry->time = time;
-	entry->wrk = std::move(work_);
-	entry->next = *it;
-	*it = entry;
-	// signal scheduler if head has changed
-	if(head == entry)
+	entry = tree.emplace(next_id++, time, std::move(work_));
+	if(entry == tree.min())
 		cond.notify_one();
-	return entry;
+	return {entry->id, entry->time};
 }
 
-bool scheduler_remove(kp::sch_entry *entry)
+bool scheduler_remove(const kp::schref &ref)
 {
-	kp::sch_entry **it;
-
 	std::lock_guard<std::mutex> lguard(mtx);
-	// check if entry is still valid
-	it = &head;
-	while(*it != nullptr && (*it) != entry)
-		it = &(*it)->next;
-	if(*it == nullptr){
-		LOG_WARNING("scheduler_remove: trying to remove invalid entry");
+	if(!tree.remove(ref)){
+		LOG("scheduler_remove: trying to remove invalid scheduler entry");
 		return false;
 	}
-	// remove entry
-	*it = (*it)->next;
-	blk.free(entry);
-	return true;
-}
-
-bool scheduler_reschedule(long delay, kp::sch_entry *entry)
-{
-	kp::sch_entry **it;
-	int64 time = delay + sys_get_tick_count();
-
-	std::lock_guard<std::mutex> lguard(mtx);
-	// check if entry is still valid
-	it = &head;
-	while(*it != nullptr && *it != entry)
-		it = &(*it)->next;
-	if(*it == nullptr){
-		LOG_WARNING("scheduler_reschedule: trying to reschedule invalid entry");
-		return false;
-	}
-	// re-insert entry with new time
-	*it = (*it)->next;
-	if(entry->time > time)
-		it = &head;
-	while(*it != nullptr && (*it)->time < time)
-		it = &(*it)->next;
-	entry->time = time;
-	entry->next = *it;
-	*it = entry;
-	// signal scheduler if head has changed
-	if(head == entry)
-		cond.notify_one();
-	return true;
-}
-
-bool scheduler_pop(kp::sch_entry *entry)
-{
-	kp::sch_entry **it;
-
-	std::lock_guard<std::mutex> lguard(mtx);
-	// check if entry is still valid
-	it = &head;
-	while(*it != nullptr && *it != entry)
-		it = &(*it)->next;
-	if(*it == nullptr){
-		LOG_WARNING("scheduler_pop: trying to pop invalid entry");
-		return false;
-	}
-	// re-insert entry at the start
-	*it = (*it)->next;
-	entry->time = 0;
-	entry->next = head;
-	head = entry;
-	// signal scheduler
-	cond.notify_one();
 	return true;
 }
