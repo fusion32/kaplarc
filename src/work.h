@@ -3,15 +3,11 @@
 
 #include <functional>
 
-namespace kp{
-
-using work = std::function<void(void)>;
-
-} //namespace
+using Work = std::function<void(void)>;
 
 void work_init(void);
 void work_shutdown(void);
-void work_dispatch(kp::work wrk);
-void work_dispatch_array(int count, bool single, kp::work *wrk);
+void work_dispatch(Work wrk);
+void work_dispatch_array(int count, bool single, Work *wrk);
 
 #endif //WORK_H_

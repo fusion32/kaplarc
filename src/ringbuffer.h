@@ -1,12 +1,10 @@
-#ifndef RINGBUFFER_H_
+﻿#ifndef RINGBUFFER_H_
 #define RINGBUFFER_H_
 
 #include <utility>
 
-namespace kp{
-
 template<typename T, int N>
-class ringbuffer{
+class RingBuffer{
 private:
 	int readpos;
 	int writepos;
@@ -15,13 +13,13 @@ private:
 
 public:
 	// delete copy and move operations
-	ringbuffer(const ringbuffer &)			= delete;
-	ringbuffer(ringbuffer &&)			= delete;
-	ringbuffer &operator=(const ringbuffer &)	= delete;
-	ringbuffer &operator=(ringbuffer &&)		= delete;
+	RingBuffer(const RingBuffer&)			= delete;
+	RingBuffer(RingBuffer&&)			= delete;
+	RingBuffer &operator=(const RingBuffer&)	= delete;
+	RingBuffer &operator=(RingBuffer&&)		= delete;
 
-	ringbuffer() : readpos(0), writepos(0), length(0) {}
-	~ringbuffer(){}
+	RingBuffer() : readpos(0), writepos(0), length(0) {}
+	~RingBuffer(){}
 
 	int size() const { return length; }
 
@@ -48,7 +46,5 @@ public:
 		return true;
 	}
 };
-
-} //namespace
 
 #endif //RINGBUFFER_H_

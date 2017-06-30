@@ -10,7 +10,7 @@ Options: (options in the same section are mutually exclusive)
     -o <file>               - write output to <file>
     -srcdir <dir>           - change source directory
     -builddir <dir>         - change build directory
-    -test                   - compiles ./main.c instead of <srcdir>/main.c
+    -test                   - compiles ./main.cpp instead of <srcdir>/main.cpp
                               (this is useful for unit testing)
 
     [compiler]:
@@ -56,33 +56,26 @@ MakefileObject = r'''
 '''
 
 DEPS = [
-	"atomic.h", "cmdline.h", "connection.h", "log.h",
-	"message.h", "mmblock.h", "mm.h", "network.h",
-	"scheduler.h", "server.h", "system.h", "thread.h",
-	"types.h", "util.h", "work.h", "work_group.h",
+	"avltree.h", "common.h", "cstring.h", "def.h",
+	"log.h", "memblock.h", "ringbuffer.h", "scheduler.h",
+	"system.h", "work.h", "workgroup.h",
 ]
 
 COMMON = [
-	"adler32.o", "cmdline.o", "connection.o", "log.o",
-	"main.o", "message.o", "mmblock.o", "mm.o",
-	"protocol_game.o", "protocol_login.o", "protocol_old.o",
-	"protocol_test.o", "scheduler.o", "server.o", "work.o",
-	"work_group.o",
+	"log.o", "main.o", "scheduler.o", "system.o",
+	"work.o",
 ]
 
 WIN32 = [
-	"win32/atomic.o",
-	"win32/system.o", "win32/thread.o", "win32/network.o",
+	#
 ]
 
 LINUX = [
-	"linux/atomic.o",
-	"posix/system.o", "posix/thread.o", "linux/network.o",
+	#
 ]
 
 FREEBSD = [
-	"freebsd/atomic.o",
-	"posix/system.o", "posix/thread.o", "freebsd/network.o",
+	#
 ]
 
 if __name__ == "__main__":
@@ -98,7 +91,7 @@ if __name__ == "__main__":
 	#default to this platform byteorder
 	byteorder	= "LITTLE"
 	if sys.byteorder == "big":
-		endianess = "BIG"
+		byteorder = "BIG"
 
 	args = iter(sys.argv[1:])
 	for opt in args:
@@ -157,17 +150,17 @@ if __name__ == "__main__":
 
 	# set parameters
 	CC	= ""
-	CFLAGS	= "-std=c99 -Wall -Wno-pointer-sign"
+	CFLAGS	= "-std=c++14 -Wall -Wno-pointer-sign"
 	CDEFS	= "-D_XOPEN_SOURCE=700"
 	LDFLAGS	= ""
-	LDLIBS	= "-lc -lpthread"
+	LDLIBS	= "-lc++ -lpthread"
 	OBJECTS	= COMMON[:]
 
 	#check compiler
 	if compiler == "GCC":
-		CC = "gcc"
+		CC = "g++"
 	elif compiler == "CLANG":
-		CC = "clang"
+		CC = "clang++"
 	else:
 		print("[error] invalid compiler")
 		sys.exit()

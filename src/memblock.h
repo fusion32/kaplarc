@@ -1,13 +1,11 @@
-﻿#ifndef MMBLOCK_H_
-#define MMBLOCK_H_
-
-namespace kp{
+﻿#ifndef MEMBLOCK_H_
+#define MEMBLOCK_H_
 
 template<typename T, int N>
-class mmblock{
+class MemBlock{
 private:
 	static_assert(sizeof(T) >= sizeof(T*),
-		"mmblock: T must be big enough to hold a pointer");
+		"MemBlock: T must be big enough to hold a pointer");
 
 	int offset;
 	T *freelist;
@@ -18,13 +16,13 @@ private:
 
 public:
 	// delete move and copy operations
-	mmblock(const mmblock &blk)		= delete;
-	mmblock &operator=(const mmblock &blk)	= delete;
-	mmblock(mmblock &&blk)			= delete;
-	mmblock &operator=(mmblock &&blk)	= delete;
+	MemBlock(const MemBlock&)		= delete;
+	MemBlock(MemBlock&&)			= delete;
+	MemBlock &operator=(const MemBlock&)	= delete;
+	MemBlock &operator=(MemBlock&&)		= delete;
 
-	mmblock(void) : freelist(nullptr), offset(0) {}
-	~mmblock(void){}
+	MemBlock(void) : freelist(nullptr), offset(0) {}
+	~MemBlock(void){}
 
 	void reset(void){
 		offset = 0;
@@ -32,7 +30,7 @@ public:
 	}
 
 	bool owns(T *ptr){
-		return (ptr >= base || ptr <= (base + N - 1));
+		return (ptr >= base || ptr < (base + N));
 	}
 
 	T *alloc(void){
@@ -62,6 +60,4 @@ public:
 	}
 };
 
-} //namespace
-
-#endif //MMBLOCK_H_
+#endif //MEMBLOCK_H_

@@ -1,35 +1,31 @@
-#ifndef CSTRING_H_
+﻿#ifndef CSTRING_H_
 #define CSTRING_H_
-
-#include "log.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 
-namespace kp{
-
 template<int N>
-class cstring{
+class CString{
 private:
 	int length;
 	char buf[N];
 
-	friend class cstring;
+	friend class CString;
 
 public:
 	// delete move operations
-	cstring(cstring &&str)			= delete;
-	cstring &operator=(cstring &&str)	= delete;
+	CString(CString &&str)			= delete;
+	CString &operator=(CString &&str)	= delete;
 
 	// constructors
-	cstring(void) : length(0) {}
+	CString(void) : length(0) {}
 	template<int M>
-	cstring(const cstring<M> &str){ copy(str); }
-	cstring(const char *str){ copy(str); }
+	CString(const CString<M> &str){ copy(str); }
+	CString(const char *str){ copy(str); }
 
 	// destructor
-	~cstring(void){}
+	~CString(void){}
 
 	// string operations
 	void vformat(const char *fmt, va_list ap){
@@ -64,7 +60,7 @@ public:
 	}
 
 	template<int M>
-	void append(const cstring<M> &str){
+	void append(const CString<M> &str){
 		int len = str.length;
 		if(len + length >= N - 1)
 			len = N - 1 - length;
@@ -85,7 +81,7 @@ public:
 	}
 
 	template<int M>
-	void copy(const cstring<M> &str){
+	void copy(const CString<M> &str){
 		int len = str.length;
 		if(len > N - 1)
 			len = N - 1;
@@ -121,40 +117,38 @@ public:
 
 	// operators overload
 	template<int M>
-	cstring &operator=(const cstring<M> &str){
+	CString &operator=(const CString<M> &str){
 		copy(str);
 		return *this;
 	}
 
-	cstring &operator=(const char *str){
+	CString &operator=(const char *str){
 		copy(str);
 		return *this;
 	}
 
 	template<int M>
-	cstring &operator+=(const cstring<M> &str){
+	CString &operator+=(const CString<M> &str){
 		append(str);
 		return *this;
 	}
 
-	cstring &operator+=(const char *str){
+	CString &operator+=(const char *str){
 		append(str);
 		return *this;
 	}
 
 	template<int M>
-	cstring &operator+(const cstring<M> &str){
+	CString &operator+(const CString<M> &str){
 		append(str);
 		return *this;
 	}
 
-	cstring &operator+(const char *str){
+	CString &operator+(const char *str){
 		append(str);
 		return *this;
 	}
 };
-
-} // namespace
 
 #endif //CSTRING_H_
 

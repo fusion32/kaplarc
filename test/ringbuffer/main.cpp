@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv)
 {
-	kp::ringbuffer<int, 32> rb;
+	RingBuffer<int, 32> rb;
 
 	for(int j = 1; j <= 10; j++){
 		LOG("=======================");

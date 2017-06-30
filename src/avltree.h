@@ -1,12 +1,10 @@
-﻿#ifndef AVL_TREE_H_
-#define AVL_TREE_H_
+﻿#ifndef AVLTREE_H_
+#define AVLTREE_H_
 
-#include "mmblock.h"
-
-namespace kp{
+#include "memblock.h"
 
 template<typename T, int N>
-class avl_tree{
+class AVLTree{
 private:
 	struct node{
 		T key;
@@ -20,7 +18,7 @@ private:
 	node *root;
 
 	// tree memory
-	kp::mmblock<node, N> blk;
+	MemBlock<node, N> blk;
 
 	// fix node height
 	static void fix_height(node *x){
@@ -171,13 +169,13 @@ private:
 
 public:
 	// delete copy and move operations
-	avl_tree(const avl_tree&) = delete;
-	avl_tree &operator=(const avl_tree&) = delete;
-	avl_tree(avl_tree&&) = delete;
-	avl_tree &operator=(avl_tree&&) = delete;
+	AVLTree(const AVLTree&)			= delete;
+	AVLTree(AVLTree&&)			= delete;
+	AVLTree &operator=(const AVLTree&)	= delete;
+	AVLTree &operator=(AVLTree&&)		= delete;
 
-	avl_tree(void) : root(nullptr), blk() {}
-	~avl_tree(void){}
+	AVLTree(void) : root(nullptr), blk() {}
+	~AVLTree(void){}
 
 	template<typename G>
 	T *insert(G &&value){
@@ -301,6 +299,4 @@ public:
 	}
 };
 
-} //namespace
-
-#endif //AVL_TREE_H_
+#endif //AVLTREE_H_

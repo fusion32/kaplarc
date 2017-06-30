@@ -1,24 +1,23 @@
-#include "work.h"
-
-#include "log.h"
-#include "ringbuffer.h"
-#include "system.h"
-
 #include <vector>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
 
-#define MAX_WORK 4096
-static kp::ringbuffer<kp::work, MAX_WORK>	rb;
-static std::vector<std::thread>			thread_pool;
-static std::mutex				mtx;
-static std::condition_variable			cond;
-static bool					running = false;
+#include "work.h"
+#include "log.h"
+#include "ringbuffer.h"
+#include "system.h"
+
+#define MAX_WORK 0xFFFF
+static RingBuffer<Work, MAX_WORK>	rb;
+static std::vector<std::thread>		thread_pool;
+static std::mutex			mtx;
+static std::condition_variable		cond;
+static bool				running = false;
 
 static void worker(void)
 {
-	kp::work wrk;
+	Work wrk;
 	std::unique_lock<std::mutex> ulock(mtx, std::defer_lock);
 	while(running){
 		ulock.lock();
@@ -44,7 +43,6 @@ void work_init(void)
 		count = 1;
 	running = true;
 	for(int i = 0; i < count; i++)
-		//thread_pool.push_back(std::thread(worker));
 		thread_pool.emplace_back(worker);
 }
 
@@ -60,7 +58,7 @@ void work_shutdown(void)
 	thread_pool.clear();
 }
 
-void work_dispatch(kp::work wrk)
+void work_dispatch(Work wrk)
 {
 	std::lock_guard<std::mutex> lguard(mtx);
 	if(!rb.push(std::move(wrk)))
@@ -69,7 +67,7 @@ void work_dispatch(kp::work wrk)
 		cond.notify_one();
 }
 
-void work_dispatch_array(int count, bool single, kp::work *wrk)
+void work_dispatch_array(int count, bool single, Work *wrk)
 {
 	std::lock_guard<std::mutex> lguard(mtx);
 	if(rb.size() + count >= MAX_WORK){

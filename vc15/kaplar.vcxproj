@@ -135,12 +135,15 @@
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
     <ClCompile Include="..\src\system.cpp" />
+    <ClCompile Include="..\src\win32\network.cpp" />
     <ClCompile Include="..\src\work.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\avl_tree.h" />
+    <ClInclude Include="..\src\avltree.h" />
+    <ClInclude Include="..\src\common.h" />
     <ClInclude Include="..\src\def.h" />
-    <ClInclude Include="..\src\mmblock.h" />
+    <ClInclude Include="..\src\memblock.h" />
+    <ClInclude Include="..\src\network.h" />
     <ClInclude Include="..\src\scheduler.h" />
     <ClInclude Include="..\src\cstring.h" />
     <ClInclude Include="..\src\log.h" />

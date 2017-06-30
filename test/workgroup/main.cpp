@@ -1,10 +1,10 @@
+#include "../../src/log.h"
 #include "../../src/work.h"
 #include "../../src/workgroup.h"
-#include "../../src/log.h"
 
 int main(int argc, char **argv)
 {
-	kp::workgroup grp;
+	WorkGroup grp;
 
 	// work
 	auto f3 = [](void){

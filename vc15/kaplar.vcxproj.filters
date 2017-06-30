@@ -25,6 +25,9 @@
     <ClCompile Include="..\src\system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\win32\network.cpp">
+      <Filter>Source Files\win32</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\work.h">
@@ -48,13 +51,19 @@
     <ClInclude Include="..\src\def.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\mmblock.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\system.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\avl_tree.h">
+    <ClInclude Include="..\src\common.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\memblock.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\avltree.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\network.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

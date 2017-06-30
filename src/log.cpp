@@ -1,9 +1,9 @@
-#include "log.h"
-#include "cstring.h"
-
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
+
+#include "cstring.h"
+#include "log.h"
 
 #define MAX_FILE_NAME_SIZE 64
 static char	filename[MAX_FILE_NAME_SIZE];
@@ -51,7 +51,7 @@ void log_add1(const char *tag, const char *fmt, va_list ap)
 	time_t curtime;
 	struct tm *timeptr;
 	char timestr[64];
-	kp::cstring<256> log_entry;
+	CString<256> log_entry;
 
 	// time str
 	curtime = time(NULL);

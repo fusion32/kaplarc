@@ -1,26 +1,25 @@
+#include <vector>
+
 #include "log.h"
 #include "scheduler.h"
-#include "work.h"
 #include "system.h"
-#include <stdio.h>
-
-#include "avl_tree.h"
+#include "work.h"
 
 int main(int argc, char **argv)
 {
 	work_init();
 	scheduler_init();
 
-	kp::schref ref[4096];
-	for(int i = 0; i < 4096; ++i){
-		ref[i] = scheduler_add((i+1)*1000, [](void){
-			LOG("hello");
-		});
+	std::vector<SchRef> vec;
+	vec.reserve(0x3FFF);
+	for(int i = 0; i < 0x3FFF; ++i){
+		vec.push_back(scheduler_add((i+1)*1000, [](void){
+				LOG("hello");
+		}));
 	}
 
-	//for(int i = 0; i < 4096; ++i){
-	//	scheduler_remove(ref[i]);
-	//}
+	for(auto &ref : vec)
+		scheduler_remove(ref);
 
 	getchar();
 	scheduler_shutdown();

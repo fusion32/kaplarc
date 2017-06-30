@@ -4,16 +4,14 @@
 #include "def.h"
 #include "work.h"
 
-namespace kp{
-struct schref{
+struct SchRef{
 	int64 id;
 	int64 time;
 };
-} // namespace
 
 void		scheduler_init(void);
 void		scheduler_shutdown(void);
-kp::schref	scheduler_add(int64 delay, kp::work work_);
-bool		scheduler_remove(const kp::schref &ref);
+SchRef		scheduler_add(int64 delay, Work wrk);
+bool		scheduler_remove(const SchRef &ref);
 
 #endif //SCHEDULER_H_

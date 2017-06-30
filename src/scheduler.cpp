@@ -1,60 +1,57 @@
-#include "scheduler.h"
-
-#include "avl_tree.h"
-#include "log.h"
-#include "system.h"
-#include "work.h"
-
 #include <chrono>
 #include <condition_variable>
 #include <thread>
 
-namespace kp{
-struct schentry{
+#include "scheduler.h"
+#include "avltree.h"
+#include "log.h"
+#include "system.h"
+#include "work.h"
+
+struct SchEntry{
 	int64 id;
 	int64 time;
-	kp::work wrk;
+	Work wrk;
 
 	// constructors
-	schentry(void){}
+	SchEntry(void){}
 
 	template<typename G>
-	schentry(int64 id_, int64 time_, G &&wrk_)
+	SchEntry(int64 id_, int64 time_, G &&wrk_)
 		: id(id_), time(time_), wrk(std::forward<G>(wrk_)) {}
 
-	// comparisson with `schentry`
-	bool operator==(const schentry &rhs) const{
+	// comparisson with `SchEntry`
+	bool operator==(const SchEntry &rhs) const{
 		return id == rhs.id;
 	}
-	bool operator!=(const schentry &rhs) const{
+	bool operator!=(const SchEntry &rhs) const{
 		return id != rhs.id;
 	}
-	bool operator<(const schentry &rhs) const{
+	bool operator<(const SchEntry &rhs) const{
 		return time < rhs.time;
 	}
-	bool operator>(const schentry &rhs) const{
+	bool operator>(const SchEntry &rhs) const{
 		return time > rhs.time;
 	}
 
-	// comparisson with `schref`
-	bool operator==(const schref &rhs) const{
+	// comparisson with `SchRef`
+	bool operator==(const SchRef &rhs) const{
 		return id == rhs.id;
 	}
-	bool operator!=(const schref &rhs) const{
+	bool operator!=(const SchRef &rhs) const{
 		return id != rhs.id;
 	}
-	bool operator<(const schref &rhs) const{
+	bool operator<(const SchRef &rhs) const{
 		return time < rhs.time;
 	}
-	bool operator>(const schref &rhs) const{
+	bool operator>(const SchRef &rhs) const{
 		return time > rhs.time;
 	}
 };
-} //namespace
 
 // scheduler entries
-#define SCH_MAX_ENTRIES 4096
-static kp::avl_tree<kp::schentry, SCH_MAX_ENTRIES> tree;
+#define SCH_MAX_ENTRIES 0x3FFF
+static AVLTree<SchEntry, SCH_MAX_ENTRIES> tree;
 
 // scheduler control
 static std::thread		thr;
@@ -65,9 +62,9 @@ static bool			running = false;
 
 static void scheduler(void)
 {
-	int64 delta;
-	kp::work wrk;
-	kp::schentry *entry;
+	int64		delta;
+	Work		wrk;
+	SchEntry	*entry;
 
 	std::unique_lock<std::mutex> ulock(mtx, std::defer_lock);
 	while(running){
@@ -93,7 +90,6 @@ static void scheduler(void)
 		}
 
 		// get work and remove entry
-		LOG("entry: %d", entry->id);
 		wrk = std::move(entry->wrk);
 		tree.remove(*entry);
 		ulock.unlock();
@@ -121,19 +117,24 @@ void scheduler_shutdown(void)
 	thr.join();
 }
 
-kp::schref scheduler_add(int64 delay, kp::work work_)
+SchRef scheduler_add(int64 delay, Work wrk)
 {
 	int64 time = delay + sys_get_tick_count();
-	kp::schentry *entry;
+	SchEntry *entry;
 
 	std::lock_guard<std::mutex> lguard(mtx);
-	entry = tree.emplace(next_id++, time, std::move(work_));
+	entry = tree.emplace(next_id++, time, std::move(wrk));
+	if(entry == nullptr){
+		LOG("scheduler_add: scheduler is at maximum capacity (%d)", SCH_MAX_ENTRIES);
+		return {-1, 0};
+	}
+
 	if(entry == tree.min())
 		cond.notify_one();
 	return {entry->id, entry->time};
 }
 
-bool scheduler_remove(const kp::schref &ref)
+bool scheduler_remove(const SchRef &ref)
 {
 	std::lock_guard<std::mutex> lguard(mtx);
 	if(!tree.remove(ref)){

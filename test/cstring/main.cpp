@@ -3,8 +3,8 @@
 
 int main(int argc, char **argv)
 {
-	kp::cstring<64> str1 = "string1";
-	kp::cstring<16> str2 = "string2";
+	CString<64> str1 = "string1";
+	CString<16> str2 = "string2";
 
 	str1 += " ";
 	str1 += str2;
