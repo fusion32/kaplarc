@@ -2,15 +2,13 @@
 #include <thread>
 #include "system.h"
 
-int64 sys_get_tick_count()
-{
+int64 sys_tick_count(void){
 	auto now = std::chrono::steady_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(
 			now.time_since_epoch());
 	return dur.count();
 }
 
-int32 sys_get_cpu_count()
-{
+int sys_cpu_count(void){
 	return std::thread::hardware_concurrency();
 }

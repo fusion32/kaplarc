@@ -62,27 +62,19 @@ DEPS = [
 ]
 
 COMMON = [
-	"log.o", "main.o", "scheduler.o", "system.o",
-	"work.o",
+	"log", "main", "scheduler", "system",
+	"work",
 ]
 
-WIN32 = [
-	#
-]
-
-LINUX = [
-	#
-]
-
-FREEBSD = [
-	#
-]
+WIN32 = []
+LINUX = []
+FREEBSD = []
 
 if __name__ == "__main__":
 	# parse parameters
-	output		= 'kaplar'
-	srcdir		= 'src/'
-	builddir	= 'build/'
+	output		= "kaplar"
+	srcdir		= "src/"
+	builddir	= "build/"
 	test		= False
 	compiler	= "CLANG"
 	build		= "RELEASE"
@@ -203,15 +195,15 @@ if __name__ == "__main__":
 	DEPS	= [srcdir + dep for dep in DEPS]
 
 	#create tuple (obj, src) for each object
-	OBJECTS = [(builddir + "obj/" + obj, srcdir + obj[:-2] + ".c")
+	OBJECTS = [(builddir + "obj/" + obj + ".o", srcdir + obj + ".cpp")
 				for obj in OBJECTS]
 
-	#if testing, change <srcdir>/main.c to ./main.c
+	#if testing, change <srcdir>/main.cpp to ./main.cpp
 	if test == True:
 		for (a, b) in OBJECTS:
-			if ("main.o" in a) or ("main.c" in b):
+			if ("main.o" in a) or ("main.cpp" in b):
 				OBJECTS.remove((a, b))
-				OBJECTS.append((a, "main.c"))
+				OBJECTS.append((a, "main.cpp"))
 				break
 
 	# output to file

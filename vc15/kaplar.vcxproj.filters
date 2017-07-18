@@ -5,8 +5,8 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Source Files\win32">
-      <UniqueIdentifier>{b5a3e907-c60a-4792-987b-378479b67ff4}</UniqueIdentifier>
+    <Filter Include="Source Files\net">
+      <UniqueIdentifier>{17be985e-6359-4e2f-817e-7d9743bb7dd4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -25,8 +25,14 @@
     <ClCompile Include="..\src\system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\win32\network.cpp">
-      <Filter>Source Files\win32</Filter>
+    <ClCompile Include="..\src\net\network_epoll.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\network_iocp.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\network_kqueue.cpp">
+      <Filter>Source Files\net</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -63,8 +69,8 @@
     <ClInclude Include="..\src\avltree.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\network.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="..\src\net\network.h">
+      <Filter>Source Files\net</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

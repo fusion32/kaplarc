@@ -9,9 +9,9 @@ struct SchRef{
 	int64 time;
 };
 
-void		scheduler_init(void);
-void		scheduler_shutdown(void);
-SchRef		scheduler_add(int64 delay, Work wrk);
-bool		scheduler_remove(const SchRef &ref);
+void	scheduler_init(void);
+void	scheduler_shutdown(void);
+SchRef	scheduler_add(int64 delay, Work wrk);
+bool	scheduler_remove(const SchRef &ref);
 
 #endif //SCHEDULER_H_

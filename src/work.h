@@ -8,6 +8,7 @@ using Work = std::function<void(void)>;
 void work_init(void);
 void work_shutdown(void);
 void work_dispatch(Work wrk);
-void work_dispatch_array(int count, bool single, Work *wrk);
+void work_multi_dispatch(int count, const Work &wrk);
+void work_multi_dispatch(int count, const Work *wrk);
 
 #endif //WORK_H_

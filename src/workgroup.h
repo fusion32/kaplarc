@@ -14,7 +14,7 @@ private:
 
 public:
 	WorkGroup(void){}
-	WorkGroup(int count) : vec(count) {}
+	WorkGroup(int count) : vec() { vec.reserve(count); }
 
 	void add(Work wrk){
 		vec.push_back(std::move(wrk));

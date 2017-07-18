@@ -133,9 +133,11 @@
   <ItemGroup>
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\net\network_epoll.cpp" />
+    <ClCompile Include="..\src\net\network_iocp.cpp" />
+    <ClCompile Include="..\src\net\network_kqueue.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
     <ClCompile Include="..\src\system.cpp" />
-    <ClCompile Include="..\src\win32\network.cpp" />
     <ClCompile Include="..\src\work.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -143,7 +145,7 @@
     <ClInclude Include="..\src\common.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\memblock.h" />
-    <ClInclude Include="..\src\network.h" />
+    <ClInclude Include="..\src\net\network.h" />
     <ClInclude Include="..\src\scheduler.h" />
     <ClInclude Include="..\src\cstring.h" />
     <ClInclude Include="..\src\log.h" />

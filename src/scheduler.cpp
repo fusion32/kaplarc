@@ -60,8 +60,7 @@ static std::condition_variable	cond;
 static int64			next_id = 1;
 static bool			running = false;
 
-static void scheduler(void)
-{
+static void scheduler(void){
 	int64		delta;
 	Work		wrk;
 	SchEntry	*entry;
@@ -69,21 +68,20 @@ static void scheduler(void)
 	std::unique_lock<std::mutex> ulock(mtx, std::defer_lock);
 	while(running){
 		ulock.lock();
-		entry = tree.min();
-		if(entry == nullptr){
+		if(tree.empty()){
 			cond.wait(ulock);
-			entry = tree.min();
-			if(entry == nullptr){
+			if(tree.empty()){
 				ulock.unlock();
 				continue;
 			}
 		}
 
-		delta = entry->time - sys_get_tick_count();
+		entry = tree.min();
+		delta = entry->time - sys_tick_count();
 		if(delta > 0){
 			cond.wait_for(ulock, std::chrono::milliseconds(delta));
 			entry = tree.min();
-			if(entry == nullptr || entry->time > sys_get_tick_count()){
+			if(entry == nullptr || entry->time > sys_tick_count()){
 				ulock.unlock();
 				continue;
 			}
@@ -99,16 +97,13 @@ static void scheduler(void)
 	}
 }
 
-
-void scheduler_init(void)
-{
+void scheduler_init(void){
 	// spawn scheduler thread
 	running = true;
 	thr = std::thread(scheduler);
 }
 
-void scheduler_shutdown(void)
-{
+void scheduler_shutdown(void){
 	// join scheduler thread
 	mtx.lock();
 	running = false;
@@ -117,9 +112,8 @@ void scheduler_shutdown(void)
 	thr.join();
 }
 
-SchRef scheduler_add(int64 delay, Work wrk)
-{
-	int64 time = delay + sys_get_tick_count();
+SchRef scheduler_add(int64 delay, Work wrk){
+	int64 time = delay + sys_tick_count();
 	SchEntry *entry;
 
 	std::lock_guard<std::mutex> lguard(mtx);
@@ -134,8 +128,7 @@ SchRef scheduler_add(int64 delay, Work wrk)
 	return {entry->id, entry->time};
 }
 
-bool scheduler_remove(const SchRef &ref)
-{
+bool scheduler_remove(const SchRef &ref){
 	std::lock_guard<std::mutex> lguard(mtx);
 	if(!tree.remove(ref)){
 		LOG("scheduler_remove: trying to remove invalid scheduler entry");

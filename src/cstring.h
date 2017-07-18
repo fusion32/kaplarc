@@ -137,17 +137,6 @@ public:
 		append(str);
 		return *this;
 	}
-
-	template<int M>
-	CString &operator+(const CString<M> &str){
-		append(str);
-		return *this;
-	}
-
-	CString &operator+(const char *str){
-		append(str);
-		return *this;
-	}
 };
 
 #endif //CSTRING_H_

@@ -15,8 +15,7 @@ static std::mutex			mtx;
 static std::condition_variable		cond;
 static bool				running = false;
 
-static void worker(void)
-{
+static void worker(void){
 	Work wrk;
 	std::unique_lock<std::mutex> ulock(mtx, std::defer_lock);
 	while(running){
@@ -36,9 +35,8 @@ static void worker(void)
 	}
 }
 
-void work_init(void)
-{
-	int count = sys_get_cpu_count() - 1;
+void work_init(void){
+	int count = sys_cpu_count() - 1;
 	if(count <= 0)
 		count = 1;
 	running = true;
@@ -46,8 +44,7 @@ void work_init(void)
 		thread_pool.emplace_back(worker);
 }
 
-void work_shutdown(void)
-{
+void work_shutdown(void){
 	mtx.lock();
 	running = false;
 	cond.notify_all();
@@ -58,8 +55,7 @@ void work_shutdown(void)
 	thread_pool.clear();
 }
 
-void work_dispatch(Work wrk)
-{
+void work_dispatch(Work wrk){
 	std::lock_guard<std::mutex> lguard(mtx);
 	if(!rb.push(std::move(wrk)))
 		LOG_ERROR("work_dispatch: work ring buffer is at maximum capacity (%d)", MAX_WORK);
@@ -67,24 +63,31 @@ void work_dispatch(Work wrk)
 		cond.notify_one();
 }
 
-void work_dispatch_array(int count, bool single, Work *wrk)
-{
+void work_multi_dispatch(int count, const Work &wrk){
 	std::lock_guard<std::mutex> lguard(mtx);
 	if(rb.size() + count >= MAX_WORK){
-		LOG_ERROR("work_dispatch_array: requested amount of work would cause the ring buffer to overflow");
+		LOG_ERROR("work_dispatch_array: requested amount of work would overflow the ringbuffer");
 		return;
 	}
 
-	for(int i = 0; i < count; i++){
-		// NOTE: don't move here or else the function
-		// handles will be all empty after the dispatch
-		rb.push(*wrk);
-		// if there is a single work in the array
-		// keep adding it to the work pool, else
-		// advance to the next element
-		if(!single)
-			wrk++;
+	// push work into the ringbuffer
+	for(int i = 0; i < count; ++i)
+		rb.push(wrk);
+
+	// signal worker threads
+	cond.notify_all();
+}
+
+void work_multi_dispatch(int count, const Work *wrk){
+	std::lock_guard<std::mutex> lguard(mtx);
+	if(rb.size() + count >= MAX_WORK){
+		LOG_ERROR("work_dispatch_array: requested amount of work would overflow the ringbuffer");
+		return;
 	}
+
+	// push work into the ringbuffer
+	for(int i = 0; i < count; i++)
+		rb.push(wrk[i]);
 
 	// signal worker threads
 	cond.notify_all();
