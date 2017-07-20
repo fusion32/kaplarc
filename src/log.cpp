@@ -8,13 +8,12 @@
 #define MAX_FILE_NAME_SIZE 64
 static char	filename[MAX_FILE_NAME_SIZE];
 static FILE	*file = nullptr;
-static bool	saving = false;
 
 bool log_start(void){
 	time_t curTime;
 	struct tm *timeptr;
 
-	if(!saving){
+	if(file == nullptr){
 		// name example: "Jan-01-1999-133700.log"
 		curTime = time(nullptr);
 		timeptr = localtime(&curTime);
@@ -22,16 +21,14 @@ bool log_start(void){
 
 		// open file
 		file = fopen(filename, "a");
-		saving = file != nullptr;
 	}
-	return saving;
+	return (file != nullptr);
 }
 
 void log_stop(void){
-	if(!saving)
+	if(file == nullptr)
 		return;
 
-	saving = false;
 	fclose(file);
 	file = nullptr;
 }
@@ -68,9 +65,7 @@ void log_add1(const char *tag, const char *fmt, va_list ap){
 	printf(log_entry);
 
 	// if saving, output to log file
-	if(saving){
-		if(fwrite(log_entry, 1, log_entry.size(), file) != 1)
-			printf("<ERROR> Failed to write log entry to file! (filename = %s)\n", filename);
-	}
+	if(file != nullptr && fwrite(log_entry, 1, log_entry.size(), file) != 1)
+		printf("<ERROR> Failed to write log entry to file! (filename = %s)\n", filename);
 }
 

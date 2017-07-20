@@ -11,6 +11,7 @@
 #define SOCKET_SHUT_RDWR	0x02
 
 struct Socket;
+// Callback(Socket *socket, int error, int transfered);
 using SocketCallback = std::function<void(Socket*, int, int)>;
 
 // network service

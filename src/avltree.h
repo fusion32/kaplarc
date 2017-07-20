@@ -148,7 +148,7 @@ private:
 			}
 			*y = x;
 			root = retrace(x);
-		} else{
+		} else {
 			root = x;
 		}
 	}
@@ -237,9 +237,9 @@ public:
 			y->left->parent = y;
 			y->right = x->right;
 			y->right->parent = y;
-		} else if(x->left != nullptr){
+		} else if(x->left != nullptr) {
 			y = x->left;
-		} else if(x->right != nullptr){
+		} else if(x->right != nullptr) {
 			y = x->right;
 		}
 

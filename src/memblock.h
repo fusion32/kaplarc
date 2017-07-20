@@ -37,7 +37,7 @@ public:
 		if(freelist != nullptr){
 			ptr = freelist;
 			freelist = *(T**)freelist;
-		} else if(offset < N){
+		} else if(offset < N) {
 			ptr = &base[offset];
 			offset += 1;
 		}
@@ -50,7 +50,7 @@ public:
 
 		if(ptr == &base[offset - 1]){
 			offset -= 1;
-		} else{
+		} else {
 			*(T**)ptr = freelist;
 			freelist = ptr;
 		}

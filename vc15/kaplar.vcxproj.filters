@@ -34,6 +34,18 @@
     <ClCompile Include="..\src\net\network_kqueue.cpp">
       <Filter>Source Files\net</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\net\protocol_test.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\server.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\connection.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\message.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\work.h">
@@ -70,6 +82,15 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\net\network.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\connection.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\server.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\message.h">
       <Filter>Source Files\net</Filter>
     </ClInclude>
   </ItemGroup>

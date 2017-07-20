@@ -26,8 +26,8 @@ Options: (options in the same section are mutually exclusive)
         -linux              -
         -freebsd            -
 
-    [endianess]:
-        -le (default)       compile for little endian arch
+    [byte order]: (defaults to platform's)
+        -le                 compile for little endian arch
 	-be                 compile for big endian arch
 '''
 
