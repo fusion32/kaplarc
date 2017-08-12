@@ -4,6 +4,8 @@
 #include "def.h"
 #include "work.h"
 
+#define SCHREF_INVALID {-1, 0}
+
 struct SchRef{
 	int64 id;
 	int64 time;

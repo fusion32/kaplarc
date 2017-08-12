@@ -32,6 +32,12 @@ public:
 	void	add_u16(uint16 val);
 	void	add_u32(uint32 val);
 	void	add_str(const char *buf, uint16 buflen);
+
+	// reverse add
+	void	radd_byte(uint8 val);
+	void	radd_u16(uint16 val);
+	void	radd_u32(uint32 val);
+	void	radd_str(const char *buf, uint16 buflen);
 };
 
 #endif //MESSAGE_H_

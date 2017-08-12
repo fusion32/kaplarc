@@ -8,6 +8,9 @@
     <Filter Include="Source Files\net">
       <UniqueIdentifier>{17be985e-6359-4e2f-817e-7d9743bb7dd4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\netlib">
+      <UniqueIdentifier>{44f0fa6b-c11c-42c0-943a-0e0d21658b22}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -25,15 +28,6 @@
     <ClCompile Include="..\src\system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\net\network_epoll.cpp">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\network_iocp.cpp">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\network_kqueue.cpp">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\net\protocol_test.cpp">
       <Filter>Source Files\net</Filter>
     </ClCompile>
@@ -45,6 +39,18 @@
     </ClCompile>
     <ClCompile Include="..\src\net\message.cpp">
       <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\adler32.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\netlib\network_epoll.cpp">
+      <Filter>Source Files\netlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\netlib\network_iocp.cpp">
+      <Filter>Source Files\netlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\netlib\network_kqueue.cpp">
+      <Filter>Source Files\netlib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -81,9 +87,6 @@
     <ClInclude Include="..\src\avltree.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\net\network.h">
-      <Filter>Source Files\net</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\net\connection.h">
       <Filter>Source Files\net</Filter>
     </ClInclude>
@@ -92,6 +95,15 @@
     </ClInclude>
     <ClInclude Include="..\src\net\message.h">
       <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\protocol_test.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\shared.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\netlib\network.h">
+      <Filter>Source Files\netlib</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

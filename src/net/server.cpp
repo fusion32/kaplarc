@@ -1,9 +1,10 @@
 
 #include <algorithm>
 #include <vector>
-#include "network.h"
-#include "server.h"
 #include "../log.h"
+#include "connection.h"
+#include "../netlib/network.h"
+#include "server.h"
 
 /*************************************
 
@@ -40,6 +41,7 @@ private:
 	int port;
 	Socket *socket;
 	std::vector<IProtocolFactory*> factories;
+	friend Server;
 
 public:
 	Service(int port_)
@@ -105,7 +107,7 @@ public:
 	void on_accept(Socket *sock, int error, int transfered){
 		if(error == 0){
 			// accept new connection
-			//
+			ConnMgr::instance().accept(sock, this);
 
 			// chain next accept
 			auto callback = [this](Socket *sock, int error, int transfered)
@@ -133,18 +135,24 @@ public:
 	Server Implementation
 
 *************************************/
-static std::vector<Service*> services;
-static bool running = false;
+
+Server::Server(void)
+  : running(false) {}
+
+Server::~Server(void){
+}
 
 template<typename T>
-bool server_add_protocol(int port){
+bool Server::add_protocol(int port){
 	if(running){
 		LOG_ERROR("server_add_protocol: server already running");
 		return false;
 	}
 
-	auto it = std::find_if(services.begin(), services.end(), [port](Service *service)
-		{ return (service->get_port() == port); });
+	auto it = std::find_if(services.begin(), services.end(),
+		[port](Service *service) {
+			return (service->get_port() == port);
+		});
 
 	Service *service;
 	if(it == services.end()){
@@ -157,7 +165,7 @@ bool server_add_protocol(int port){
 	return service->add_protocol<T>();
 }
 
-void server_run(void){
+void Server::run(void){
 	// open services
 	for(Service *service : services)
 		service->open();
@@ -170,11 +178,11 @@ void server_run(void){
 		service->close();
 }
 
-void server_stop(void){
+void Server::stop(void){
 	running = false;
 }
 
-Protocol *server_make_protocol(Service *service,
+Protocol *Server::make_protocol(Service *service,
 		Connection *conn, uint32 identifier){
 	return service->make_protocol(conn, identifier);
 }

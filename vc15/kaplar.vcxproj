@@ -131,13 +131,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\adler32.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\netlib\network_epoll.cpp" />
+    <ClCompile Include="..\src\netlib\network_iocp.cpp" />
+    <ClCompile Include="..\src\netlib\network_kqueue.cpp" />
     <ClCompile Include="..\src\net\connection.cpp" />
     <ClCompile Include="..\src\net\message.cpp" />
-    <ClCompile Include="..\src\net\network_epoll.cpp" />
-    <ClCompile Include="..\src\net\network_iocp.cpp" />
-    <ClCompile Include="..\src\net\network_kqueue.cpp" />
     <ClCompile Include="..\src\net\protocol_test.cpp" />
     <ClCompile Include="..\src\net\server.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
@@ -149,14 +150,16 @@
     <ClInclude Include="..\src\common.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\memblock.h" />
+    <ClInclude Include="..\src\netlib\network.h" />
     <ClInclude Include="..\src\net\connection.h" />
     <ClInclude Include="..\src\net\message.h" />
-    <ClInclude Include="..\src\net\network.h" />
+    <ClInclude Include="..\src\net\protocol_test.h" />
     <ClInclude Include="..\src\net\server.h" />
     <ClInclude Include="..\src\scheduler.h" />
     <ClInclude Include="..\src\cstring.h" />
     <ClInclude Include="..\src\log.h" />
     <ClInclude Include="..\src\ringbuffer.h" />
+    <ClInclude Include="..\src\shared.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\work.h" />
     <ClInclude Include="..\src\workgroup.h" />
