@@ -1,4 +1,4 @@
-#ifdef _WIN32
+﻿#ifdef _WIN32
 
 #include <atomic>
 #include <errno.h>
@@ -18,6 +18,7 @@ struct AsyncOp{
 	std::atomic<int>	opcode;
 	Socket			*socket;
 	SocketCallback		complete;
+	void			*udata;
 };
 
 #define SOCKET_MAX_OPS 8
@@ -92,6 +93,12 @@ static bool load_extensions(void){
 	closesocket(fd);
 	return true;
 }
+
+/*************************************
+
+	Network Management
+
+*************************************/
 
 bool net_init(void){
 	int ret = WSAStartup(MAKEWORD(2, 2), &wsa_data);
@@ -190,6 +197,7 @@ int net_work(void){
 	ret = GetQueuedCompletionStatus(iocp, &transfered,
 		&completion_key, (OVERLAPPED**)&op, NET_WORK_TIMEOUT);
 
+	error = NO_ERROR;
 	if(ret == FALSE)
 		error = GetLastError();
 
@@ -203,10 +211,17 @@ int net_work(void){
 			(sockaddr**)&op->socket->remote_addr, &dummy);
 	}
 
-	op->complete(op->socket, posix_error(error), transfered);
+	op->complete(op->socket, posix_error(error), transfered, op->udata);
 	op->opcode.store(OP_NONE, std::memory_order_relaxed);
 	return 0;
 }
+
+
+/*************************************
+
+	Socket Management
+
+*************************************/
 
 static AsyncOp *socket_op(Socket *sock, int opcode){
 	int cmp;
@@ -244,7 +259,7 @@ void socket_close(Socket *sock){
 	delete sock;
 }
 
-bool socket_async_accept(Socket *sock, SocketCallback cb){
+bool socket_async_accept(Socket *sock, SocketCallback cb, void *udata){
 	AsyncOp *op;
 	BOOL ret;
 	DWORD transfered;
@@ -260,6 +275,7 @@ bool socket_async_accept(Socket *sock, SocketCallback cb){
 	// initialize it
 	memset(&op->overlapped, 0, sizeof(OVERLAPPED));
 	op->complete = std::move(cb);
+	op->udata = udata;
 	op->socket = net_socket();
 	if(op->socket == nullptr){
 		op->opcode.store(OP_NONE, std::memory_order_relaxed);
@@ -283,7 +299,7 @@ bool socket_async_accept(Socket *sock, SocketCallback cb){
 	return true;
 }
 
-bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb){
+bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb, void *udata){
 	AsyncOp *op;
 	WSABUF data;
 	DWORD flags;
@@ -299,8 +315,9 @@ bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb){
 
 	// initialize it
 	memset(&op->overlapped, 0, sizeof(OVERLAPPED));
-	op->complete = std::move(cb);
 	op->socket = sock;
+	op->complete = std::move(cb);
+	op->udata = udata;
 
 	// start read operation
 	flags = 0;
@@ -318,7 +335,7 @@ bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb){
 	return true;
 }
 
-bool socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb){
+bool socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb, void *udata){
 	AsyncOp *op;
 	WSABUF data;
 	DWORD transfered;
@@ -335,7 +352,7 @@ bool socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb){
 	memset(&op->overlapped, 0, sizeof(OVERLAPPED));
 	op->socket = sock;
 	op->complete = std::move(cb);
-
+	op->udata = udata;
 
 	// start write operation
 	data.len = len;

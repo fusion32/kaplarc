@@ -2,27 +2,36 @@
 #define SERVER_H_
 
 #include "../def.h"
-
+#include "protocol.h"
 class Connection;
-class Message;
-class Service;
 
-#define PROTOCOL_SENDS_FIRST 0x01
-class Protocol{
+class Service{
+private:
+	// service control
+	std::vector<IProtocolFactory*>	factories;
+	Socket				*socket;
+	int				port;
+
+	// helpers
+	bool open(void);
+	void close(void);
+	static void on_accept(Socket *sock, int error, int transfered, void *udata);
+
+	// give control to the server
+	friend class Server;
+
 public:
-	// protocol information
-	static constexpr char	*name = "none";
-	static constexpr uint32	identifier = 0x00;
-	static constexpr uint32	flags = 0;
+	Service(int port_);
+	~Service(void);
 
-	// protocol interface
-	virtual		~Protocol(void){}
-	virtual void	message_begin(Message *msg) = 0;
-	virtual void	message_end(Message *msg) = 0;
-	virtual void	on_connect(void) = 0;
-	virtual void	on_close(void) = 0;
-	virtual void	on_recv_message(Message *msg) = 0;
-	virtual void	on_recv_first_message(Message *msg) = 0;
+	// service information
+	int get_port(void) const;
+	bool single_protocol(void) const;
+
+	// protocol management
+	template<typename T>
+	bool		add_protocol(void);
+	Protocol	*make_protocol(Connection *conn, uint32 identifier);
 };
 
 class Server{

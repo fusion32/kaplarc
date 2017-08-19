@@ -5,30 +5,7 @@
 #include "connection.h"
 #include "../netlib/network.h"
 #include "server.h"
-
-/*************************************
-
-	Protocol Factory
-
-*************************************/
-class IProtocolFactory{
-public:
-	virtual const char *name(void) = 0;
-	virtual const uint32 identifier(void) = 0;
-	virtual const uint32 flags(void) = 0;
-	virtual Protocol *make_protocol(Connection *conn) = 0;
-};
-
-template <typename T>
-class ProtocolFactory: IProtocolFactory{
-public:
-	virtual const char *name(void) override{ return T::name; }
-	virtual const uint32 identifier(void) override{ return T::identifier; }
-	virtual const uint32 flags(void) override{ return T::flags; }
-	virtual Protocol *make_protocol(Connection *conn) override{
-		return new T(conn);
-	}
-};
+#include "protocol.h"
 
 
 /*************************************
@@ -36,99 +13,98 @@ public:
 	Service Implementation
 
 *************************************/
-class Service{
-private:
-	int port;
-	Socket *socket;
-	std::vector<IProtocolFactory*> factories;
-	friend Server;
 
-public:
-	Service(int port_)
-	  : port(port_), socket(nullptr){}
-
-	~Service(void){
-		if(socket != nullptr){
-			socket_close(socket);
-			socket = nullptr;
-		}
-		for(IProtocolFactory *factory : factories)
-			delete factory;
+bool Service::open(void){
+	if(socket != nullptr){
+		LOG_ERROR("Service::open: service already open");
+		return false;
 	}
 
-	int get_port(void) const { return port; }
-
-	template<typename T>
-	bool add_protocol(void){
-		if(!factories.empty()){
-			IProtocolFactory *factory = factories[0];
-			if((factory->flags() & PROTOCOL_SENDS_FIRST)
-					|| (T::flags & PROTOCOL_SENDS_FIRST)){
-				LOG_ERROR("Service::add_protocol: protocols `%s` and `%s` cannot use the same port %d",
-					factory->name(), T::name, port);
-				return false;
-			}
-		}
-
-		factories.push_back(new ProtocolFactory<T>);
-		return true;
+	socket = net_server_socket(port);
+	if(socket == nullptr){
+		LOG_ERROR("Service::open: failed to open service on port %d", port);
+		return false;
 	}
 
-	bool open(void){
-		if(socket != nullptr){
-			LOG_ERROR("Service::open: service already open");
+	// start accept chain
+	if(!socket_async_accept(socket, on_accept, this)){
+		LOG_ERROR("Service::open: failed to start accept chain on port %d", port);
+		socket_close(socket);
+		return false;
+	}
+	return true;
+}
+
+void Service::close(void){
+	if(socket != nullptr){
+		socket_close(socket);
+		socket = nullptr;
+	}
+}
+
+void Service::on_accept(Socket *sock, int error, int transfered, void *udata){
+	Service *service = (Service*)udata;
+	if(error == 0){
+		// accept new connection
+		ConnMgr::instance().accept(sock, service);
+
+		// chain next accept
+		if(socket_async_accept(service->socket, on_accept, udata))
+			return;
+	}
+
+	// socket error
+	LOG_ERROR("Service::on_accept: socket error! trying to re-open service");
+	service->close();
+	service->open();
+}
+
+Service::Service(int port_)
+	: port(port_), socket(nullptr){}
+
+Service::~Service(void){
+	if(socket != nullptr){
+		socket_close(socket);
+		socket = nullptr;
+	}
+	for(IProtocolFactory *factory : factories)
+		delete factory;
+}
+
+int Service::get_port(void) const{
+	return port;
+}
+
+bool Service::single_protocol(void) const{
+	if(factories.empty())
+		return false;
+	return factories[0]->single();
+}
+
+template<typename T>
+bool Service::add_protocol(void){
+	if(!factories.empty()){
+		IProtocolFactory *factory = factories[0];
+		if((factory->flags() & PROTOCOL_SINGLE)
+				|| (T::flags & PROTOCOL_SINGLE)){
+			LOG_ERROR("Service::add_protocol: protocols `%s` and `%s` cannot use the same port %d",
+				factory->name(), T::name, port);
 			return false;
 		}
-
-		socket = net_server_socket(port);
-		if(socket == nullptr){
-			LOG_ERROR("Service::open: failed to open service on port %d", port);
-			return false;
-		}
-
-		// start accept chain
-		auto callback = [this](Socket *sock, int error, int transfered)
-			{ this->on_accept(sock, error, transfered); };
-		if(!socket_async_accept(socket, callback)){
-			LOG_ERROR("Service::open: failed to start accept chain on port %d", port);
-			socket_close(socket);
-			return false;
-		}
-		return true;
 	}
 
-	void close(void){
-		if(socket != nullptr){
-			socket_close(socket);
-			socket = nullptr;
-		}
+	factories.push_back(new ProtocolFactory<T>);
+	return true;
+}
+
+Protocol *Service::make_protocol(Connection *conn, uint32 identifier){
+	for(IProtocolFactory *factory : factories){
+		if(identifier == PROTOCOL_ANY
+			|| factory->identifier() == identifier)
+			return factory->make_protocol(conn);
 	}
-
-	void on_accept(Socket *sock, int error, int transfered){
-		if(error == 0){
-			// accept new connection
-			ConnMgr::instance().accept(sock, this);
-
-			// chain next accept
-			auto callback = [this](Socket *sock, int error, int transfered)
-				{ this->on_accept(sock, error, transfered); };
-			if(socket_async_accept(socket, callback))
-				return;
-		}
-
-		// socket error
-		LOG_ERROR("Service::on_accept: socket error! trying to re-open service");
-		close(); open();
-	}
-
-	Protocol *make_protocol(Connection *conn, uint32 identifier){
-		for(IProtocolFactory *factory : factories){
-			if(factory->identifier() == identifier)
-				return factory->make_protocol(conn);
-		}
-		return nullptr;
-	}
-};
+	return nullptr;
+}
 
 /*************************************
 
@@ -139,8 +115,7 @@ public:
 Server::Server(void)
   : running(false) {}
 
-Server::~Server(void){
-}
+Server::~Server(void){}
 
 template<typename T>
 bool Server::add_protocol(int port){
@@ -151,7 +126,7 @@ bool Server::add_protocol(int port){
 
 	auto it = std::find_if(services.begin(), services.end(),
 		[port](Service *service) {
-			return (service->get_port() == port);
+			return (service->port == port);
 		});
 
 	Service *service;

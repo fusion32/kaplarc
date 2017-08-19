@@ -18,7 +18,7 @@ struct SchEntry{
 
 	template<typename G>
 	SchEntry(int64 id_, int64 time_, G &&wrk_)
-		: id(id_), time(time_), wrk(std::forward<G>(wrk_)) {}
+	  : id(id_), time(time_), wrk(std::forward<G>(wrk_)) {}
 
 	// comparisson with `SchEntry`
 	bool operator==(const SchEntry &rhs) const{
@@ -120,12 +120,12 @@ SchRef scheduler_add(int64 delay, Work wrk){
 	entry = tree.emplace(next_id++, time, std::move(wrk));
 	if(entry == nullptr){
 		LOG("scheduler_add: scheduler is at maximum capacity (%d)", SCH_MAX_ENTRIES);
-		return {-1, 0};
+		return SCHREF_INVALID;
 	}
 
 	if(entry == tree.min())
 		cond.notify_one();
-	return {entry->id, entry->time};
+	return SchRef(entry->id, entry->time);
 }
 
 bool scheduler_remove(const SchRef &ref){

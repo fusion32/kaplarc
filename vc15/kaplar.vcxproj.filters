@@ -52,6 +52,9 @@
     <ClCompile Include="..\src\netlib\network_kqueue.cpp">
       <Filter>Source Files\netlib</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\net\protocol.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\work.h">
@@ -104,6 +107,9 @@
     </ClInclude>
     <ClInclude Include="..\src\netlib\network.h">
       <Filter>Source Files\netlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\protocol.h">
+      <Filter>Source Files\net</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

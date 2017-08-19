@@ -69,11 +69,11 @@ private:
 	static void begin(Connection *conn);
 
 	// connection callbacks
-	static void read_timeout(Connection *conn);
-	static void write_timeout(Connection *conn);
-	static void on_read_length(Connection *conn, Socket *sock, int error, int transfered);
-	static void on_read_body(Connection *conn, Socket *sock, int error, int transfered);
-	static void on_write(Connection *conn, Socket *sock, int error, int transfered);
+	static void read_timeout_handler(Connection *conn);
+	static void write_timeout_handler(Connection *conn);
+	static void on_read_length(Socket *sock, int error, int transfered, void *udata);
+	static void on_read_body(Socket *sock, int error, int transfered, void *udata);
+	static void on_write(Socket *sock, int error, int transfered, void *udata);
 
 public:
 	static ConnMgr &instance(void){

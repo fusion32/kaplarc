@@ -139,6 +139,7 @@
     <ClCompile Include="..\src\netlib\network_kqueue.cpp" />
     <ClCompile Include="..\src\net\connection.cpp" />
     <ClCompile Include="..\src\net\message.cpp" />
+    <ClCompile Include="..\src\net\protocol.cpp" />
     <ClCompile Include="..\src\net\protocol_test.cpp" />
     <ClCompile Include="..\src\net\server.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
@@ -153,6 +154,7 @@
     <ClInclude Include="..\src\netlib\network.h" />
     <ClInclude Include="..\src\net\connection.h" />
     <ClInclude Include="..\src\net\message.h" />
+    <ClInclude Include="..\src\net\protocol.h" />
     <ClInclude Include="..\src\net\protocol_test.h" />
     <ClInclude Include="..\src\net\server.h" />
     <ClInclude Include="..\src\scheduler.h" />

@@ -13,7 +13,9 @@ public:
 	// protocol information
 	static constexpr char	*name = "test";
 	static constexpr uint32	identifier = 0x00;
-	static constexpr uint32	flags = PROTOCOL_SENDS_FIRST;
+	static constexpr uint32	flags =
+		PROTOCOL_SINGLE
+		| PROTOCOL_SENDS_FIRST;
 
 	// protocol interface
 	ProtocolTest(Connection *conn);

@@ -48,19 +48,43 @@ void Connection::send(Message *msg){
 	Connection Callbacks
 
 *************************************/
-void ConnMgr::read_timeout(Connection *conn){
+void ConnMgr::begin(Connection *conn){
+	if(conn->flags & (CONNECTION_CLOSED | CONNECTION_CLOSING))
+		return;
+
+	std::lock_guard<std::mutex> lguard(conn->mtx);
+	if(conn->service->single_protocol()){
+		conn->protocol = conn->service->make_protocol(conn, PROTOCOL_ANY);
+		conn->protocol->on_connect();
+	}
+
+	conn->incref();
+	conn->rd_timeout = scheduler_add(CONNECTION_RD_TIMEOUT,
+		[conn](void){ ConnMgr::read_timeout_handler(conn); });
+	if(conn->rd_timeout != SCHREF_INVALID){
+		conn->incref();
+		if(socket_async_read(conn->socket, (char*)conn->input.buffer, 2,
+				ConnMgr::on_read_length, conn))
+			return;
+	}
 }
 
-void ConnMgr::write_timeout(Connection *conn){
+void ConnMgr::read_timeout_handler(Connection *conn){
 }
 
-void ConnMgr::on_read_length(Connection *conn, Socket *sock, int error, int transfered){
+void ConnMgr::write_timeout_handler(Connection *conn){
 }
 
-void ConnMgr::on_read_body(Connection *conn, Socket *sock, int error, int transfered){
+void ConnMgr::on_read_length(Socket *sock, int error, int transfered, void *udata){
+	Connection *conn = (Connection*)udata;
 }
 
-void ConnMgr::on_write(Connection *conn, Socket *sock, int error, int transfered){
+void ConnMgr::on_read_body(Socket *sock, int error, int transfered, void *udata){
+	Connection *conn = (Connection*)udata;
+}
+
+void ConnMgr::on_write(Socket *sock, int error, int transfered, void *udata){
+	Connection *conn = (Connection*)udata;
 }
 
 /*************************************
