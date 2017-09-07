@@ -1,4 +1,4 @@
-﻿#ifndef MEMBLOCK_H_
+#ifndef MEMBLOCK_H_
 #define MEMBLOCK_H_
 
 template<typename T, int N>

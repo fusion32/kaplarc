@@ -45,46 +45,67 @@ void Connection::send(Message *msg){
 
 /*************************************
 
-	Connection Callbacks
+	ConnMgr Helpers
 
 *************************************/
-void ConnMgr::begin(Connection *conn){
+void ConnMgr::begin(const std::shared_ptr<Connection> &conn){
 	if(conn->flags & (CONNECTION_CLOSED | CONNECTION_CLOSING))
 		return;
 
 	std::lock_guard<std::mutex> lguard(conn->mtx);
 	if(conn->service->single_protocol()){
-		conn->protocol = conn->service->make_protocol(conn, PROTOCOL_ANY);
+		//conn->protocol = conn->service->make_protocol(conn);
 		conn->protocol->on_connect();
 	}
 
-	conn->incref();
+	auto wconn = std::weak_ptr<Connection>(conn);
 	conn->rd_timeout = scheduler_add(CONNECTION_RD_TIMEOUT,
-		[conn](void){ ConnMgr::read_timeout_handler(conn); });
+		[conn=wconn](void){ ConnMgr::read_timeout_handler(conn); });
+
 	if(conn->rd_timeout != SCHREF_INVALID){
-		conn->incref();
-		if(socket_async_read(conn->socket, (char*)conn->input.buffer, 2,
-				ConnMgr::on_read_length, conn))
+		auto callback = [conn](Socket *sock, int error, int transfered)
+			{ ConnMgr::on_read_length(sock, error, transfered, conn); };
+		if(socket_async_read(conn->socket, (char*)conn->input.buffer, 2, callback))
 			return;
+
+		cancel_rd_timeout(conn);
 	}
+
+	// close connection if the read chain is not properly started
+	ConnMgr::instance()->close(conn);
 }
 
-void ConnMgr::read_timeout_handler(Connection *conn){
+void ConnMgr::cancel_rd_timeout(const std::shared_ptr<Connection> &conn){
+	if(!scheduler_remove(conn->rd_timeout))
+		conn->flags |= CONNECTION_RD_TIMEOUT_CANCEL;
 }
 
-void ConnMgr::write_timeout_handler(Connection *conn){
+void ConnMgr::cancel_wr_timeout(const std::shared_ptr<Connection> &conn){
+	if(!scheduler_remove(conn->wr_timeout))
+		conn->flags |= CONNECTION_WR_TIMEOUT_CANCEL;
 }
 
-void ConnMgr::on_read_length(Socket *sock, int error, int transfered, void *udata){
-	Connection *conn = (Connection*)udata;
+/*************************************
+
+	Connection Callbacks
+
+*************************************/
+void ConnMgr::read_timeout_handler(const std::weak_ptr<Connection> &conn){
 }
 
-void ConnMgr::on_read_body(Socket *sock, int error, int transfered, void *udata){
-	Connection *conn = (Connection*)udata;
+void ConnMgr::write_timeout_handler(const std::weak_ptr<Connection> &conn){
 }
 
-void ConnMgr::on_write(Socket *sock, int error, int transfered, void *udata){
-	Connection *conn = (Connection*)udata;
+void ConnMgr::on_read_length(Socket *sock, int error, int transfered,
+				const std::shared_ptr<Connection> &conn){
+}
+
+void ConnMgr::on_read_body(Socket *sock, int error, int transfered,
+				const std::shared_ptr<Connection> &conn){
+}
+
+void ConnMgr::on_write(Socket *sock, int error, int transfered,
+				const std::shared_ptr<Connection> &conn){
 }
 
 /*************************************
@@ -97,7 +118,7 @@ ConnMgr::~ConnMgr(void) {}
 
 void ConnMgr::accept(Socket *socket, Service *service){
 	// initialize connection
-	Connection *conn = new Connection(socket, service);
+	auto conn = std::make_shared<Connection>(socket, service);
 	begin(conn);
 
 	// insert connection into list
@@ -105,5 +126,5 @@ void ConnMgr::accept(Socket *socket, Service *service){
 	connections.push_back(conn);
 }
 
-void ConnMgr::close(Connection *conn){
+void ConnMgr::close(const std::shared_ptr<Connection> &conn){
 }

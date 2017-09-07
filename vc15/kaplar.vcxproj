@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{BC3E9892-CA33-4707-873B-AC509C899601}</ProjectGuid>
     <RootNamespace>kaplar</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -139,7 +139,6 @@
     <ClCompile Include="..\src\netlib\network_kqueue.cpp" />
     <ClCompile Include="..\src\net\connection.cpp" />
     <ClCompile Include="..\src\net\message.cpp" />
-    <ClCompile Include="..\src\net\protocol.cpp" />
     <ClCompile Include="..\src\net\protocol_test.cpp" />
     <ClCompile Include="..\src\net\server.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />

@@ -31,7 +31,10 @@ static void worker(void){
 		wrk = std::move(*rb.pop());
 		ulock.unlock();
 
+		// execute work
 		wrk();
+		// release std::function resources
+		wrk = nullptr;
 	}
 }
 

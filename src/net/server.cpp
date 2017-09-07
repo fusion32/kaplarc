@@ -27,7 +27,9 @@ bool Service::open(void){
 	}
 
 	// start accept chain
-	if(!socket_async_accept(socket, on_accept, this)){
+	auto callback = [this](Socket *sock, int error, int transfered)
+		{ Service::on_accept(sock, error, transfered, this); };
+	if(!socket_async_accept(socket, callback)){
 		LOG_ERROR("Service::open: failed to start accept chain on port %d", port);
 		socket_close(socket);
 		return false;
@@ -42,14 +44,15 @@ void Service::close(void){
 	}
 }
 
-void Service::on_accept(Socket *sock, int error, int transfered, void *udata){
-	Service *service = (Service*)udata;
+void Service::on_accept(Socket *sock, int error, int transfered, Service *service){
 	if(error == 0){
 		// accept new connection
-		ConnMgr::instance().accept(sock, service);
+		ConnMgr::instance()->accept(sock, service);
 
 		// chain next accept
-		if(socket_async_accept(service->socket, on_accept, udata))
+		auto callback = [service](Socket *sock, int error, int transfered)
+			{ Service::on_accept(sock, error, transfered, service); };
+		if(socket_async_accept(service->socket, callback))
 			return;
 	}
 
@@ -85,8 +88,7 @@ template<typename T>
 bool Service::add_protocol(void){
 	if(!factories.empty()){
 		IProtocolFactory *factory = factories[0];
-		if((factory->flags() & PROTOCOL_SINGLE)
-				|| (T::flags & PROTOCOL_SINGLE)){
+		if(factory->single() || T::single){
 			LOG_ERROR("Service::add_protocol: protocols `%s` and `%s` cannot use the same port %d",
 				factory->name(), T::name, port);
 			return false;
@@ -97,10 +99,16 @@ bool Service::add_protocol(void){
 	return true;
 }
 
-Protocol *Service::make_protocol(Connection *conn, uint32 identifier){
+
+Protocol *Service::make_protocol(const std::shared_ptr<Connection> &conn){
+	if(factories.empty())
+		return nullptr;
+	return factories[0]->make_protocol(conn);
+}
+
+Protocol *Service::make_protocol(const std::shared_ptr<Connection> &conn, uint32 identifier){
 	for(IProtocolFactory *factory : factories){
-		if(identifier == PROTOCOL_ANY
-			|| factory->identifier() == identifier)
+		if(factory->identifier() == identifier)
 			return factory->make_protocol(conn);
 	}
 	return nullptr;
@@ -155,9 +163,4 @@ void Server::run(void){
 
 void Server::stop(void){
 	running = false;
-}
-
-Protocol *Server::make_protocol(Service *service,
-		Connection *conn, uint32 identifier){
-	return service->make_protocol(conn, identifier);
 }

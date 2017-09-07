@@ -1,4 +1,4 @@
-﻿#ifndef AVLTREE_H_
+#ifndef AVLTREE_H_
 #define AVLTREE_H_
 
 #include "memblock.h"
@@ -254,6 +254,7 @@ public:
 		}
 
 		// free node
+		x->key.~T();
 		blk.free(x);
 		return true;
 	}

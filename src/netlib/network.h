@@ -1,7 +1,8 @@
-﻿#ifndef NETWORK_H_
+#ifndef NETWORK_H_
 #define NETWORK_H_
 
 #include "../def.h"
+#include <functional>
 
 #define NET_WORK_TIMEOUT	1000
 
@@ -10,7 +11,7 @@
 #define SOCKET_SHUT_RDWR	0x02
 
 struct Socket;
-using SocketCallback = void (*)(Socket*, int, int, void*);
+using SocketCallback = std::function<void(Socket*, int, int)>;
 
 // network service
 bool	net_init(void);
@@ -23,8 +24,8 @@ int	net_work(void);
 uint32	socket_remote_address(Socket *sock);
 void	socket_shutdown(Socket *sock, int how);
 void	socket_close(Socket *sock);
-bool	socket_async_accept(Socket *sock, SocketCallback cb, void *udata);
-bool	socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb, void *udata);
-bool	socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb, void *udata);
+bool	socket_async_accept(Socket *sock, SocketCallback cb);
+bool	socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb);
+bool	socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb);
 
 #endif //NETWORK_H_

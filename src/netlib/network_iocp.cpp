@@ -18,7 +18,6 @@ struct AsyncOp{
 	std::atomic<int>	opcode;
 	Socket			*socket;
 	SocketCallback		complete;
-	void			*udata;
 };
 
 #define SOCKET_MAX_OPS 8
@@ -211,7 +210,9 @@ int net_work(void){
 			(sockaddr**)&op->socket->remote_addr, &dummy);
 	}
 
-	op->complete(op->socket, posix_error(error), transfered, op->udata);
+	op->complete(op->socket, posix_error(error), transfered);
+	// release std::function resources
+	op->complete = nullptr;
 	op->opcode.store(OP_NONE, std::memory_order_relaxed);
 	return 0;
 }
@@ -259,7 +260,7 @@ void socket_close(Socket *sock){
 	delete sock;
 }
 
-bool socket_async_accept(Socket *sock, SocketCallback cb, void *udata){
+bool socket_async_accept(Socket *sock, SocketCallback cb){
 	AsyncOp *op;
 	BOOL ret;
 	DWORD transfered;
@@ -275,7 +276,6 @@ bool socket_async_accept(Socket *sock, SocketCallback cb, void *udata){
 	// initialize it
 	memset(&op->overlapped, 0, sizeof(OVERLAPPED));
 	op->complete = std::move(cb);
-	op->udata = udata;
 	op->socket = net_socket();
 	if(op->socket == nullptr){
 		op->opcode.store(OP_NONE, std::memory_order_relaxed);
@@ -299,7 +299,7 @@ bool socket_async_accept(Socket *sock, SocketCallback cb, void *udata){
 	return true;
 }
 
-bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb, void *udata){
+bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb){
 	AsyncOp *op;
 	WSABUF data;
 	DWORD flags;
@@ -317,7 +317,6 @@ bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb, void
 	memset(&op->overlapped, 0, sizeof(OVERLAPPED));
 	op->socket = sock;
 	op->complete = std::move(cb);
-	op->udata = udata;
 
 	// start read operation
 	flags = 0;
@@ -335,7 +334,7 @@ bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb, void
 	return true;
 }
 
-bool socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb, void *udata){
+bool socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb){
 	AsyncOp *op;
 	WSABUF data;
 	DWORD transfered;
@@ -352,7 +351,6 @@ bool socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb, voi
 	memset(&op->overlapped, 0, sizeof(OVERLAPPED));
 	op->socket = sock;
 	op->complete = std::move(cb);
-	op->udata = udata;
 
 	// start write operation
 	data.len = len;

@@ -4,7 +4,7 @@
 #include "server.h"
 #include "../log.h"
 
-ProtocolTest::ProtocolTest(Connection *conn)
+ProtocolTest::ProtocolTest(const std::shared_ptr<Connection> &conn)
   : connection(conn) {}
 
 ProtocolTest::~ProtocolTest(void){

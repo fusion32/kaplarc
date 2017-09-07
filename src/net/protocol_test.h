@@ -1,11 +1,12 @@
-﻿#ifndef PROTOCOL_TEST_H_
+#ifndef PROTOCOL_TEST_H_
 #define PROTOCOL_TEST_H_
 
 #include "server.h"
+#include "connection.h"
 
 class ProtocolTest: public Protocol{
 private:
-	Connection *connection;
+	std::shared_ptr<Connection> connection;
 
 	void send_hello(void);
 
@@ -13,12 +14,10 @@ public:
 	// protocol information
 	static constexpr char	*name = "test";
 	static constexpr uint32	identifier = 0x00;
-	static constexpr uint32	flags =
-		PROTOCOL_SINGLE
-		| PROTOCOL_SENDS_FIRST;
+	static constexpr bool	single = true;
 
 	// protocol interface
-	ProtocolTest(Connection *conn);
+	ProtocolTest(const std::shared_ptr<Connection> &conn);
 	virtual ~ProtocolTest(void) override;
 
 	virtual void message_begin(Message *msg) override;

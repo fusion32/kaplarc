@@ -1,9 +1,5 @@
-﻿#ifndef CONNECTION_H_
+#ifndef CONNECTION_H_
 #define CONNECTION_H_
-
-#include <mutex>
-#include <vector>
-#include <queue>
 
 #include "../def.h"
 #include "../scheduler.h"
@@ -11,6 +7,11 @@
 #include "../netlib/network.h"
 #include "message.h"
 #include "server.h"
+
+#include <mutex>
+#include <memory>
+#include <vector>
+#include <queue>
 
 // connection flags
 #define CONNECTION_CLOSED		0x01
@@ -23,7 +24,7 @@
 #define CONNECTION_RD_TIMEOUT	30000
 #define CONNECTION_WR_TIMEOUT	30000
 #define CONNECTION_MAX_OUTPUT	8
-class Connection : public Shared{
+class Connection{
 private:
 	// connection control
 	Socket			*socket;
@@ -52,7 +53,7 @@ public:
 class ConnMgr{
 private:
 	// connection list
-	std::vector<Connection*> connections;
+	std::vector<std::shared_ptr<Connection>> connections;
 	std::mutex mtx;
 
 	// delete copy and move operations
@@ -66,22 +67,27 @@ private:
 	~ConnMgr(void);
 
 	// helpers
-	static void begin(Connection *conn);
+	static void begin(const std::shared_ptr<Connection> &conn);
+	static void cancel_rd_timeout(const std::shared_ptr<Connection> &conn);
+	static void cancel_wr_timeout(const std::shared_ptr<Connection> &conn);
 
 	// connection callbacks
-	static void read_timeout_handler(Connection *conn);
-	static void write_timeout_handler(Connection *conn);
-	static void on_read_length(Socket *sock, int error, int transfered, void *udata);
-	static void on_read_body(Socket *sock, int error, int transfered, void *udata);
-	static void on_write(Socket *sock, int error, int transfered, void *udata);
+	static void read_timeout_handler(const std::weak_ptr<Connection> &conn);
+	static void write_timeout_handler(const std::weak_ptr<Connection> &conn);
+	static void on_read_length(Socket *sock, int error, int transfered,
+				const std::shared_ptr<Connection> &conn);
+	static void on_read_body(Socket *sock, int error, int transfered,
+				const std::shared_ptr<Connection> &conn);
+	static void on_write(Socket *sock, int error, int transfered,
+				const std::shared_ptr<Connection> &conn);
 
 public:
-	static ConnMgr &instance(void){
+	static ConnMgr *instance(void){
 		static ConnMgr instance;
-		return instance;
+		return &instance;
 	}
 	void accept(Socket *socket, Service *service);
-	void close(Connection *conn);
+	void close(const std::shared_ptr<Connection> &conn);
 };
 
 #endif //CONNECTION_H_

@@ -52,9 +52,6 @@
     <ClCompile Include="..\src\netlib\network_kqueue.cpp">
       <Filter>Source Files\netlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\net\protocol.cpp">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\work.h">
