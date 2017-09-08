@@ -60,7 +60,7 @@ void ConnMgr::begin(const std::shared_ptr<Connection> &conn){
 
 	auto wconn = std::weak_ptr<Connection>(conn);
 	conn->rd_timeout = scheduler_add(CONNECTION_RD_TIMEOUT,
-		[conn=wconn](void){ ConnMgr::read_timeout_handler(conn); });
+		[wconn](void){ ConnMgr::timeout_handler(wconn); });
 
 	if(conn->rd_timeout != SCHREF_INVALID){
 		auto callback = [conn](Socket *sock, int error, int transfered)
@@ -68,21 +68,11 @@ void ConnMgr::begin(const std::shared_ptr<Connection> &conn){
 		if(socket_async_read(conn->socket, (char*)conn->input.buffer, 2, callback))
 			return;
 
-		cancel_rd_timeout(conn);
+		scheduler_remove(conn->rd_timeout);
 	}
 
 	// close connection if the read chain is not properly started
 	ConnMgr::instance()->close(conn);
-}
-
-void ConnMgr::cancel_rd_timeout(const std::shared_ptr<Connection> &conn){
-	if(!scheduler_remove(conn->rd_timeout))
-		conn->flags |= CONNECTION_RD_TIMEOUT_CANCEL;
-}
-
-void ConnMgr::cancel_wr_timeout(const std::shared_ptr<Connection> &conn){
-	if(!scheduler_remove(conn->wr_timeout))
-		conn->flags |= CONNECTION_WR_TIMEOUT_CANCEL;
 }
 
 /*************************************
@@ -90,10 +80,9 @@ void ConnMgr::cancel_wr_timeout(const std::shared_ptr<Connection> &conn){
 	Connection Callbacks
 
 *************************************/
-void ConnMgr::read_timeout_handler(const std::weak_ptr<Connection> &conn){
-}
-
-void ConnMgr::write_timeout_handler(const std::weak_ptr<Connection> &conn){
+void ConnMgr::timeout_handler(const std::weak_ptr<Connection> &wconn){
+	auto conn = wconn.lock();
+	if(conn) ConnMgr::instance()->close(conn);
 }
 
 void ConnMgr::on_read_length(Socket *sock, int error, int transfered,

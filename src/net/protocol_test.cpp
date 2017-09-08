@@ -33,7 +33,6 @@ void ProtocolTest::on_recv_message(Message *msg){
 }
 
 void ProtocolTest::on_recv_first_message(Message *msg){
-	LOG("on_recv_first_message: protocol id = %d", msg->get_byte());
 	on_recv_message(msg);
 }
 

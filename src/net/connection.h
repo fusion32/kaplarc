@@ -68,12 +68,9 @@ private:
 
 	// helpers
 	static void begin(const std::shared_ptr<Connection> &conn);
-	static void cancel_rd_timeout(const std::shared_ptr<Connection> &conn);
-	static void cancel_wr_timeout(const std::shared_ptr<Connection> &conn);
 
 	// connection callbacks
-	static void read_timeout_handler(const std::weak_ptr<Connection> &conn);
-	static void write_timeout_handler(const std::weak_ptr<Connection> &conn);
+	static void timeout_handler(const std::weak_ptr<Connection> &wconn);
 	static void on_read_length(Socket *sock, int error, int transfered,
 				const std::shared_ptr<Connection> &conn);
 	static void on_read_body(Socket *sock, int error, int transfered,

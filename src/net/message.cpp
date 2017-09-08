@@ -63,14 +63,18 @@ uint32 Message::get_u32(void){
 }
 
 void Message::get_str(char *buf, uint16 buflen){
-	uint16 len = get_u16();
+	// if `buflen` was not big enough, the message going
+	// further would be corrupted if the original length
+	// of the string was not cached
+	uint16 len0 = get_u16();
+	uint16 len = len0;
 	if(len == 0 || buflen == 0) return;
 	if(len > buflen - 1)
 		len = buflen - 1;
 
 	memcpy(buf, (buffer + readpos), len);
 	buf[len] = 0x00;
-	readpos += len;
+	readpos += len0;
 }
 
 void Message::add_byte(uint8 val){
