@@ -142,6 +142,7 @@
     <ClCompile Include="..\src\net\protocol_test.cpp" />
     <ClCompile Include="..\src\net\server.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
+    <ClCompile Include="..\src\env.cpp" />
     <ClCompile Include="..\src\system.cpp" />
     <ClCompile Include="..\src\work.cpp" />
   </ItemGroup>
@@ -161,6 +162,7 @@
     <ClInclude Include="..\src\log.h" />
     <ClInclude Include="..\src\ringbuffer.h" />
     <ClInclude Include="..\src\shared.h" />
+    <ClInclude Include="..\src\env.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\work.h" />
     <ClInclude Include="..\src\workgroup.h" />

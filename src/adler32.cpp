@@ -1,5 +1,3 @@
-#include <stddef.h>
-
 #define BASE 65521U
 #define NMAX 5552
 
@@ -19,9 +17,6 @@ unsigned long adler32(const unsigned char *buf, unsigned long len)
 		k = len > NMAX ? NMAX : len;
 		len -= k;
 		while(k >= 16){
-			// unroll 16 steps
-			// NOTE: not sure if this increases performance as
-			// the compiler usually optimize loops
 			DO16(buf);
 			buf += 16;
 			k -= 16;
