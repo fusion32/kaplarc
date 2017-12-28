@@ -43,17 +43,26 @@
     <ClCompile Include="..\src\adler32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\netlib\network_epoll.cpp">
-      <Filter>Source Files\netlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\netlib\network_iocp.cpp">
-      <Filter>Source Files\netlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\netlib\network_kqueue.cpp">
-      <Filter>Source Files\netlib</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\env.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\netlib\iocp_net.cpp">
+      <Filter>Source Files\netlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\netlib\iocp_socket.cpp">
+      <Filter>Source Files\netlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\netlib\epoll_net.cpp">
+      <Filter>Source Files\netlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\netlib\epoll_socket.cpp">
+      <Filter>Source Files\netlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\netlib\kqueue_net.cpp">
+      <Filter>Source Files\netlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\netlib\kqueue_socket.cpp">
+      <Filter>Source Files\netlib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +122,15 @@
     </ClInclude>
     <ClInclude Include="..\src\env.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\netlib\iocp_private.h">
+      <Filter>Source Files\netlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\netlib\epoll_private.h">
+      <Filter>Source Files\netlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\netlib\kqueue_private.h">
+      <Filter>Source Files\netlib</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

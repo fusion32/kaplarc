@@ -134,9 +134,12 @@
     <ClCompile Include="..\src\adler32.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\netlib\network_epoll.cpp" />
-    <ClCompile Include="..\src\netlib\network_iocp.cpp" />
-    <ClCompile Include="..\src\netlib\network_kqueue.cpp" />
+    <ClCompile Include="..\src\netlib\epoll_net.cpp" />
+    <ClCompile Include="..\src\netlib\epoll_socket.cpp" />
+    <ClCompile Include="..\src\netlib\iocp_net.cpp" />
+    <ClCompile Include="..\src\netlib\iocp_socket.cpp" />
+    <ClCompile Include="..\src\netlib\kqueue_net.cpp" />
+    <ClCompile Include="..\src\netlib\kqueue_socket.cpp" />
     <ClCompile Include="..\src\net\connection.cpp" />
     <ClCompile Include="..\src\net\message.cpp" />
     <ClCompile Include="..\src\net\protocol_test.cpp" />
@@ -151,6 +154,9 @@
     <ClInclude Include="..\src\common.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\memblock.h" />
+    <ClInclude Include="..\src\netlib\epoll_private.h" />
+    <ClInclude Include="..\src\netlib\iocp_private.h" />
+    <ClInclude Include="..\src\netlib\kqueue_private.h" />
     <ClInclude Include="..\src\netlib\network.h" />
     <ClInclude Include="..\src\net\connection.h" />
     <ClInclude Include="..\src\net\message.h" />

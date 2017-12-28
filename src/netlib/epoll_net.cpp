@@ -2,7 +2,6 @@
 
 
 #ifdef __linux__
-
 #include "../network.h"
 
 #include "../mmblock.h"
@@ -648,5 +647,4 @@ bool socket_async_write(Socket *sock, char *buf, int len, Callback cb, void *uda
 	mutex_unlock(sock->lock);
 	return true;
 }
-
 #endif //__linux__

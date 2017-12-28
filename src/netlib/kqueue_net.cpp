@@ -1,7 +1,6 @@
 // TODO: review this for the C++ version
 
 #ifdef __FreeBSD__
-
 #include "../network.h"
 
 #include "../mmblock.h"
@@ -650,6 +649,4 @@ unsigned long net_remote_address(struct socket *sock){
 	if(sock->addr.sa_family != AF_INET) return 0;
 	return ((struct sockaddr_in*)&sock->addr)->sin_addr.s_addr;
 }
-
-
 #endif //__FreeBSD__
