@@ -7,7 +7,6 @@ static HANDLE	iocp;
 
 LPFN_ACCEPTEX			pfnAcceptEx = nullptr;
 LPFN_GETACCEPTEXSOCKADDRS	pfnGetAcceptExSockaddrs = nullptr;
-
 static bool load_extensions(void){
 	int ret;
 	DWORD dummy;

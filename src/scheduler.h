@@ -1,4 +1,4 @@
-﻿#ifndef SCHEDULER_H_
+#ifndef SCHEDULER_H_
 #define SCHEDULER_H_
 
 #include "def.h"
@@ -33,5 +33,6 @@ void	scheduler_init(void);
 void	scheduler_shutdown(void);
 SchRef	scheduler_add(int64 delay, Work wrk);
 bool	scheduler_remove(const SchRef &ref);
+bool	scheduler_reschedule(int64 delay, SchRef &ref);
 
 #endif //SCHEDULER_H_

@@ -14,13 +14,12 @@
 #include <queue>
 
 // connection flags
-#define CONNECTION_CLOSED		0x01
-#define CONNECTION_CLOSING		0x02
+#define CONNECTION_CLOSED		0x03 // (0x01 | CONNECTION_SHUTDOWN)
+#define CONNECTION_SHUTDOWN		0x02
 #define CONNECTION_FIRST_MSG		0x04
 
 // connection settings
-#define CONNECTION_RD_TIMEOUT	30000
-#define CONNECTION_WR_TIMEOUT	30000
+#define CONNECTION_TIMEOUT	10000
 #define CONNECTION_MAX_OUTPUT	8
 class Connection{
 private:
@@ -29,8 +28,8 @@ private:
 	Service			*service;
 	Protocol		*protocol;
 	uint32			flags;
-	SchRef			rd_timeout;
-	SchRef			wr_timeout;
+	uint32			rdwr_count;
+	SchRef			timeout;
 	std::mutex		mtx;
 
 	// connection messages

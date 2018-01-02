@@ -2,8 +2,8 @@
 #include <algorithm>
 #include <vector>
 #include "../log.h"
-#include "connection.h"
 #include "../netlib/network.h"
+#include "connection.h"
 #include "server.h"
 #include "protocol.h"
 
@@ -153,6 +153,7 @@ void Server::run(void){
 	for(Service *service : services)
 		service->open();
 
+	running = true;
 	while(running && net_work() == 0)
 		continue;
 

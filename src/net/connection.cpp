@@ -11,8 +11,8 @@ Connection::Connection(Socket *socket_, Service *service_)
 	service(service_),
 	protocol(nullptr),
 	flags(0),
-	rd_timeout(SCHREF_INVALID),
-	wr_timeout(SCHREF_INVALID) {
+	rdwr_count(0),
+	timeout(SCHREF_INVALID) {
 
 	input.release();
 	for(int i = 0; i < CONNECTION_MAX_OUTPUT; ++i)
@@ -35,11 +35,6 @@ Message *Connection::get_output_message(void){
 }
 
 void Connection::send(Message *msg){
-	// check if connection is closed/closing
-	if(flags & (CONNECTION_CLOSED | CONNECTION_CLOSING))
-		return;
-
-	//
 }
 
 
@@ -49,26 +44,27 @@ void Connection::send(Message *msg){
 
 *************************************/
 void ConnMgr::begin(const std::shared_ptr<Connection> &conn){
-	if(conn->flags & (CONNECTION_CLOSED | CONNECTION_CLOSING))
+	std::lock_guard<std::mutex> lock(conn->mtx);
+	if(conn->flags & CONNECTION_SHUTDOWN)
 		return;
 
-	std::lock_guard<std::mutex> lguard(conn->mtx);
 	if(conn->service->single_protocol()){
-		//conn->protocol = conn->service->make_protocol(conn);
+		conn->protocol = conn->service->make_protocol(conn);
 		conn->protocol->on_connect();
 	}
 
 	auto wconn = std::weak_ptr<Connection>(conn);
-	conn->rd_timeout = scheduler_add(CONNECTION_RD_TIMEOUT,
+	conn->rdwr_count = 0;
+	conn->timeout = scheduler_add(CONNECTION_TIMEOUT,
 		[wconn](void){ ConnMgr::timeout_handler(wconn); });
 
-	if(conn->rd_timeout != SCHREF_INVALID){
+	if(conn->timeout != SCHREF_INVALID){
 		auto callback = [conn](Socket *sock, int error, int transfered)
 			{ ConnMgr::on_read_length(sock, error, transfered, conn); };
 		if(socket_async_read(conn->socket, (char*)conn->input.buffer, 2, callback))
 			return;
 
-		scheduler_remove(conn->rd_timeout);
+		scheduler_remove(conn->timeout);
 	}
 
 	// close connection if the read chain is not properly started
@@ -82,15 +78,60 @@ void ConnMgr::begin(const std::shared_ptr<Connection> &conn){
 *************************************/
 void ConnMgr::timeout_handler(const std::weak_ptr<Connection> &wconn){
 	auto conn = wconn.lock();
-	if(conn) ConnMgr::instance()->close(conn);
+	if(conn){
+		std::lock_guard<std::mutex> lock(conn->mtx);
+		if(conn->rdwr_count == 0){
+			ConnMgr::instance()->close(conn);
+		}else{
+			conn->rdwr_count = 0;
+			conn->timeout = scheduler_add(CONNECTION_TIMEOUT,
+				[wconn](void){ ConnMgr::timeout_handler(wconn); });
+		}
+	}
 }
 
 void ConnMgr::on_read_length(Socket *sock, int error, int transfered,
 				const std::shared_ptr<Connection> &conn){
+
+	Message *msg = &conn->input;
+
+	std::lock_guard<std::mutex> lock(conn->mtx);
+	msg->readpos = 0;
+	msg->length = msg->get_u16();
+	if(error == 0 && transfered > 0 && msg->length > 0
+			&& (msg->length+2) < MESSAGE_BUFFER_LEN
+			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
+		// chain body read
+		auto callback = [conn](Socket *sock, int error, int transfered)
+			{ ConnMgr::on_read_body(sock, error, transfered, conn); };
+		if(socket_async_read(conn->socket, (char*)(msg->buffer + 2),
+				msg->length, callback))
+			return;
+	}
+
+	ConnMgr::instance()->close(conn);
 }
 
 void ConnMgr::on_read_body(Socket *sock, int error, int transfered,
 				const std::shared_ptr<Connection> &conn){
+
+	Message *msg = &conn->input;
+
+	std::lock_guard<std::mutex> lock(conn->mtx);
+	if(error == 0 && transfered > 0
+			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
+
+		// checksum
+		// on receive message
+
+		// chain next message read
+		conn->rdwr_count++;
+		auto callback = [conn](Socket *sock, int error, int transfered)
+			{ ConnMgr::on_read_length(sock, error, transfered, conn); };
+		if(socket_async_read(conn->socket, (char*)msg->buffer, 2, callback))
+			return;
+	}
+	ConnMgr::instance()->close(conn);
 }
 
 void ConnMgr::on_write(Socket *sock, int error, int transfered,
@@ -111,7 +152,7 @@ void ConnMgr::accept(Socket *socket, Service *service){
 	begin(conn);
 
 	// insert connection into list
-	std::lock_guard<std::mutex> lguard(mtx);
+	std::lock_guard<std::mutex> lock(mtx);
 	connections.push_back(conn);
 }
 

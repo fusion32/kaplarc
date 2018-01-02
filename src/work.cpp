@@ -17,19 +17,19 @@ static bool				running = false;
 
 static void worker(void){
 	Work wrk;
-	std::unique_lock<std::mutex> ulock(mtx, std::defer_lock);
+	std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
 	while(running){
-		ulock.lock();
+		lock.lock();
 		if(rb.size() == 0){
-			cond.wait(ulock);
+			cond.wait(lock);
 			if(rb.size() == 0){
-				ulock.unlock();
+				lock.unlock();
 				continue;
 			}
 		}
 
 		wrk = std::move(*rb.pop());
-		ulock.unlock();
+		lock.unlock();
 
 		// execute work
 		wrk();
@@ -59,7 +59,7 @@ void work_shutdown(void){
 }
 
 void work_dispatch(Work wrk){
-	std::lock_guard<std::mutex> lguard(mtx);
+	std::lock_guard<std::mutex> lock(mtx);
 	if(!rb.push(std::move(wrk)))
 		LOG_ERROR("work_dispatch: work ring buffer is at maximum capacity (%d)", MAX_WORK);
 	else
@@ -67,7 +67,7 @@ void work_dispatch(Work wrk){
 }
 
 void work_multi_dispatch(int count, const Work &wrk){
-	std::lock_guard<std::mutex> lguard(mtx);
+	std::lock_guard<std::mutex> lock(mtx);
 	if(rb.size() + count >= MAX_WORK){
 		LOG_ERROR("work_dispatch_array: requested amount of work would overflow the ringbuffer");
 		return;
@@ -82,7 +82,7 @@ void work_multi_dispatch(int count, const Work &wrk){
 }
 
 void work_multi_dispatch(int count, const Work *wrk){
-	std::lock_guard<std::mutex> lguard(mtx);
+	std::lock_guard<std::mutex> lock(mtx);
 	if(rb.size() + count >= MAX_WORK){
 		LOG_ERROR("work_dispatch_array: requested amount of work would overflow the ringbuffer");
 		return;

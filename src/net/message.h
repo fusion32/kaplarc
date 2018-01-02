@@ -1,4 +1,4 @@
-﻿#ifndef MESSAGE_H_
+#ifndef MESSAGE_H_
 #define MESSAGE_H_
 
 #include <atomic>
