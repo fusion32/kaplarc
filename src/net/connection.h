@@ -43,8 +43,6 @@ private:
 public:
 	Connection(Socket *socket_, Service *service_);
 	~Connection(void);
-	Message *get_output_message(void);
-	void send(Message *msg);
 };
 
 class ConnMgr{
@@ -63,9 +61,6 @@ private:
 	ConnMgr(void);
 	~ConnMgr(void);
 
-	// helpers
-	static void begin(const std::shared_ptr<Connection> &conn);
-
 	// connection callbacks
 	static void timeout_handler(const std::weak_ptr<Connection> &wconn);
 	static void on_read_length(Socket *sock, int error, int transfered,
@@ -82,6 +77,8 @@ public:
 	}
 	void accept(Socket *socket, Service *service);
 	void close(const std::shared_ptr<Connection> &conn);
+	void send(const std::shared_ptr<Connection> &conn, Message *msg);
+	Message *get_output_message(const std::shared_ptr<Connection> &conn);
 };
 
 #endif //CONNECTION_H_

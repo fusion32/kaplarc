@@ -37,9 +37,9 @@ void ProtocolTest::on_recv_first_message(Message *msg){
 }
 
 void ProtocolTest::send_hello(void){
-	Message *msg = connection->get_output_message();
+	Message *msg = ConnMgr::instance()->get_output_message(connection);
 	message_begin(msg);
 	msg->add_str("Hello World", 11);
 	message_end(msg);
-	connection->send(msg);
+	ConnMgr::instance()->send(connection, msg);
 }
