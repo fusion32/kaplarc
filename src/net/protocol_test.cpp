@@ -25,6 +25,10 @@ void ProtocolTest::on_connect(void){
 	send_hello();
 }
 
+void ProtocolTest::on_close(void){
+	LOG("on_close");
+}
+
 void ProtocolTest::on_recv_message(Message *msg){
 	char buf[64];
 	msg->get_str(buf, 64);

@@ -31,12 +31,6 @@
     <ClCompile Include="..\src\net\protocol_test.cpp">
       <Filter>Source Files\net</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\net\server.cpp">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\connection.cpp">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\net\message.cpp">
       <Filter>Source Files\net</Filter>
     </ClCompile>
@@ -63,6 +57,12 @@
     </ClCompile>
     <ClCompile Include="..\src\netlib\kqueue_socket.cpp">
       <Filter>Source Files\netlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\connection.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\server.cpp">
+      <Filter>Source Files\net</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -99,12 +99,6 @@
     <ClInclude Include="..\src\avltree.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\net\connection.h">
-      <Filter>Source Files\net</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\net\server.h">
-      <Filter>Source Files\net</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\net\message.h">
       <Filter>Source Files\net</Filter>
     </ClInclude>
@@ -131,6 +125,12 @@
     </ClInclude>
     <ClInclude Include="..\src\netlib\kqueue_private.h">
       <Filter>Source Files\netlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\connection.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\server.h">
+      <Filter>Source Files\net</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

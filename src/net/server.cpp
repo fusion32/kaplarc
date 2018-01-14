@@ -84,22 +84,6 @@ bool Service::single_protocol(void) const{
 	return factories[0]->single();
 }
 
-template<typename T>
-bool Service::add_protocol(void){
-	if(!factories.empty()){
-		IProtocolFactory *factory = factories[0];
-		if(factory->single() || T::single){
-			LOG_ERROR("Service::add_protocol: protocols `%s` and `%s` cannot use the same port %d",
-				factory->name(), T::name, port);
-			return false;
-		}
-	}
-
-	factories.push_back(new ProtocolFactory<T>);
-	return true;
-}
-
-
 Protocol *Service::make_protocol(const std::shared_ptr<Connection> &conn){
 	if(factories.empty())
 		return nullptr;
@@ -124,29 +108,6 @@ Server::Server(void)
   : running(false) {}
 
 Server::~Server(void){}
-
-template<typename T>
-bool Server::add_protocol(int port){
-	if(running){
-		LOG_ERROR("server_add_protocol: server already running");
-		return false;
-	}
-
-	auto it = std::find_if(services.begin(), services.end(),
-		[port](Service *service) {
-			return (service->port == port);
-		});
-
-	Service *service;
-	if(it == services.end()){
-		service = new Service(port);
-		services.push_back(service);
-	} else {
-		service = *it;
-	}
-
-	return service->add_protocol<T>();
-}
 
 void Server::run(void){
 	// open services

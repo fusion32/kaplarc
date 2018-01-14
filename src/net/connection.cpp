@@ -1,4 +1,6 @@
 #include "connection.h"
+#include "protocol.h"
+#include "server.h"
 
 
 /*************************************
@@ -49,7 +51,6 @@ void ConnMgr::on_read_length(Socket *sock, int error, int transfered,
 				const std::shared_ptr<Connection> &conn){
 
 	Message *msg = &conn->input;
-
 	std::lock_guard<std::mutex> lock(conn->mtx);
 	msg->readpos = 0;
 	msg->length = msg->get_u16();
@@ -71,39 +72,57 @@ void ConnMgr::on_read_body(Socket *sock, int error, int transfered,
 				const std::shared_ptr<Connection> &conn){
 
 	Message *msg = &conn->input;
-
 	std::lock_guard<std::mutex> lock(conn->mtx);
 	if(error == 0 && transfered > 0
 			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
 
-		// checksum
-		// on receive message
+		// uint32 checksum = adler32(msg->buffer + 6, msg->length - 4);
+		// if(checksum == msg->peek_u32())
+		//	msg->readpos += 4;
 
-		// chain next message read
-		conn->rdwr_count++;
-		auto callback = [conn](Socket *sock, int error, int transfered)
-			{ ConnMgr::on_read_length(sock, error, transfered, conn); };
-		if(socket_async_read(sock, (char*)msg->buffer, 2, callback))
-			return;
+		if(conn->protocol == nullptr)
+			conn->protocol = conn->service->make_protocol(
+				conn, msg->get_byte());
+
+		if(conn->protocol != nullptr){
+			if((conn->flags & CONNECTION_FIRST_MSG) == 0){
+				conn->flags |= CONNECTION_FIRST_MSG;
+				conn->protocol->on_recv_first_message(msg);
+			}else{
+				conn->protocol->on_recv_message(msg);
+			}
+
+			// chain next message read
+			conn->rdwr_count++;
+			auto callback = [conn](Socket *sock, int error, int transfered)
+				{ ConnMgr::on_read_length(sock, error, transfered, conn); };
+			if(socket_async_read(sock, (char*)msg->buffer, 2, callback))
+				return;
+		}
 	}
+
 	ConnMgr::instance()->close(conn);
 }
 
 void ConnMgr::on_write(Socket *sock, int error, int transfered,
 				const std::shared_ptr<Connection> &conn){
-	std::lock_guard<std::mutex> lock(conn->mtx);
-	if(error == 0 && transfered > 0){
-		conn->rdwr_count++;
-		conn->output_queue.pop();
-		if(!conn->output_queue.empty()){
-			Message *next = conn->output_queue.front();
-			auto callback = [conn](Socket *sock, int error, int transfered)
-				{ ConnMgr::on_write(sock, error, transfered, conn); };
-			if(socket_async_write(sock, (char*)next->buffer, next->length, callback))
-				return;
-		}
+
+	if(error != 0 || transfered <= 0){
+		ConnMgr::instance()->close(conn);
+		return;
 	}
-	ConnMgr::instance()->close(conn);
+
+	std::lock_guard<std::mutex> lock(conn->mtx);
+	conn->rdwr_count++;
+	conn->output_queue.pop();
+	if(!conn->output_queue.empty()){
+		Message *next = conn->output_queue.front();
+		auto callback = [conn](Socket *sock, int error, int transfered)
+			{ ConnMgr::on_write(sock, error, transfered, conn); };
+		if(!socket_async_write(sock, (char*)next->buffer, next->length, callback))
+			ConnMgr::instance()->close(conn);
+	}
+
 }
 
 /*************************************
@@ -128,7 +147,6 @@ void ConnMgr::accept(Socket *socket, Service *service){
 		conn->rdwr_count = 0;
 		conn->timeout = scheduler_add(CONNECTION_TIMEOUT,
 			[wconn](void){ ConnMgr::timeout_handler(wconn); });
-
 		if(conn->timeout == SCHREF_INVALID)
 			return;
 
@@ -147,6 +165,13 @@ void ConnMgr::accept(Socket *socket, Service *service){
 }
 
 void ConnMgr::close(const std::shared_ptr<Connection> &conn){
+	// the goal here is to shutdown the socket, interrupting the
+	// read chain while keeping it open to send any pending output
+	// messages
+	// also remove this shared_ptr reference so when there are no
+	// more output messages, the connection is properly released
+	// by the it's destructor
+
 	// remove connection from connection list
 	{	std::lock_guard<std::mutex> lock(mtx);
 		auto it = std::find(connections.cbegin(), connections.cend(), conn);
@@ -156,12 +181,11 @@ void ConnMgr::close(const std::shared_ptr<Connection> &conn){
 
 	// shutdown connection
 	{	std::lock_guard<std::mutex> lock(conn->mtx);
-		conn->flags |= CONNECTION_SHUTDOWN;
-		socket_shutdown(conn->socket, SOCKET_SHUT_RD);
+		if((conn->flags & CONNECTION_SHUTDOWN) == 0){
+			conn->flags |= CONNECTION_SHUTDOWN;
+			socket_shutdown(conn->socket, SOCKET_SHUT_RD);
+		}
 	}
-
-	// from this point the connection will no longer read and will finish
-	// sending any pending output message
 }
 
 void ConnMgr::send(const std::shared_ptr<Connection> &conn, Message *msg){
@@ -170,11 +194,9 @@ void ConnMgr::send(const std::shared_ptr<Connection> &conn, Message *msg){
 	if(conn->output_queue.size() == 1){
 		auto callback = [conn](Socket *sock, int error, int transfered)
 			{ ConnMgr::on_write(sock, error, transfered, conn); };
-		if(socket_async_write(conn->socket, (char*)msg->buffer, msg->length, callback))
-			return;
+		if(!socket_async_write(conn->socket, (char*)msg->buffer, msg->length, callback))
+			ConnMgr::instance()->close(conn);
 	}
-
-	ConnMgr::instance()->close(conn);
 }
 
 Message *ConnMgr::get_output_message(const std::shared_ptr<Connection> &conn){

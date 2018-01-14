@@ -2,7 +2,9 @@
 #define PROTOCOL_H_
 
 #include "../def.h"
+
 #include <memory>
+
 class Connection;
 class Message;
 
@@ -43,7 +45,7 @@ public:
 };
 
 template <typename T>
-class ProtocolFactory: IProtocolFactory{
+class ProtocolFactory: public IProtocolFactory{
 public:
 	virtual const char *name(void) override{ return T::name; }
 	virtual const uint32 identifier(void) override{ return T::identifier; }

@@ -23,6 +23,7 @@ public:
 	virtual void message_begin(Message *msg) override;
 	virtual void message_end(Message *msg) override;
 	virtual void on_connect(void) override;
+	virtual void on_close(void) override;
 	virtual void on_recv_message(Message *msg) override;
 	virtual void on_recv_first_message(Message *msg) override;
 };

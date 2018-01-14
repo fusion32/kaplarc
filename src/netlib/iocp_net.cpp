@@ -145,8 +145,10 @@ int net_work(void){
 	if(ret == FALSE)
 		error = GetLastError();
 
-	if(op == nullptr)
+	if(op == nullptr){
+		if(error == WAIT_TIMEOUT) return 0;
 		return posix_error(error);
+	}
 
 	if(op->opcode == OP_ACCEPT){
 		pfnGetAcceptExSockaddrs(op->socket->addr_buffer, 0,

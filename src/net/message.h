@@ -1,16 +1,14 @@
 #ifndef MESSAGE_H_
 #define MESSAGE_H_
 
-#include <atomic>
 #include "../def.h"
+#include <atomic>
 
 #define MESSAGE_BUFFER_LEN 4096
 
 class Message{
-// this is a low level class anyways, so making
-// the members public, will save us from adding
-// getters and setters which wouldn't add anything
-// to the table
+// this is a low-level class so making all attributes public is fine
+// as adding getters and setters here would just increase code bloat
 public:
 	long readpos;
 	long length;
@@ -20,6 +18,9 @@ public:
 	// message control
 	bool try_acquire(void);
 	void release(void);
+
+	// peek data
+	uint32 peek_u32(void);
 
 	// get data
 	uint8	get_byte(void);

@@ -3,10 +3,8 @@
 
 #include "../def.h"
 #include "../scheduler.h"
-#include "../shared.h"
 #include "../netlib/network.h"
 #include "message.h"
-#include "server.h"
 
 #include <mutex>
 #include <memory>
@@ -21,6 +19,9 @@
 // connection settings
 #define CONNECTION_TIMEOUT	10000
 #define CONNECTION_MAX_OUTPUT	8
+
+class Service;
+class Protocol;
 class Connection{
 private:
 	// connection control
@@ -52,9 +53,9 @@ private:
 	std::mutex mtx;
 
 	// delete copy and move operations
-	ConnMgr(ConnMgr&) = delete;
+	ConnMgr(const ConnMgr&) = delete;
 	ConnMgr(ConnMgr&&) = delete;
-	ConnMgr &operator=(ConnMgr&) = delete;
+	ConnMgr &operator=(const ConnMgr&) = delete;
 	ConnMgr &operator=(ConnMgr&&) = delete;
 
 	// private construtor and destrutor

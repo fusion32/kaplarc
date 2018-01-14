@@ -44,6 +44,11 @@ void Message::release(void){
 	busy.clear(std::memory_order_relaxed);
 }
 
+uint32 Message::peek_u32(void){
+	uint32 val = *(uint32*)(buffer + readpos);
+	return swap_u32(val);
+}
+
 uint8 Message::get_byte(void){
 	uint8 val = *(uint8*)(buffer + readpos);
 	readpos += 1;
