@@ -1,4 +1,4 @@
-﻿#ifndef WORKGROUP_H_
+#ifndef WORKGROUP_H_
 #define WORKGROUP_H_
 
 #include <atomic>

@@ -23,7 +23,9 @@
 class Service;
 class Protocol;
 class Connection{
-private:
+// this is a low-level class so making all attributes public will make
+// this interface more readable and easier to implement
+public:
 	// connection control
 	Socket			*socket;
 	Service			*service;
@@ -38,48 +40,21 @@ private:
 	Message			output[CONNECTION_MAX_OUTPUT];
 	std::queue<Message*>	output_queue;
 
-	// befriend the Connection Manager
-	friend class ConnMgr;
-
-public:
+	// constructor/destructor
 	Connection(Socket *socket_, Service *service_);
 	~Connection(void);
+
+	// delete operations
+	Connection(void) = delete;
+	Connection(const Connection&) = delete;
+	Connection(Connection&&) = delete;
+	Connection &operator=(const Connection&) = delete;
+	Connection &operator=(Connection&&) = delete;
 };
 
-class ConnMgr{
-private:
-	// connection list
-	std::vector<std::shared_ptr<Connection>> connections;
-	std::mutex mtx;
-
-	// delete copy and move operations
-	ConnMgr(const ConnMgr&) = delete;
-	ConnMgr(ConnMgr&&) = delete;
-	ConnMgr &operator=(const ConnMgr&) = delete;
-	ConnMgr &operator=(ConnMgr&&) = delete;
-
-	// private construtor and destrutor
-	ConnMgr(void);
-	~ConnMgr(void);
-
-	// connection callbacks
-	static void timeout_handler(const std::weak_ptr<Connection> &wconn);
-	static void on_read_length(Socket *sock, int error, int transfered,
-				const std::shared_ptr<Connection> &conn);
-	static void on_read_body(Socket *sock, int error, int transfered,
-				const std::shared_ptr<Connection> &conn);
-	static void on_write(Socket *sock, int error, int transfered,
-				const std::shared_ptr<Connection> &conn);
-
-public:
-	static ConnMgr *instance(void){
-		static ConnMgr instance;
-		return &instance;
-	}
-	void accept(Socket *socket, Service *service);
-	void close(const std::shared_ptr<Connection> &conn);
-	void send(const std::shared_ptr<Connection> &conn, Message *msg);
-	Message *get_output_message(const std::shared_ptr<Connection> &conn);
-};
+void connmgr_accept(Socket *socket, Service *service);
+void connmgr_close(const std::shared_ptr<Connection> &conn);
+void connmgr_send(const std::shared_ptr<Connection> &conn, Message *msg);
+Message *connmgr_get_output_message(const std::shared_ptr<Connection> &conn);
 
 #endif //CONNECTION_H_

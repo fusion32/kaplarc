@@ -105,9 +105,6 @@
     <ClInclude Include="..\src\net\protocol_test.h">
       <Filter>Source Files\net</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\shared.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\netlib\network.h">
       <Filter>Source Files\netlib</Filter>
     </ClInclude>

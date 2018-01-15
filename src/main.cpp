@@ -14,8 +14,8 @@ int main(int argc, char **argv){
 	scheduler_init();
 	net_init();
 
-	Server::instance()->add_protocol<ProtocolTest>(7171);
-	Server::instance()->run();
+	server_add_protocol<ProtocolTest>(7171);
+	server_run();
 
 	net_shutdown();
 	scheduler_shutdown();
