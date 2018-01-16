@@ -92,8 +92,8 @@ static void scheduler(void){
 		tree.remove(*entry);
 		lock.unlock();
 
-		// dispatch work
 		work_dispatch(wrk);
+		wrk = nullptr;
 	}
 }
 

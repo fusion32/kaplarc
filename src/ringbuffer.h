@@ -1,4 +1,4 @@
-﻿#ifndef RINGBUFFER_H_
+#ifndef RINGBUFFER_H_
 #define RINGBUFFER_H_
 
 #include <utility>
@@ -18,20 +18,23 @@ public:
 	RingBuffer &operator=(const RingBuffer&)	= delete;
 	RingBuffer &operator=(RingBuffer&&)		= delete;
 
-	RingBuffer() : readpos(0), writepos(0), length(0) {}
-	~RingBuffer(){}
+	RingBuffer(void) : readpos(0), writepos(0), length(0) {}
+	~RingBuffer(void){}
 
-	int size() const { return length; }
+	int size(void) const { return length; }
+	bool empty(void) const { return length == 0; }
 
-	T *pop(){
-		T *ptr = nullptr;
+	T &front(void){
+		return buf[readpos];
+	}
+
+	void pop(void){
 		if(length > 0){
 			length--;
-			ptr = &buf[readpos++];
+			readpos++;
 			if(readpos >= N)
 				readpos = 0;
 		}
-		return ptr;
 	}
 
 	template<typename G>

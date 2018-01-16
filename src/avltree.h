@@ -253,6 +253,10 @@ public:
 				x->parent->right = y;
 		}
 
+		// check if root needs to be updated
+		if(root == x)
+			root = y;
+
 		// free node
 		x->key.~T();
 		blk.free(x);

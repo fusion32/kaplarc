@@ -28,7 +28,8 @@ static void worker(void){
 			}
 		}
 
-		wrk = std::move(*rb.pop());
+		wrk = std::move(rb.front());
+		rb.pop();
 		lock.unlock();
 
 		// execute work

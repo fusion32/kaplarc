@@ -60,13 +60,13 @@ static void service_on_accept(Socket *sock, int error,
 
 static bool service_open(Service *service){
 	if(service->socket != nullptr){
-		LOG_ERROR("Service::open: service already open");
+		LOG_ERROR("service_open: service already open");
 		return false;
 	}
 
 	service->socket = net_server_socket(service->port);
 	if(service->socket == nullptr){
-		LOG_ERROR("Service::open: failed to open service on port %d", service->port);
+		LOG_ERROR("service_open: failed to open service on port %d", service->port);
 		return false;
 	}
 
@@ -74,7 +74,7 @@ static bool service_open(Service *service){
 	auto callback = [service](Socket *sock, int error, int transfered)
 		{ service_on_accept(sock, error, transfered, service); };
 	if(!socket_async_accept(service->socket, callback)){
-		LOG_ERROR("Service::open: failed to start accept chain on port %d", service->port);
+		LOG_ERROR("service_open: failed to start accept chain on port %d", service->port);
 		socket_close(service->socket);
 		return false;
 	}
@@ -116,7 +116,7 @@ static void service_on_accept(Socket *sock, int error,
 	}
 
 	// socket error
-	LOG_ERROR("Service::on_accept: socket error! trying to re-open service");
+	LOG_ERROR("service_on_accept: socket error! trying to re-open service");
 	service_close(service);
 	service_open(service);
 }
@@ -179,7 +179,7 @@ void server_stop(void){
 
 bool server_add_factory(int port, IProtocolFactory *factory){
 	if(running){
-		LOG_ERROR("server_add_protocol_factory: server already running");
+		LOG_ERROR("server_add_factory: server already running");
 		return false;
 	}
 

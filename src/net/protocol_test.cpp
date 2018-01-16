@@ -42,8 +42,10 @@ void ProtocolTest::on_recv_first_message(Message *msg){
 
 void ProtocolTest::send_hello(void){
 	Message *msg = connmgr_get_output_message(connection);
-	message_begin(msg);
-	msg->add_str("Hello World", 11);
-	message_end(msg);
-	connmgr_send(connection, msg);
+	if(msg != nullptr){
+		message_begin(msg);
+		msg->add_str("Hello World", 11);
+		message_end(msg);
+		connmgr_send(connection, msg);
+	}
 }

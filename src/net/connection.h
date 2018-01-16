@@ -33,7 +33,7 @@ public:
 	uint32			flags;
 	uint32			rdwr_count;
 	SchRef			timeout;
-	std::mutex		mtx;
+	std::recursive_mutex	mtx;
 
 	// connection messages
 	Message			input;
