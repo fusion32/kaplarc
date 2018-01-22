@@ -22,26 +22,30 @@ void ProtocolTest::message_end(Message *msg){
 
 void ProtocolTest::on_connect(void){
 	LOG("on_connect");
-	send_hello();
+	work_dispatch([this](void){
+		send_hello(); });
 }
 
 void ProtocolTest::on_close(void){
 	LOG("on_close");
+	connection.reset();
 }
 
 void ProtocolTest::on_recv_message(Message *msg){
 	char buf[64];
 	msg->get_str(buf, 64);
-	LOG("on_recv_message: %d", buf);
-	send_hello();
+	LOG("on_recv_message: %s", buf);
+	work_dispatch([this](void){
+		send_hello(); });
 }
 
 void ProtocolTest::on_recv_first_message(Message *msg){
+	LOG("on_recv_first_message: %d", msg->get_byte());
 	on_recv_message(msg);
 }
 
 void ProtocolTest::send_hello(void){
-	Message *msg = connmgr_get_output_message(connection);
+	Message *msg = output_pool_acquire(MSG_CAPACITY_SMALL);
 	if(msg != nullptr){
 		message_begin(msg);
 		msg->add_str("Hello World", 11);

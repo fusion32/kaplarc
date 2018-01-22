@@ -8,6 +8,16 @@
 class Connection;
 class Message;
 
+/*			Protocol Guidelines
+
+ 1 -	Every protocol must have the default constructor deleted and have a
+	custom constructor defined as:
+		ProtocolName(const std::shared_ptr<Connection> &conn);
+
+ 2 -	Protocol callbacks may not call connmgr_accept, connmgr_close, or
+	connmgr_send directly as doing so would cause a deadlock situation.
+*/
+
 /*************************************
 
 	Protocol Interface

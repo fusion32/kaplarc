@@ -2,7 +2,6 @@
 #include "protocol.h"
 #include "server.h"
 
-
 /*************************************
 
 	Connection
@@ -15,10 +14,6 @@ Connection::Connection(Socket *socket_, Service *service_)
 	flags(0),
 	rdwr_count(0),
 	timeout(SCHREF_INVALID) {
-
-	input.release();
-	for(int i = 0; i < CONNECTION_MAX_OUTPUT; ++i)
-		output[i].release();
 }
 
 Connection::~Connection(void){
@@ -26,6 +21,7 @@ Connection::~Connection(void){
 		socket_close(socket);
 		socket = nullptr;
 	}
+	LOG("connection released");
 }
 
 /*************************************
@@ -41,12 +37,15 @@ static void on_read_body(Socket *sock, int error, int transfered,
 static void on_write(Socket *sock, int error, int transfered,
 			const std::shared_ptr<Connection> &conn);
 
+// special helper function to avoid deadlocking
+static void connmgr_internal_close(const std::shared_ptr<Connection> &conn);
+
 static void timeout_handler(const std::weak_ptr<Connection> &wconn){
 	auto conn = wconn.lock();
 	if(conn){
-		std::lock_guard<std::recursive_mutex> lock(conn->mtx);
+		std::lock_guard<std::mutex> lock(conn->mtx);
 		if(conn->rdwr_count == 0){
-			connmgr_close(conn);
+			connmgr_internal_close(conn);
 		}else{
 			conn->rdwr_count = 0;
 			conn->timeout = scheduler_add(CONNECTION_TIMEOUT,
@@ -59,11 +58,11 @@ static void on_read_length(Socket *sock, int error, int transfered,
 			const std::shared_ptr<Connection> &conn){
 
 	Message *msg = &conn->input;
-	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
+	std::lock_guard<std::mutex> lock(conn->mtx);
 	msg->readpos = 0;
 	msg->length = msg->get_u16();
 	if(error == 0 && transfered > 0 && msg->length > 0
-			&& (msg->length+2) < MESSAGE_BUFFER_LEN
+			&& (msg->length+2) < msg->capacity
 			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
 		// chain body read
 		auto callback = [conn](Socket *sock, int error, int transfered)
@@ -73,14 +72,14 @@ static void on_read_length(Socket *sock, int error, int transfered,
 			return;
 	}
 
-	connmgr_close(conn);
+	connmgr_internal_close(conn);
 }
 
 static void on_read_body(Socket *sock, int error, int transfered,
 			const std::shared_ptr<Connection> &conn){
 
 	Message *msg = &conn->input;
-	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
+	std::lock_guard<std::mutex> lock(conn->mtx);
 	if(error == 0 && transfered > 0
 			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
 
@@ -109,27 +108,26 @@ static void on_read_body(Socket *sock, int error, int transfered,
 		}
 	}
 
-	connmgr_close(conn);
+	connmgr_internal_close(conn);
 }
 
 static void on_write(Socket *sock, int error, int transfered,
 			const std::shared_ptr<Connection> &conn){
 
-	if(error != 0 || transfered <= 0){
-		connmgr_close(conn);
-		return;
-	}
-
-	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
-	conn->rdwr_count++;
-	conn->output_queue.front()->release();
-	conn->output_queue.pop();
-	if(!conn->output_queue.empty()){
-		Message *next = conn->output_queue.front();
-		auto callback = [conn](Socket *sock, int error, int transfered)
-			{ on_write(sock, error, transfered, conn); };
-		if(!socket_async_write(sock, (char*)next->buffer, next->length, callback))
-			connmgr_close(conn);
+	std::lock_guard<std::mutex> lock(conn->mtx);
+	if(error == 0 && transfered > 0){
+		conn->rdwr_count++;
+		output_pool_release(conn->output_queue.front());
+		conn->output_queue.pop();
+		if(!conn->output_queue.empty()){
+			Message *next = conn->output_queue.front();
+			auto callback = [conn](Socket *sock, int error, int transfered)
+				{ on_write(sock, error, transfered, conn); };
+			if(!socket_async_write(sock, (char*)next->buffer, next->length, callback))
+				connmgr_internal_close(conn);
+		}
+	}else{
+		connmgr_internal_close(conn);
 	}
 
 }
@@ -146,7 +144,7 @@ void connmgr_accept(Socket *socket, Service *service){
 	auto conn = std::make_shared<Connection>(socket, service);
 
 	// initialize connection
-	{	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
+	{	std::lock_guard<std::mutex> lock(conn->mtx);
 		if(service_has_single_protocol(conn->service)){
 			conn->protocol = service_make_protocol(conn->service, conn);
 			conn->protocol->on_connect();
@@ -173,13 +171,12 @@ void connmgr_accept(Socket *socket, Service *service){
 	}
 }
 
-void connmgr_close(const std::shared_ptr<Connection> &conn){
+static void connmgr_internal_close(const std::shared_ptr<Connection> &conn){
 	// the goal here is to shutdown the socket, interrupting the
 	// read chain while keeping it open to send any pending output
-	// messages
-	// also remove this shared_ptr reference so when there are no
-	// more output messages, the connection is properly released
-	// by the it's destructor
+	// messages and also remove the connection manager shared_ptr
+	// reference so when there are no more output messages, the
+	// connection is properly released by it's destructor
 
 	// remove connection from connection list
 	{	std::lock_guard<std::mutex> lock(mtx);
@@ -189,29 +186,25 @@ void connmgr_close(const std::shared_ptr<Connection> &conn){
 	}
 
 	// shutdown connection
-	{	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
-		if((conn->flags & CONNECTION_SHUTDOWN) == 0){
-			conn->flags |= CONNECTION_SHUTDOWN;
-			socket_shutdown(conn->socket, SOCKET_SHUT_RD);
-		}
+	if((conn->flags & CONNECTION_SHUTDOWN) == 0){
+		conn->flags |= CONNECTION_SHUTDOWN;
+		socket_shutdown(conn->socket, SOCKET_SHUT_RD);
+		conn->protocol->on_close();
 	}
 }
 
+void connmgr_close(const std::shared_ptr<Connection> &conn){
+	std::lock_guard<std::mutex> lock(conn->mtx);
+	connmgr_internal_close(conn);
+}
+
 void connmgr_send(const std::shared_ptr<Connection> &conn, Message *msg){
-	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
+	std::lock_guard<std::mutex> lock(conn->mtx);
 	conn->output_queue.push(msg);
 	if(conn->output_queue.size() == 1){
 		auto callback = [conn](Socket *sock, int error, int transfered)
 			{ on_write(sock, error, transfered, conn); };
 		if(!socket_async_write(conn->socket, (char*)msg->buffer, msg->length, callback))
-			connmgr_close(conn);
+			connmgr_internal_close(conn);
 	}
-}
-
-Message *connmgr_get_output_message(const std::shared_ptr<Connection> &conn){
-	for(int i = 0; i < CONNECTION_MAX_OUTPUT; ++i){
-		if(conn->output[i].try_acquire())
-			return &conn->output[i];
-	}
-	return nullptr;
 }

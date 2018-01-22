@@ -33,11 +33,10 @@ public:
 	uint32			flags;
 	uint32			rdwr_count;
 	SchRef			timeout;
-	std::recursive_mutex	mtx;
+	std::mutex		mtx;
 
 	// connection messages
 	Message			input;
-	Message			output[CONNECTION_MAX_OUTPUT];
 	std::queue<Message*>	output_queue;
 
 	// constructor/destructor
@@ -55,6 +54,5 @@ public:
 void connmgr_accept(Socket *socket, Service *service);
 void connmgr_close(const std::shared_ptr<Connection> &conn);
 void connmgr_send(const std::shared_ptr<Connection> &conn, Message *msg);
-Message *connmgr_get_output_message(const std::shared_ptr<Connection> &conn);
 
 #endif //CONNECTION_H_

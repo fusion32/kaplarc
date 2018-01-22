@@ -2,22 +2,21 @@
 #define MESSAGE_H_
 
 #include "../def.h"
-#include <atomic>
 
-#define MESSAGE_BUFFER_LEN 4096
-
+#define MSG_CAPACITY_DEFAULT	4096
+#define MSG_CAPACITY_SMALL	256
 class Message{
 // this is a low-level class so making all attributes public is fine
 // as adding getters and setters here would just increase code bloat
 public:
+	long capacity;
 	long readpos;
 	long length;
-	std::atomic_flag busy;
-	uint8 buffer[MESSAGE_BUFFER_LEN];
+	uint8 *buffer;
 
-	// message control
-	bool try_acquire(void);
-	void release(void);
+	// constructor/destructor
+	Message(const long capacity_ = MSG_CAPACITY_DEFAULT);
+	~Message(void);
 
 	// peek data
 	uint32 peek_u32(void);
@@ -40,5 +39,8 @@ public:
 	void	radd_u32(uint32 val);
 	void	radd_str(const char *buf, uint16 buflen);
 };
+
+Message *output_pool_acquire(const long capacity = MSG_CAPACITY_DEFAULT);
+void output_pool_release(Message *msg);
 
 #endif //MESSAGE_H_

@@ -1,16 +1,18 @@
 #ifndef RINGBUFFER_H_
 #define RINGBUFFER_H_
 
-#include <utility>
+#include "def.h"
 
-template<typename T, int N>
+template<typename T, uint32 N>
 class RingBuffer{
 private:
-	int readpos;
-	int writepos;
-	int length;
+	uint32 readpos;
+	uint32 writepos;
 	T buf[N];
 
+	static constexpr int clamp_mask = (N - 1);
+	static_assert((N != 0) && ((N & (N - 1)) == 0),
+		"Ringbuffer requires N to be a power of 2.");
 public:
 	// delete copy and move operations
 	RingBuffer(const RingBuffer&)			= delete;
@@ -18,34 +20,19 @@ public:
 	RingBuffer &operator=(const RingBuffer&)	= delete;
 	RingBuffer &operator=(RingBuffer&&)		= delete;
 
-	RingBuffer(void) : readpos(0), writepos(0), length(0) {}
+	RingBuffer(void) : readpos(0), writepos(0) {}
 	~RingBuffer(void){}
 
-	int size(void) const { return length; }
-	bool empty(void) const { return length == 0; }
+	uint32 size(void) const { return writepos - readpos; }
+	bool empty(void) const { return writepos == readpos; }
 
-	T &front(void){
-		return buf[readpos];
-	}
-
-	void pop(void){
-		if(length > 0){
-			length--;
-			readpos++;
-			if(readpos >= N)
-				readpos = 0;
-		}
-	}
+	T &front(void){ return buf[readpos & clamp_mask]; }
+	void pop(void){ if(!empty()) readpos++; }
 
 	template<typename G>
 	bool push(G &&item){
-		if(length >= N)
-			return false;
-
-		length++;
-		buf[writepos++] = std::forward<G>(item);
-		if(writepos >= N)
-			writepos = 0;
+		if(size() >= N) return false;
+		buf[writepos++ & clamp_mask] = std::forward<G>(item);
 		return true;
 	}
 };

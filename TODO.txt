@@ -1,0 +1,5 @@
+- output message pool
+- worker threads rework:
+-	every dispatch has an object and it keeps track of which worker it was assigned to
+	so there is no need for object mutexes because the same worker will process every
+	dispatch related to the same object

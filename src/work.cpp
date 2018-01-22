@@ -8,7 +8,7 @@
 #include "ringbuffer.h"
 #include "system.h"
 
-#define MAX_WORK 0xFFFF
+#define MAX_WORK 0x80000
 static RingBuffer<Work, MAX_WORK>	rb;
 static std::vector<std::thread>		thread_pool;
 static std::mutex			mtx;
