@@ -7,3 +7,5 @@
 	underlying tree so it might be better to use std::set instead of the AVLTree for the
 	scheduler as red-black trees have better performance when inserting/removing often
 	but it still needs to be measured whether or not it would improve its performance
+- further investigate the bug where the shared_ptr has already released it's shared object
+	but the weak_ptr yields a useable shared_ptr with use_count == 0
