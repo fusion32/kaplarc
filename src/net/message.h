@@ -40,7 +40,7 @@ public:
 	void	radd_str(const char *buf, uint16 buflen);
 };
 
-Message *output_pool_acquire(const long capacity = MSG_CAPACITY_DEFAULT);
+Message *output_pool_acquire(const long capacity);
 void output_pool_release(Message *msg);
 
 #endif //MESSAGE_H_

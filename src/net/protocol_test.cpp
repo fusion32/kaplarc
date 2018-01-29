@@ -34,7 +34,7 @@ void ProtocolTest::on_close(void){
 void ProtocolTest::on_recv_message(Message *msg){
 	char buf[64];
 	msg->get_str(buf, 64);
-	LOG("on_recv_message: %s", buf);
+	//LOG("on_recv_message: %s", buf);
 	work_dispatch([this](void){
 		send_hello(); });
 }

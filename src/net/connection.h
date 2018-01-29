@@ -18,7 +18,6 @@
 
 // connection settings
 #define CONNECTION_TIMEOUT	10000
-#define CONNECTION_MAX_OUTPUT	8
 
 class Service;
 class Protocol;

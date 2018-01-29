@@ -1,5 +1,9 @@
 - output message pool
 - worker threads rework:
--	every dispatch has an object and it keeps track of which worker it was assigned to
+	every dispatch has an object and it keeps track of which worker it was assigned to
 	so there is no need for object mutexes because the same worker will process every
 	dispatch related to the same object
+- came to know that most implementations of std::map and std::set use red-black trees as the
+	underlying tree so it might be better to use std::set instead of the AVLTree for the
+	scheduler as red-black trees have better performance when inserting/removing often
+	but it still needs to be measured whether or not it would improve its performance

@@ -29,7 +29,7 @@ Connection::~Connection(void){
 	Connection Callbacks
 
 *************************************/
-static void timeout_handler(const std::weak_ptr<Connection> &wconn);
+static void timeout_handler(std::weak_ptr<Connection> &wconn);
 static void on_read_length(Socket *sock, int error, int transfered,
 			const std::shared_ptr<Connection> &conn);
 static void on_read_body(Socket *sock, int error, int transfered,
@@ -40,16 +40,20 @@ static void on_write(Socket *sock, int error, int transfered,
 // special helper function to avoid deadlocking
 static void connmgr_internal_close(const std::shared_ptr<Connection> &conn);
 
-static void timeout_handler(const std::weak_ptr<Connection> &wconn){
+static void timeout_handler(std::weak_ptr<Connection> &wconn){
 	auto conn = wconn.lock();
+	LOG("wconn.expired = %s", wconn.expired() ? "true" : "false");
+	LOG("wconn.lock = %s", conn ? "valid" : "invalid");
 	if(conn){
+		LOG("conn.use_count() = %d", conn.use_count());
 		std::lock_guard<std::mutex> lock(conn->mtx);
 		if(conn->rdwr_count == 0){
 			connmgr_internal_close(conn);
 		}else{
+			LOG("conn->rdwr_count = %lu", conn->rdwr_count);
 			conn->rdwr_count = 0;
 			conn->timeout = scheduler_add(CONNECTION_TIMEOUT,
-				[wconn](void){ timeout_handler(wconn); });
+				[wconn](void)mutable{ timeout_handler(wconn); });
 		}
 	}
 }
@@ -153,7 +157,7 @@ void connmgr_accept(Socket *socket, Service *service){
 		auto wconn = std::weak_ptr<Connection>(conn);
 		conn->rdwr_count = 0;
 		conn->timeout = scheduler_add(CONNECTION_TIMEOUT,
-			[wconn](void){ timeout_handler(wconn); });
+			[wconn](void)mutable{ timeout_handler(wconn); });
 		if(conn->timeout == SCHREF_INVALID)
 			return;
 

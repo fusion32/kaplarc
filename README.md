@@ -11,6 +11,7 @@ Refer to LICENSE inside the project directory for details.
 ```
 data/           data
 src/            source
+test/			unit tests
 vc15/           Visual Studio 15
 ```
 
@@ -18,4 +19,4 @@ vc15/           Visual Studio 15
 
 - fusion32
 
-> **Note:** Anyone is welcome to contribute with the project, if you want to get involved do a pull request or contact me by email.
+> **Note:** Anyone is welcome to contribute with the project.

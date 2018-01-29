@@ -2,6 +2,7 @@
 #define AVLTREE_H_
 
 #include "memblock.h"
+#include "log.h"
 
 template<typename T, int N>
 class AVLTree{
@@ -51,11 +52,6 @@ private:
 	//
 	static node *rotate_right(node *a, node *b){
 		//assert(a->left == b);
-
-		// check if node needs a left_right rotation
-		if(balance_factor(b) >= 1)
-			b = rotate_left(b, b->right);
-
 		b->parent = a->parent;
 		a->parent = b;
 		if(b->parent != nullptr){
@@ -90,11 +86,6 @@ private:
 	//
 	static node *rotate_left(node *a, node *c){
 		//assert(a->right == c);
-
-		// check if node needs a right_left rotation
-		if(balance_factor(c) <= -1)
-			c = rotate_right(c, c->left);
-
 		c->parent = a->parent;
 		a->parent = c;
 		if(c->parent != nullptr){
@@ -118,22 +109,63 @@ private:
 		return c;
 	}
 
-	// retrace from node `x` (this is assuming `x` has the correct height)
-	// returns the new root node (may not have changed)
+	// retrace from node `x` and returns the new root node
 	static node *retrace(node *x){
-		int balance;
-
-		while(x->parent != nullptr){
-			x = x->parent;
+		node *parent;
+		int b1;
+		for(;;){
+			parent = x->parent;
 			fix_height(x);
-			balance = balance_factor(x);
-			if(balance >= 2)
+			b1 = balance_factor(x);
+			if(b1 >= 2){
+				if(balance_factor(x->right) <= -1)
+					/*x->right = */rotate_right(x->right, x->right->left);
 				x = rotate_left(x, x->right);
-			else if(balance <= -2)
+			}else if(b1 <= -2){
+				if(balance_factor(x->left) >= 1)
+					/*x->left = */rotate_left(x->left, x->left->right);
 				x = rotate_right(x, x->left);
+			}
+
+			if(parent == nullptr)
+				break;
+			x = parent;
 		}
 		return x;
 	}
+
+#if 0
+	static void swap_nodes(node *x, node *y){
+		node *xright, *xleft, *xparent;
+		xleft = x->left;
+		xright = x->right;
+		xparent = x->parent;
+
+		x->left = y->left;
+		x->right = y->right;
+		x->parent = y->parent;
+		if(x->left) x->left->parent = x;
+		if(x->right) x->right->parent = x;
+		if(x->parent){
+			if(x->parent->left == y)
+				x->parent->left = x;
+			else
+				x->parent->right = x;
+		}
+
+		y->left = xleft;
+		y->right = xright;
+		y->parent = xparent;
+		if(y->left) y->left->parent = y;
+		if(y->right) y->right->parent = y;
+		if(y->parent){
+			if(y->parent->left == x)
+				y->parent->left = y;
+			else
+				y->parent->right = y;
+		}
+	}
+#endif
 
 	// insert node into the tree
 	void insert_node(node *x){
@@ -153,20 +185,149 @@ private:
 		}
 	}
 
+	// remove node from the tree
+	void remove_node(node *x){
+		node *y = nullptr;
+		node *retrace_from = nullptr;
+		if(x->left != nullptr && x->right != nullptr){
+			if(x->height == 2){
+				y = x->right;
+				y->left = x->left;
+				y->left->parent = y;
+			}else{
+				// find smallest element y on the x->right subtree
+				y = x->right;
+				while(y->left != nullptr)
+					y = y->left;
+
+				// pop y from the tree
+				if(y->right != nullptr)
+					y->right->parent = y->parent;
+				if(y->parent->left == y)
+					y->parent->left = y->right;
+				else
+					y->parent->right = y->right;
+
+				// replace x with y
+				y->left = x->left;
+				y->left->parent = y;
+				y->right = x->right;
+				// x->right may have become null from the y pop
+				if(y->right) y->right->parent = y;
+			}
+		}else if(x->left != nullptr){
+			y = x->left;
+		}else if(x->right != nullptr){
+			y = x->right;
+		}
+
+		// fix parent link
+		if(y != nullptr){
+			y->parent = x->parent;
+			retrace_from = y;
+		}else{
+			retrace_from = x->parent;
+		}
+
+		if(x->parent){
+			if(x->parent->left == x)
+				x->parent->left = y;
+			else
+				x->parent->right = y;
+		}
+
+		// perform retrace
+		if(retrace_from != nullptr)
+			root = retrace(retrace_from);
+		else
+			root = nullptr;
+	}
+
 	// `G` is anything that can be compared to `T`
 	template<typename G>
 	node *find_node(const G &value){
 		node *x = root;
-		while(x != nullptr && x->key != value){
-			if(x->key > value)
-				x = x->left;
-			else
+		while(x != nullptr && !(x->key == value)){
+			if(x->key < value)
 				x = x->right;
+			else
+				x = x->left;
 		}
 		return x;
 	}
 
 public:
+	class iterator{
+	private:
+		node *cur;
+		friend AVLTree;
+
+	public:
+		iterator(void) : cur(nullptr) {}
+		iterator(node *x) : cur(x) {}
+		iterator(const iterator &it) : cur(it.cur) {}
+
+		T &operator*(void) const{
+			return cur->key;
+		}
+
+		T *operator->(void) const{
+			return &cur->key;
+		}
+
+		bool operator==(const iterator &rhs) const{
+			return cur == rhs.cur;
+		}
+
+		bool operator!=(const iterator &rhs) const{
+			return cur != rhs.cur;
+		}
+
+		iterator &operator++(void){
+			if(cur != nullptr){
+				if(cur->right != nullptr){
+					// elements from the right subtree are all
+					// greater than the current node so we need
+					// to find the leftmost(smallest) element
+					// from that subtree
+					cur = cur->right;
+					while(cur->left != nullptr)
+						cur = cur->left;
+				}else{
+					// if there is no right subtree, we need to
+					// iterate back to a parent greater than its
+					// previous element
+					while(cur->parent && cur->parent->left != cur)
+						cur = cur->parent;
+
+					if(cur->parent && cur->parent->left == cur)
+						cur = cur->parent;
+					else
+						cur = nullptr;
+				}
+			}
+			return *this;
+		}
+
+		iterator &operator--(void){
+			if(cur != nullptr){
+				if(cur->left != nullptr){
+					cur = cur->left;
+					while(cur->right != nullptr)
+						cur = cur->right;
+				}else{
+					while(cur->parent && cur->parent->right != cur)
+						cur = cur->parent;
+					if(cur->parent && cur->parent->right == cur)
+						cur = cur->parent;
+					else
+						cur = nullptr;
+				}
+			}
+			return *this;
+		}
+	};
+
 	// delete copy and move operations
 	AVLTree(const AVLTree&)			= delete;
 	AVLTree(AVLTree&&)			= delete;
@@ -177,7 +338,7 @@ public:
 	~AVLTree(void){}
 
 	template<typename G>
-	T *insert(G &&value){
+	iterator insert(G &&value){
 		// allocate node
 		node *x = blk.alloc();
 		if(x == nullptr)
@@ -192,18 +353,18 @@ public:
 
 		// insert into the tree
 		insert_node(x);
-		return &x->key;
+		return x;
 	}
 
 	template <typename... Args>
-	T *emplace(Args&&... args){
+	iterator emplace(Args&&... args){
 		// allocate node
 		node *x = blk.alloc();
 		if(x == nullptr)
 			return nullptr;
 
 		// initialize node
-		new(&x->key) T(std::forward<Args>(args)...);
+		new(&x->key) T{std::forward<Args>(args)...};
 		x->height = 1;
 		x->parent = nullptr;
 		x->left = nullptr;
@@ -211,60 +372,28 @@ public:
 
 		// insert into the tree
 		insert_node(x);
-		return &x->key;
+		return x;
 	}
 
+	iterator erase(iterator it){
+		node *x = it.cur;
+		iterator next = ++it;
 
-	template<typename G>
-	bool remove(const G &value){
-		node *y = nullptr;
-		node *x = find_node(value);
 		if(x == nullptr)
-			return false;
-
-		if(x->left != nullptr && x->right != nullptr){
-			y = x->right;
-			while(y->left != nullptr)
-				y = y->left;
-
-			// pull `y->right` subtree
-			y->parent->left = y->right;
-			if(y->right != nullptr)
-				y->right->parent = y->parent;
-
-			// replace `x` with `y`
-			y->left = x->left;
-			y->left->parent = y;
-			y->right = x->right;
-			y->right->parent = y;
-		} else if(x->left != nullptr) {
-			y = x->left;
-		} else if(x->right != nullptr) {
-			y = x->right;
-		}
-
-		// fix parent link
-		if(y != nullptr)
-			y->parent = x->parent;
-		if(x->parent != nullptr){
-			if(x->parent->left == x)
-				x->parent->left = y;
-			else
-				x->parent->right = y;
-		}
-
-		// check if root needs to be updated
-		if(root == x)
-			root = y;
-
-		// free node
+			return nullptr;
+		remove_node(x);
 		x->key.~T();
 		blk.free(x);
-		return true;
+		return next;
 	}
 
 	bool empty(void){
 		return (root == nullptr);
+	}
+
+	int height(void){
+		if(root == nullptr) return 0;
+		return root->height;
 	}
 
 	template<typename G>
@@ -273,31 +402,35 @@ public:
 	}
 
 	template<typename G>
-	T *find(const G &value){
+	iterator find(const G &value){
 		node *x = find_node(value);
 		if(x == nullptr)
 			return nullptr;
-		return &x->key;
+		return x;
 	}
 
-	T *min(void){
+	iterator begin(void){
 		if(root == nullptr)
 			return nullptr;
 
 		node *x = root;
 		while(x->left != nullptr)
 			x = x->left;
-		return &x->key;
+		return x;
 	}
 
-	T *max(void){
+	iterator rbegin(void){
 		if(root == nullptr)
 			return nullptr;
 
 		node *x = root;
 		while(x->right != nullptr)
 			x = x->right;
-		return &x->key;
+		return x;
+	}
+
+	iterator end(void){
+		return nullptr;
 	}
 };
 

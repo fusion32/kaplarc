@@ -63,7 +63,7 @@ static bool			running = false;
 static void scheduler(void){
 	int64		delta;
 	Work		wrk;
-	SchEntry	*entry;
+	auto		entry = tree.end();
 
 	std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
 	while(running){
@@ -76,12 +76,12 @@ static void scheduler(void){
 			}
 		}
 
-		entry = tree.min();
+		entry = tree.begin();
 		delta = entry->time - sys_tick_count();
 		if(delta > 0){
 			cond.wait_for(lock, std::chrono::milliseconds(delta));
-			entry = tree.min();
-			if(entry == nullptr || entry->time > sys_tick_count()){
+			entry = tree.begin();
+			if(entry == tree.end() || entry->time > sys_tick_count()){
 				lock.unlock();
 				continue;
 			}
@@ -89,7 +89,7 @@ static void scheduler(void){
 
 		// get work and remove entry
 		wrk = std::move(entry->wrk);
-		tree.remove(*entry);
+		tree.erase(entry);
 		lock.unlock();
 
 		work_dispatch(wrk);
@@ -114,53 +114,52 @@ void scheduler_shutdown(void){
 
 SchRef scheduler_add(int64 delay, Work wrk){
 	int64 time = delay + sys_tick_count();
-	SchEntry *entry;
 
 	std::lock_guard<std::mutex> lock(mtx);
-	entry = tree.emplace(next_id++, time, std::move(wrk));
-	if(entry == nullptr){
+	auto entry = tree.emplace(next_id++, time, std::move(wrk));
+	if(entry == tree.end()){
 		LOG("scheduler_add: scheduler is at maximum capacity (%d)", SCH_MAX_ENTRIES);
 		return SCHREF_INVALID;
 	}
 
-	if(entry == tree.min())
+	if(entry == tree.begin())
 		cond.notify_one();
 	return SchRef(entry->id, entry->time);
 }
 
 bool scheduler_remove(const SchRef &ref){
 	std::lock_guard<std::mutex> lock(mtx);
-	if(!tree.remove(ref)){
+	auto it = tree.find(ref);
+	if(it == tree.end()){
 		LOG("scheduler_remove: trying to remove invalid entry");
 		return false;
 	}
+	tree.erase(it);
 	return true;
 }
 
 bool scheduler_reschedule(int64 delay, SchRef &ref){
 	int64 time = delay + sys_tick_count();
-	SchEntry *entry, *old;
-
 	std::lock_guard<std::mutex> lock(mtx);
-	old = tree.find(ref);
-	if(old == nullptr){
+	auto old = tree.find(ref);
+	if(old == tree.end()){
 		LOG("shceduler_reschedule: trying to reschedule invalid entry");
 		return false;
 	}
 
-	entry = tree.emplace(next_id++, time, std::move(old->wrk));
-	if(entry == nullptr){
+	auto entry = tree.emplace(next_id++, time, std::move(old->wrk));
+	if(entry == tree.end()){
 		LOG("scheduler_reschedule: failed to re-insert entry"
 			"(scheduler is at maximum capactity `%d`)", SCH_MAX_ENTRIES);
 		return false;
 	}
 
 	// remove old entry and update SchRef
-	tree.remove(ref);
+	tree.erase(old);
 	ref.id = entry->id;
 	ref.time = time;
 
-	if(entry == tree.min())
+	if(entry == tree.begin())
 		cond.notify_one();
 	return true;
 }
