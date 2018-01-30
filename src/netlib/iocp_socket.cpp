@@ -26,19 +26,35 @@ void socket_shutdown(Socket *sock, int how){
 		if((how == SOCKET_SHUT_RDWR && opcode != OP_NONE)
 			|| (how == SOCKET_SHUT_RD && opcode == OP_READ)
 			|| (how == SOCKET_SHUT_RD && opcode == OP_ACCEPT)
-			|| (how == SOCKET_SHUT_WR && opcode == OP_WRITE))
+			|| (how == SOCKET_SHUT_WR && opcode == OP_WRITE)){
 			CancelIoEx((HANDLE)sock->fd, (OVERLAPPED*)&sock->ops[i]);
+			sock->ops[i].complete = nullptr;
+		}
 
 	}
 }
 
 void socket_close(Socket *sock){
 	CancelIoEx((HANDLE)sock->fd, nullptr);
+	for(int i = 0; i < MAX_OPS; ++i)
+		sock->ops[i].complete = nullptr;
 	closesocket(sock->fd);
 	delete sock;
 }
 
-bool socket_async_accept(Socket *sock, SocketCallback cb){
+bool socket_async_accept(Socket *sock, const SocketCallback &cb){
+	return socket_async_accept(sock, SocketCallback(cb));
+}
+
+bool socket_async_read(Socket *sock, char *buf, int len, const SocketCallback &cb){
+	return socket_async_read(sock, buf, len, SocketCallback(cb));
+}
+
+bool socket_async_write(Socket *sock, char *buf, int len, const SocketCallback &cb){
+	return socket_async_write(sock, buf, len, SocketCallback(cb));
+}
+
+bool socket_async_accept(Socket *sock, SocketCallback &&cb){
 	SocketOp *op;
 	BOOL ret;
 	DWORD transfered;
@@ -77,7 +93,7 @@ bool socket_async_accept(Socket *sock, SocketCallback cb){
 	return true;
 }
 
-bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb){
+bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback &&cb){
 	SocketOp *op;
 	WSABUF data;
 	DWORD flags;
@@ -112,7 +128,7 @@ bool socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb){
 	return true;
 }
 
-bool socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb){
+bool socket_async_write(Socket *sock, char *buf, int len, SocketCallback &&cb){
 	SocketOp *op;
 	WSABUF data;
 	DWORD transfered;

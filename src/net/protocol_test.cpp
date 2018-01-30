@@ -28,7 +28,8 @@ void ProtocolTest::on_connect(void){
 
 void ProtocolTest::on_close(void){
 	LOG("on_close");
-	connection.reset();
+	work_dispatch([this](void){
+		connection.reset();});
 }
 
 void ProtocolTest::on_recv_message(Message *msg){

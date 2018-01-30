@@ -134,39 +134,6 @@ private:
 		return x;
 	}
 
-#if 0
-	static void swap_nodes(node *x, node *y){
-		node *xright, *xleft, *xparent;
-		xleft = x->left;
-		xright = x->right;
-		xparent = x->parent;
-
-		x->left = y->left;
-		x->right = y->right;
-		x->parent = y->parent;
-		if(x->left) x->left->parent = x;
-		if(x->right) x->right->parent = x;
-		if(x->parent){
-			if(x->parent->left == y)
-				x->parent->left = x;
-			else
-				x->parent->right = x;
-		}
-
-		y->left = xleft;
-		y->right = xright;
-		y->parent = xparent;
-		if(y->left) y->left->parent = y;
-		if(y->right) y->right->parent = y;
-		if(y->parent){
-			if(y->parent->left == x)
-				y->parent->left = y;
-			else
-				y->parent->right = y;
-		}
-	}
-#endif
-
 	// insert node into the tree
 	void insert_node(node *x){
 		if(root != nullptr){
@@ -194,6 +161,7 @@ private:
 				y = x->right;
 				y->left = x->left;
 				y->left->parent = y;
+				retrace_from = y;
 			}else{
 				// find smallest element y on the x->right subtree
 				y = x->right;
@@ -214,20 +182,21 @@ private:
 				y->right = x->right;
 				// x->right may have become null from the y pop
 				if(y->right) y->right->parent = y;
+				retrace_from = y->parent;
 			}
 		}else if(x->left != nullptr){
 			y = x->left;
+			retrace_from = y;
 		}else if(x->right != nullptr){
 			y = x->right;
+			retrace_from = y;
 		}
 
 		// fix parent link
-		if(y != nullptr){
+		if(y != nullptr)
 			y->parent = x->parent;
-			retrace_from = y;
-		}else{
+		else
 			retrace_from = x->parent;
-		}
 
 		if(x->parent){
 			if(x->parent->left == x)
@@ -375,10 +344,18 @@ public:
 		return x;
 	}
 
+	void remove(iterator it){
+		node *x = it.cur;
+		if(x == nullptr)
+			return;
+		remove_node(x);
+		x->key.~T();
+		blk.free(x);
+	}
+
 	iterator erase(iterator it){
 		node *x = it.cur;
 		iterator next = ++it;
-
 		if(x == nullptr)
 			return nullptr;
 		remove_node(x);

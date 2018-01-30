@@ -24,8 +24,11 @@ int	net_work(void);
 uint32	socket_remote_address(Socket *sock);
 void	socket_shutdown(Socket *sock, int how);
 void	socket_close(Socket *sock);
-bool	socket_async_accept(Socket *sock, SocketCallback cb);
-bool	socket_async_read(Socket *sock, char *buf, int len, SocketCallback cb);
-bool	socket_async_write(Socket *sock, char *buf, int len, SocketCallback cb);
+bool	socket_async_accept(Socket *sock, const SocketCallback &cb);
+bool	socket_async_read(Socket *sock, char *buf, int len, const SocketCallback &cb);
+bool	socket_async_write(Socket *sock, char *buf, int len, const SocketCallback &cb);
+bool	socket_async_accept(Socket *sock, SocketCallback &&cb);
+bool	socket_async_read(Socket *sock, char *buf, int len, SocketCallback &&cb);
+bool	socket_async_write(Socket *sock, char *buf, int len, SocketCallback &&cb);
 
 #endif //NETWORK_H_

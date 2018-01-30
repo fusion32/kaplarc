@@ -41,8 +41,9 @@ static void on_write(Socket *sock, int error, int transfered,
 static void connmgr_internal_close(const std::shared_ptr<Connection> &conn);
 
 static void timeout_handler(const std::weak_ptr<Connection> &wconn){
+	LOG("wconn use_count = %d", wconn.use_count());
+	LOG("wconn expired = %s", wconn.expired() ? "true" : "false");
 	auto conn = wconn.lock();
-	LOG("wconn.expired = %s", wconn.expired() ? "true" : "false");
 	LOG("wconn.lock = %s", conn ? "valid" : "invalid");
 	if(conn){
 		LOG("conn.use_count() = %d", conn.use_count());
@@ -72,7 +73,7 @@ static void on_read_length(Socket *sock, int error, int transfered,
 		auto callback = [conn](Socket *sock, int error, int transfered)
 			{ on_read_body(sock, error, transfered, conn); };
 		if(socket_async_read(sock, (char*)(msg->buffer + 2),
-				msg->length, callback))
+				msg->length, std::move(callback)))
 			return;
 	}
 
@@ -107,7 +108,7 @@ static void on_read_body(Socket *sock, int error, int transfered,
 			conn->rdwr_count++;
 			auto callback = [conn](Socket *sock, int error, int transfered)
 				{ on_read_length(sock, error, transfered, conn); };
-			if(socket_async_read(sock, (char*)msg->buffer, 2, callback))
+			if(socket_async_read(sock, (char*)msg->buffer, 2, std::move(callback)))
 				return;
 		}
 	}
@@ -127,13 +128,12 @@ static void on_write(Socket *sock, int error, int transfered,
 			Message *next = conn->output_queue.front();
 			auto callback = [conn](Socket *sock, int error, int transfered)
 				{ on_write(sock, error, transfered, conn); };
-			if(!socket_async_write(sock, (char*)next->buffer, next->length, callback))
+			if(!socket_async_write(sock, (char*)next->buffer, next->length, std::move(callback)))
 				connmgr_internal_close(conn);
 		}
 	}else{
 		connmgr_internal_close(conn);
 	}
-
 }
 
 /*************************************
@@ -163,7 +163,7 @@ void connmgr_accept(Socket *socket, Service *service){
 
 		auto callback = [conn](Socket *sock, int error, int transfered)
 			{ on_read_length(sock, error, transfered, conn); };
-		if(!socket_async_read(conn->socket, (char*)conn->input.buffer, 2, callback)){
+		if(!socket_async_read(conn->socket, (char*)conn->input.buffer, 2, std::move(callback))){
 			scheduler_remove(conn->timeout);
 			return;
 		}
@@ -182,18 +182,19 @@ static void connmgr_internal_close(const std::shared_ptr<Connection> &conn){
 	// reference so when there are no more output messages, the
 	// connection is properly released by it's destructor
 
-	// remove connection from connection list
-	{	std::lock_guard<std::mutex> lock(mtx);
-		auto it = std::find(connections.cbegin(), connections.cend(), conn);
-		if(it != connections.end())
-			connections.erase(it);
-	}
-
-	// shutdown connection
 	if((conn->flags & CONNECTION_SHUTDOWN) == 0){
+		// remove connection reference from connection list
+		{	std::lock_guard<std::mutex> lock(mtx);
+			auto it = std::find(connections.cbegin(), connections.cend(), conn);
+			if(it != connections.end())
+				connections.erase(it);
+		}
+
+		// shutdown connection
 		conn->flags |= CONNECTION_SHUTDOWN;
 		socket_shutdown(conn->socket, SOCKET_SHUT_RD);
-		conn->protocol->on_close();
+		if(conn->protocol)
+			conn->protocol->on_close();
 	}
 }
 
@@ -204,6 +205,9 @@ void connmgr_close(const std::shared_ptr<Connection> &conn){
 
 void connmgr_send(const std::shared_ptr<Connection> &conn, Message *msg){
 	std::lock_guard<std::mutex> lock(conn->mtx);
+	if(conn->flags & CONNECTION_SHUTDOWN)
+		return;
+
 	conn->output_queue.push(msg);
 	if(conn->output_queue.size() == 1){
 		auto callback = [conn](Socket *sock, int error, int transfered)

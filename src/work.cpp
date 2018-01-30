@@ -59,7 +59,11 @@ void work_shutdown(void){
 	thread_pool.clear();
 }
 
-void work_dispatch(Work wrk){
+void work_dispatch(const Work &wrk){
+	work_dispatch(Work(wrk));
+}
+
+void work_dispatch(Work &&wrk){
 	std::lock_guard<std::mutex> lock(mtx);
 	if(!rb.push(std::move(wrk)))
 		LOG_ERROR("work_dispatch: work ring buffer is at maximum capacity (%d)", MAX_WORK);

@@ -1,4 +1,4 @@
-- output message pool
+- improve output message pool
 - worker threads rework:
 	every dispatch has an object and it keeps track of which worker it was assigned to
 	so there is no need for object mutexes because the same worker will process every
@@ -7,5 +7,5 @@
 	underlying tree so it might be better to use std::set instead of the AVLTree for the
 	scheduler as red-black trees have better performance when inserting/removing often
 	but it still needs to be measured whether or not it would improve its performance
-- further investigate the bug where the shared_ptr has already released it's shared object
-	but the weak_ptr yields a useable shared_ptr with use_count == 0
+- until the Networking TS is not merged into the c++ standard, should consider using ASIO
+	library as it would prevent more unexpected bugs

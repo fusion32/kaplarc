@@ -89,11 +89,10 @@ static void scheduler(void){
 
 		// get work and remove entry
 		wrk = std::move(entry->wrk);
-		tree.erase(entry);
+		tree.remove(entry);
 		lock.unlock();
 
-		work_dispatch(wrk);
-		wrk = nullptr;
+		work_dispatch(std::move(wrk));
 	}
 }
 
@@ -112,7 +111,11 @@ void scheduler_shutdown(void){
 	thr.join();
 }
 
-SchRef scheduler_add(int64 delay, Work wrk){
+SchRef scheduler_add(int64 delay, const Work &wrk){
+	return scheduler_add(delay, Work(wrk));
+}
+
+SchRef scheduler_add(int64 delay, Work &&wrk){
 	int64 time = delay + sys_tick_count();
 
 	std::lock_guard<std::mutex> lock(mtx);
@@ -134,7 +137,7 @@ bool scheduler_remove(const SchRef &ref){
 		LOG("scheduler_remove: trying to remove invalid entry");
 		return false;
 	}
-	tree.erase(it);
+	tree.remove(it);
 	return true;
 }
 
@@ -155,7 +158,7 @@ bool scheduler_reschedule(int64 delay, SchRef &ref){
 	}
 
 	// remove old entry and update SchRef
-	tree.erase(old);
+	tree.remove(old);
 	ref.id = entry->id;
 	ref.time = time;
 
