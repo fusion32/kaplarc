@@ -1,5 +1,5 @@
-#ifndef NETWORK_H_
-#define NETWORK_H_
+#ifndef NET_H_
+#define NET_H_
 
 #include "../def.h"
 #include <functional>
@@ -31,4 +31,19 @@ bool	socket_async_accept(Socket *sock, SocketCallback &&cb);
 bool	socket_async_read(Socket *sock, char *buf, int len, SocketCallback &&cb);
 bool	socket_async_write(Socket *sock, char *buf, int len, SocketCallback &&cb);
 
-#endif //NETWORK_H_
+/*
+namespace net{
+
+class address;
+class address_v4;
+class address_v6;
+
+class io_context{
+public:
+	//
+};
+
+}; //namespace net
+*/
+
+#endif //NET_H_

@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <vector>
 #include "../log.h"
-#include "../netlib/network.h"
+#include "../net/net.h"
 #include "connection.h"
 #include "server.h"
 #include "protocol.h"

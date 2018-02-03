@@ -8,18 +8,21 @@
     <Filter Include="Source Files\net">
       <UniqueIdentifier>{17be985e-6359-4e2f-817e-7d9743bb7dd4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\netlib">
+    <Filter Include="Source Files\server">
       <UniqueIdentifier>{44f0fa6b-c11c-42c0-943a-0e0d21658b22}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main.cpp">
+    <ClCompile Include="..\src\adler32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\work.cpp">
+    <ClCompile Include="..\src\env.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\scheduler.cpp">
@@ -28,106 +31,82 @@
     <ClCompile Include="..\src\system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\net\protocol_test.cpp">
+    <ClCompile Include="..\src\server\connection.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\message.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\protocol_test.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\server.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\iocp_net.cpp">
       <Filter>Source Files\net</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\net\message.cpp">
+    <ClCompile Include="..\src\net\iocp_socket.cpp">
       <Filter>Source Files\net</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\adler32.cpp">
+    <ClCompile Include="..\src\dispatcher.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\env.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\netlib\iocp_net.cpp">
-      <Filter>Source Files\netlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\netlib\iocp_socket.cpp">
-      <Filter>Source Files\netlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\netlib\epoll_net.cpp">
-      <Filter>Source Files\netlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\netlib\epoll_socket.cpp">
-      <Filter>Source Files\netlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\netlib\kqueue_net.cpp">
-      <Filter>Source Files\netlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\netlib\kqueue_socket.cpp">
-      <Filter>Source Files\netlib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\connection.cpp">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\server.cpp">
-      <Filter>Source Files\net</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\work.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\ringbuffer.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\log.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\cstring.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\workgroup.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\scheduler.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\def.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\system.h">
+    <ClInclude Include="..\src\avltree.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\common.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\memblock.h">
+    <ClInclude Include="..\src\cstring.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\avltree.h">
+    <ClInclude Include="..\src\def.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\net\message.h">
-      <Filter>Source Files\net</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\net\protocol_test.h">
-      <Filter>Source Files\net</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\netlib\network.h">
-      <Filter>Source Files\netlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\net\protocol.h">
-      <Filter>Source Files\net</Filter>
     </ClInclude>
     <ClInclude Include="..\src\env.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\netlib\iocp_private.h">
-      <Filter>Source Files\netlib</Filter>
+    <ClInclude Include="..\src\log.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\netlib\epoll_private.h">
-      <Filter>Source Files\netlib</Filter>
+    <ClInclude Include="..\src\memblock.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\netlib\kqueue_private.h">
-      <Filter>Source Files\netlib</Filter>
+    <ClInclude Include="..\src\ringbuffer.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\net\connection.h">
+    <ClInclude Include="..\src\scheduler.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\system.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server\connection.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server\message.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server\protocol.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server\protocol_test.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server\server.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\iocp_private.h">
       <Filter>Source Files\net</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\net\server.h">
+    <ClInclude Include="..\src\net\net.h">
       <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\dispatcher.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

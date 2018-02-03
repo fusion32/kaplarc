@@ -2,7 +2,7 @@
 #define SCHEDULER_H_
 
 #include "def.h"
-#include "work.h"
+#include "dispatcher.h"
 
 #define SCHREF_INVALID (-1)
 
@@ -29,10 +29,10 @@ struct SchRef{
 	}
 };
 
-void	scheduler_init(void);
+bool	scheduler_init(void);
 void	scheduler_shutdown(void);
-SchRef	scheduler_add(int64 delay, const Work &wrk);
-SchRef	scheduler_add(int64 delay, Work &&wrk);
+SchRef	scheduler_add(int64 delay, const Task &task);
+SchRef	scheduler_add(int64 delay, Task &&task);
 bool	scheduler_remove(const SchRef &ref);
 bool	scheduler_reschedule(int64 delay, SchRef &ref);
 

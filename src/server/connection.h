@@ -3,7 +3,7 @@
 
 #include "../def.h"
 #include "../scheduler.h"
-#include "../netlib/network.h"
+#include "../net/net.h"
 #include "message.h"
 
 #include <mutex>
@@ -31,7 +31,7 @@ public:
 	Protocol		*protocol;
 	uint32			flags;
 	uint32			rdwr_count;
-	SchRef			timeout;
+	SchRef			timeout; //TODO: use platform specific async timer
 	std::mutex		mtx;
 
 	// connection messages

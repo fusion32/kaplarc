@@ -18,6 +18,41 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\adler32.cpp" />
+    <ClCompile Include="..\src\env.cpp" />
+    <ClCompile Include="..\src\log.cpp" />
+    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\net\iocp_net.cpp" />
+    <ClCompile Include="..\src\net\iocp_socket.cpp" />
+    <ClCompile Include="..\src\scheduler.cpp" />
+    <ClCompile Include="..\src\server\connection.cpp" />
+    <ClCompile Include="..\src\server\message.cpp" />
+    <ClCompile Include="..\src\server\protocol_test.cpp" />
+    <ClCompile Include="..\src\server\server.cpp" />
+    <ClCompile Include="..\src\system.cpp" />
+    <ClCompile Include="..\src\dispatcher.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\avltree.h" />
+    <ClInclude Include="..\src\common.h" />
+    <ClInclude Include="..\src\cstring.h" />
+    <ClInclude Include="..\src\def.h" />
+    <ClInclude Include="..\src\env.h" />
+    <ClInclude Include="..\src\log.h" />
+    <ClInclude Include="..\src\memblock.h" />
+    <ClInclude Include="..\src\net\iocp_private.h" />
+    <ClInclude Include="..\src\net\net.h" />
+    <ClInclude Include="..\src\ringbuffer.h" />
+    <ClInclude Include="..\src\scheduler.h" />
+    <ClInclude Include="..\src\server\connection.h" />
+    <ClInclude Include="..\src\server\message.h" />
+    <ClInclude Include="..\src\server\protocol.h" />
+    <ClInclude Include="..\src\server\protocol_test.h" />
+    <ClInclude Include="..\src\server\server.h" />
+    <ClInclude Include="..\src\system.h" />
+    <ClInclude Include="..\src\dispatcher.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{BC3E9892-CA33-4707-873B-AC509C899601}</ProjectGuid>
@@ -130,48 +165,6 @@
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\src\adler32.cpp" />
-    <ClCompile Include="..\src\log.cpp" />
-    <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\netlib\epoll_net.cpp" />
-    <ClCompile Include="..\src\netlib\epoll_socket.cpp" />
-    <ClCompile Include="..\src\netlib\iocp_net.cpp" />
-    <ClCompile Include="..\src\netlib\iocp_socket.cpp" />
-    <ClCompile Include="..\src\netlib\kqueue_net.cpp" />
-    <ClCompile Include="..\src\netlib\kqueue_socket.cpp" />
-    <ClCompile Include="..\src\net\connection.cpp" />
-    <ClCompile Include="..\src\net\message.cpp" />
-    <ClCompile Include="..\src\net\protocol_test.cpp" />
-    <ClCompile Include="..\src\net\server.cpp" />
-    <ClCompile Include="..\src\scheduler.cpp" />
-    <ClCompile Include="..\src\env.cpp" />
-    <ClCompile Include="..\src\system.cpp" />
-    <ClCompile Include="..\src\work.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\src\avltree.h" />
-    <ClInclude Include="..\src\common.h" />
-    <ClInclude Include="..\src\def.h" />
-    <ClInclude Include="..\src\memblock.h" />
-    <ClInclude Include="..\src\netlib\epoll_private.h" />
-    <ClInclude Include="..\src\netlib\iocp_private.h" />
-    <ClInclude Include="..\src\netlib\kqueue_private.h" />
-    <ClInclude Include="..\src\netlib\network.h" />
-    <ClInclude Include="..\src\net\connection.h" />
-    <ClInclude Include="..\src\net\message.h" />
-    <ClInclude Include="..\src\net\protocol.h" />
-    <ClInclude Include="..\src\net\protocol_test.h" />
-    <ClInclude Include="..\src\net\server.h" />
-    <ClInclude Include="..\src\scheduler.h" />
-    <ClInclude Include="..\src\cstring.h" />
-    <ClInclude Include="..\src\log.h" />
-    <ClInclude Include="..\src\ringbuffer.h" />
-    <ClInclude Include="..\src\env.h" />
-    <ClInclude Include="..\src\system.h" />
-    <ClInclude Include="..\src\work.h" />
-    <ClInclude Include="..\src\workgroup.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

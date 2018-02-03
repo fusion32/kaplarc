@@ -22,22 +22,22 @@ void ProtocolTest::message_end(Message *msg){
 
 void ProtocolTest::on_connect(void){
 	LOG("on_connect");
-	work_dispatch([this](void){
-		send_hello(); });
+	//work_dispatch([this](void){
+	//	send_hello(); });
 }
 
 void ProtocolTest::on_close(void){
 	LOG("on_close");
-	work_dispatch([this](void){
-		connection.reset();});
+	//work_dispatch([this](void){
+	//	connection.reset();});
 }
 
 void ProtocolTest::on_recv_message(Message *msg){
 	char buf[64];
 	msg->get_str(buf, 64);
 	//LOG("on_recv_message: %s", buf);
-	work_dispatch([this](void){
-		send_hello(); });
+	//work_dispatch([this](void){
+	//	send_hello(); });
 }
 
 void ProtocolTest::on_recv_first_message(Message *msg){

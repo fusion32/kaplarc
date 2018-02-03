@@ -23,15 +23,17 @@ public:
 	RingBuffer(void) : readpos(0), writepos(0) {}
 	~RingBuffer(void){}
 
+	constexpr uint32 capacity(void) const { return N; }
 	uint32 size(void) const { return writepos - readpos; }
 	bool empty(void) const { return writepos == readpos; }
+	bool full(void) const { return size() >= N; }
 
 	T &front(void){ return buf[readpos & clamp_mask]; }
 	void pop(void){ if(!empty()) readpos++; }
 
 	template<typename G>
 	bool push(G &&item){
-		if(size() >= N) return false;
+		if(full()) return false;
 		buf[writepos++ & clamp_mask] = std::forward<G>(item);
 		return true;
 	}

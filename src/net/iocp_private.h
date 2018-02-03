@@ -8,7 +8,7 @@
 #include <winsock2.h>
 #include <mswsock.h>
 
-#include "network.h"
+#include "net.h"
 
 #define MAX_OPS		8
 #define OP_NONE		0x00
@@ -24,11 +24,11 @@ struct SocketOp{
 };
 
 struct Socket{
-	SOCKET		fd;
-	SocketOp	ops[MAX_OPS];
-	char		addr_buffer[sizeof(sockaddr_in) * 2 + 16];
-	sockaddr_in	*local_addr;
-	sockaddr_in	*remote_addr;
+	SOCKET			fd;
+	SocketOp		ops[MAX_OPS];
+	char			addr_buffer[sizeof(sockaddr_in) * 2 + 16];
+	sockaddr_in		*local_addr;
+	sockaddr_in		*remote_addr;
 };
 
 

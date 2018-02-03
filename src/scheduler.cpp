@@ -6,19 +6,18 @@
 #include "avltree.h"
 #include "log.h"
 #include "system.h"
-#include "work.h"
 
 struct SchEntry{
 	int64 id;
 	int64 time;
-	Work wrk;
+	Task task;
 
 	// constructors
 	SchEntry(void){}
 
 	template<typename G>
-	SchEntry(int64 id_, int64 time_, G &&wrk_)
-	  : id(id_), time(time_), wrk(std::forward<G>(wrk_)) {}
+	SchEntry(int64 id_, int64 time_, G &&task_)
+	  : id(id_), time(time_), task(std::forward<G>(task_)) {}
 
 	// comparisson with `SchEntry`
 	bool operator==(const SchEntry &rhs) const{
@@ -61,9 +60,9 @@ static int64			next_id = 1;
 static bool			running = false;
 
 static void scheduler(void){
-	int64		delta;
-	Work		wrk;
-	auto		entry = tree.end();
+	int64	delta;
+	Task	task;
+	auto	entry = tree.end();
 
 	std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
 	while(running){
@@ -88,18 +87,20 @@ static void scheduler(void){
 		}
 
 		// get work and remove entry
-		wrk = std::move(entry->wrk);
+		task = std::move(entry->task);
 		tree.remove(entry);
 		lock.unlock();
 
-		work_dispatch(std::move(wrk));
+		// TODO: each task has a dispatcher
+		//dispatcher_add(dispatcher, std::move(task));
 	}
 }
 
-void scheduler_init(void){
+bool scheduler_init(void){
 	// spawn scheduler thread
 	running = true;
 	thr = std::thread(scheduler);
+	return true;
 }
 
 void scheduler_shutdown(void){
@@ -109,17 +110,22 @@ void scheduler_shutdown(void){
 	cond.notify_one();
 	mtx.unlock();
 	thr.join();
+
+	// release queue resources
+	auto it = tree.begin();
+	while(it != tree.end())
+		it = tree.erase(it);
 }
 
-SchRef scheduler_add(int64 delay, const Work &wrk){
-	return scheduler_add(delay, Work(wrk));
+SchRef scheduler_add(int64 delay, const Task &task){
+	return scheduler_add(delay, Task(task));
 }
 
-SchRef scheduler_add(int64 delay, Work &&wrk){
+SchRef scheduler_add(int64 delay, Task &&task){
 	int64 time = delay + sys_tick_count();
 
 	std::lock_guard<std::mutex> lock(mtx);
-	auto entry = tree.emplace(next_id++, time, std::move(wrk));
+	auto entry = tree.emplace(next_id++, time, std::move(task));
 	if(entry == tree.end()){
 		LOG("scheduler_add: scheduler is at maximum capacity (%d)", SCH_MAX_ENTRIES);
 		return SCHREF_INVALID;
@@ -150,7 +156,7 @@ bool scheduler_reschedule(int64 delay, SchRef &ref){
 		return false;
 	}
 
-	auto entry = tree.emplace(next_id++, time, std::move(old->wrk));
+	auto entry = tree.emplace(next_id++, time, std::move(old->task));
 	if(entry == tree.end()){
 		LOG("scheduler_reschedule: failed to re-insert entry"
 			"(scheduler is at maximum capactity `%d`)", SCH_MAX_ENTRIES);
