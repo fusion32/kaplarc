@@ -25,6 +25,7 @@ void init_interface(const char *name, bool(*init)(void), void(*shutdown)(void)){
 
 int main(int argc, char **argv){
 	// initialize core interfaces
+	init_interface("dispatcher", dispatcher_init, dispatcher_shutdown);
 	init_interface("scheduler", scheduler_init, scheduler_shutdown);
 
 	server_add_protocol<ProtocolTest>(7171);

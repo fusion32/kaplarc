@@ -74,7 +74,7 @@ static void on_read_length(const std::shared_ptr<Connection> &conn,
 			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
 
 		// chain body read
-		asio::async_read(*conn->socket, asio::buffer(msg->buffer, 2),
+		asio::async_read(*conn->socket, asio::buffer(msg->buffer, msg->length),
 			[conn](const asio::error_code &ec, std::size_t transfered)
 				{ on_read_body(conn, ec, transfered); });
 		return;

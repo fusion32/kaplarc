@@ -91,8 +91,16 @@ static void scheduler(void){
 		tree.remove(entry);
 		lock.unlock();
 
+		dispatcher_add(std::move(task));
+
 		// TODO: each task has a dispatcher
-		//dispatcher_add(dispatcher, std::move(task));
+		//before unlocking:
+		//disp = task->dispatcher;
+		//after unlocking
+		//if(disp != nullptr)
+		//	dispatcher_add(disp, std::move(task));
+		//else
+		//	dispatcher_add(std::move(task));
 	}
 }
 

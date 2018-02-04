@@ -51,12 +51,11 @@ static void dispatcher_thread(Dispatcher *d){
 }
 
 
-bool dispatcher_create(Dispatcher **d, uint32 capacity){
+void dispatcher_create(Dispatcher **d, uint32 capacity){
 	// TODO: variable capacity here
 	*d = new Dispatcher;
 	(*d)->running = true;
 	(*d)->thr = std::thread(dispatcher_thread, *d);
-	return true;
 }
 
 void dispatcher_destroy(Dispatcher *d){
@@ -78,4 +77,29 @@ void dispatcher_add(Dispatcher *d, Task &&task){
 		LOG_ERROR("dispatcher_add: task ring buffer is at maximum capacity (%d)", d->rb.capacity());
 	else
 		d->cond.notify_one();
+}
+
+
+/*************************************
+
+	Temporary interface
+
+*************************************/
+static Dispatcher *disp = nullptr;
+
+void dispatcher_init(void){
+	dispatcher_create(&disp, 1);
+}
+
+void dispatcher_shutdown(void){
+	if(disp != nullptr)
+		dispatcher_destroy(disp);
+}
+
+void dispatcher_add(const Task &task){
+	dispatcher_add(disp, Task(task));
+}
+
+void dispatcher_add(Task &&task){
+	dispatcher_add(disp, std::move(task));
 }

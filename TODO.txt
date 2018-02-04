@@ -3,15 +3,21 @@
 	underlying tree so it might be better to use std::set instead of the AVLTree for the
 	scheduler as red-black trees have better performance when inserting/removing often
 	but it still needs to be measured whether or not it would improve its performance
-- until the Networking TS is not merged into the c++ standard, should consider using ASIO
-	library as it would prevent more unexpected bugs
 - add variable capacity to dispatchers (requires a dynamic capacity ringbuffer)
 - divide the map into sectors with each sector having it's own dispatcher and effectively
 	having better multithreaded performance without the need of locking
 	-- edge problem: essentialy try to keep a whole zone within a sector and if the zone is
 		too big and you need to split the zone in two, make so people from one sector are
-		phased from the people of the other sector
+		phased from the people of the other sector or add two instances of the same zone
+		and splitting the players but that will require more computation for NPCs etc etc
+		which wouldn't be better in the end
 - every platform i'm targeting here has an async io, timer, and event mechanism:
 	- linux: epoll has eventfd, timerfd, and io
 	- bsd: kqueue has user events, timers and io
 	- win32: iocp has user events and io (need to check for timers)
+- could use the scheduler for the timers and simply dispatch as an event to the OS io service
+- also the ASIO library doesn't seem to free the lambda resources (std::shared_ptr in this case)
+	which made me think again about replacing it at the next commit but also make lambdas with
+	internal an empty state after a call:	[shared](...){ callback(std::move(shared), ...); }
+						[shared](...){ callback(shared, ...); shared.reset(); }
+	(shared == nullptr) would evaluate true after the first call
