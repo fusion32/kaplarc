@@ -23,8 +23,6 @@
     <ClCompile Include="..\src\env.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\net\iocp_net.cpp" />
-    <ClCompile Include="..\src\net\iocp_socket.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
     <ClCompile Include="..\src\server\connection.cpp" />
     <ClCompile Include="..\src\server\message.cpp" />
@@ -41,10 +39,9 @@
     <ClInclude Include="..\src\env.h" />
     <ClInclude Include="..\src\log.h" />
     <ClInclude Include="..\src\memblock.h" />
-    <ClInclude Include="..\src\net\iocp_private.h" />
-    <ClInclude Include="..\src\net\net.h" />
     <ClInclude Include="..\src\ringbuffer.h" />
     <ClInclude Include="..\src\scheduler.h" />
+    <ClInclude Include="..\src\server\asio.h" />
     <ClInclude Include="..\src\server\connection.h" />
     <ClInclude Include="..\src\server\message.h" />
     <ClInclude Include="..\src\server\protocol.h" />
@@ -104,7 +101,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>X:\libs\asio\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>X:\libs\asio\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>

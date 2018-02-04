@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <vector>
 #include "../log.h"
-#include "../net/net.h"
 #include "connection.h"
 #include "server.h"
 #include "protocol.h"
@@ -18,11 +17,11 @@ class Service{
 public:
 	// service control
 	std::vector<IProtocolFactory*>	factories;
-	Socket				*socket;
+	asio::ip::tcp::acceptor		acceptor;
 	int				port;
 
 	// constructor/destructor
-	Service(int port);
+	Service(asio::io_service &ios_, int port_);
 	~Service(void);
 
 	// delete operations
@@ -33,15 +32,12 @@ public:
 	Service &operator=(Service&&) = delete;
 };
 
-Service::Service(int port_)
- : port(port_), socket(nullptr) {}
+Service::Service(asio::io_service &ios_, int port_)
+ : acceptor(ios_), port(port_) {}
 
 Service::~Service(void){
-	if(socket != nullptr){
-		socket_close(socket);
-		socket = nullptr;
-	}
-
+	if(acceptor.is_open())
+		acceptor.close();
 	for(IProtocolFactory *factory : factories)
 		delete factory;
 	factories.clear();
@@ -55,37 +51,32 @@ Service::~Service(void){
 static bool service_open(Service *service);
 static void service_close(Service *service);
 static bool service_add_factory(Service *service, IProtocolFactory *factory);
-static void service_on_accept(Socket *sock, int error,
-			int transfered, Service *service);
+static void service_start_accept(Service *service);
+static void service_on_accept(asio::ip::tcp::socket *socket,
+	Service *service, const asio::error_code &err);
 
 static bool service_open(Service *service){
-	if(service->socket != nullptr){
+	if(service->acceptor.is_open()){
 		LOG_ERROR("service_open: service already open");
 		return false;
 	}
 
-	service->socket = net_server_socket(service->port);
-	if(service->socket == nullptr){
-		LOG_ERROR("service_open: failed to open service on port %d", service->port);
-		return false;
-	}
+	// initialize acceptor
+	asio::ip::tcp::endpoint endpoint(asio::ip::address(), service->port);
+	service->acceptor.open(endpoint.protocol());
+	service->acceptor.set_option(
+		asio::ip::tcp::acceptor::reuse_address(true));
+	service->acceptor.bind(endpoint);
+	service->acceptor.listen();
 
 	// start accept chain
-	auto callback = [service](Socket *sock, int error, int transfered)
-		{ service_on_accept(sock, error, transfered, service); };
-	if(!socket_async_accept(service->socket, callback)){
-		LOG_ERROR("service_open: failed to start accept chain on port %d", service->port);
-		socket_close(service->socket);
-		return false;
-	}
+	service_start_accept(service);
 	return true;
 }
 
 static void service_close(Service *service){
-	if(service->socket != nullptr){
-		socket_close(service->socket);
-		service->socket = nullptr;
-	}
+	if(service->acceptor.is_open())
+		service->acceptor.close();
 }
 
 static bool service_add_factory(Service *service, IProtocolFactory *f){
@@ -101,24 +92,29 @@ static bool service_add_factory(Service *service, IProtocolFactory *f){
 	return true;
 }
 
-static void service_on_accept(Socket *sock, int error,
-			int transfered, Service *service){
+static void service_start_accept(Service *service){
+	// start accept chain
+	auto socket = new asio::ip::tcp::socket(
+		service->acceptor.get_io_service());
+	service->acceptor.async_accept(*socket,
+		[socket, service](const asio::error_code &err) -> void
+			{ service_on_accept(socket, service, err); });
+}
 
-	if(error == 0){
-		// accept new connection
-		connmgr_accept(sock, service);
+static void service_on_accept(asio::ip::tcp::socket *socket,
+	Service *service, const asio::error_code &err){
 
+	if(!err){
+		connmgr_accept(socket, service);
 		// chain next accept
-		auto callback = [service](Socket *sock, int error, int transfered)
-			{ service_on_accept(sock, error, transfered, service); };
-		if(socket_async_accept(service->socket, callback))
-			return;
+		service_start_accept(service);
+	}else{
+		// socket error
+		LOG_ERROR("service_on_accept: socket error! trying to re-open service");
+		delete socket;
+		service_close(service);
+		service_open(service);
 	}
-
-	// socket error
-	LOG_ERROR("service_on_accept: socket error! trying to re-open service");
-	service_close(service);
-	service_open(service);
 }
 
 /*************************************
@@ -158,27 +154,26 @@ Protocol *service_make_protocol(Service *service,
 	Server Public Interface
 
 *************************************/
+static asio::io_service io_service;
 static std::vector<Service*> services;
-static bool running = false;
 
 void server_run(void){
 	for(Service *service : services)
 		service_open(service);
 
-	running = true;
-	while(running && net_work() == 0)
-		continue;
+	//asio::io_service::work work(io_service);
+	io_service.run();
 
 	for(Service *service : services)
 		service_close(service);
 }
 
 void server_stop(void){
-	running = false;
+	io_service.stop();
 }
 
 bool server_add_factory(int port, IProtocolFactory *factory){
-	if(running){
+	if(io_service.stopped()){
 		LOG_ERROR("server_add_factory: server already running");
 		return false;
 	}
@@ -187,11 +182,15 @@ bool server_add_factory(int port, IProtocolFactory *factory){
 	auto it = std::find_if(services.begin(), services.end(),
 		[port](Service *service){ return service->port == port; });
 	if(it == services.end()){
-		service = new Service(port);
+		service = new Service(io_service, port);
 		services.push_back(service);
 	}else{
 		service = *it;
 	}
 
 	return service_add_factory(service, factory);
+}
+
+asio::io_service &server_io_service(void){
+	return io_service;
 }

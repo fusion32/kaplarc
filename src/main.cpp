@@ -3,28 +3,29 @@
 #include "system.h"
 #include "dispatcher.h"
 
-#include "net/net.h"
 #include "server/server.h"
 #include "server/protocol_test.h"
 
 #include <stdlib.h>
-#include <vector>
 
+void init_interface(const char *name, void(*init)(void), void(*shutdown)(void)){
+	LOG("initializing `%s` interface", name);
+	init(); atexit(shutdown);
+}
+
+void init_interface(const char *name, bool(*init)(void), void(*shutdown)(void)){
+	LOG("initializing `%s` interface", name);
+	if(!init()){
+		// error messages should be
+		// provided by the interface
+		getchar(); exit(-1);
+	}
+	atexit(shutdown);
+}
 
 int main(int argc, char **argv){
-	LOG("Initializing dispatcher queues...");
-	Dispatcher *main_dispatcher;
-	dispatcher_create(&main_dispatcher, 0);
-
-	LOG("Initializing scheduler...");
-	scheduler_init(main_dispatcher);
-	atexit(scheduler_shutdown);
-
-	LOG("Initializing network interface...");
-	if(!net_init())
-		return -1;
-	atexit(net_shutdown);
-
+	// initialize core interfaces
+	init_interface("scheduler", scheduler_init, scheduler_shutdown);
 
 	server_add_protocol<ProtocolTest>(7171);
 	server_run();

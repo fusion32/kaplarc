@@ -3,7 +3,7 @@
 
 #include "../def.h"
 #include "../scheduler.h"
-#include "../net/net.h"
+#include "asio.h"
 #include "message.h"
 
 #include <mutex>
@@ -26,12 +26,12 @@ class Connection{
 // this interface more readable and easier to implement
 public:
 	// connection control
-	Socket			*socket;
+	asio::ip::tcp::socket	*socket;
 	Service			*service;
 	Protocol		*protocol;
 	uint32			flags;
 	uint32			rdwr_count;
-	SchRef			timeout; //TODO: use platform specific async timer
+	asio::steady_timer	timeout;
 	std::mutex		mtx;
 
 	// connection messages
@@ -39,7 +39,7 @@ public:
 	std::queue<Message*>	output_queue;
 
 	// constructor/destructor
-	Connection(Socket *socket_, Service *service_);
+	Connection(asio::ip::tcp::socket *socket_, Service *service_);
 	~Connection(void);
 
 	// delete operations
@@ -50,7 +50,7 @@ public:
 	Connection &operator=(Connection&&) = delete;
 };
 
-void connmgr_accept(Socket *socket, Service *service);
+void connmgr_accept(asio::ip::tcp::socket *socket, Service *service);
 void connmgr_close(const std::shared_ptr<Connection> &conn);
 void connmgr_send(const std::shared_ptr<Connection> &conn, Message *msg);
 

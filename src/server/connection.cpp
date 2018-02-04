@@ -7,18 +7,19 @@
 	Connection
 
 *************************************/
-Connection::Connection(Socket *socket_, Service *service_)
+Connection::Connection(asio::ip::tcp::socket *socket_, Service *service_)
   :	socket(socket_),
 	service(service_),
 	protocol(nullptr),
 	flags(0),
 	rdwr_count(0),
-	timeout(SCHREF_INVALID) {
+	timeout(socket->get_io_service()) {
 }
 
 Connection::~Connection(void){
 	if(socket != nullptr){
-		socket_close(socket);
+		socket->close();
+		delete socket;
 		socket = nullptr;
 	}
 	LOG("connection released");
@@ -29,63 +30,65 @@ Connection::~Connection(void){
 	Connection Callbacks
 
 *************************************/
-static void timeout_handler(const std::weak_ptr<Connection> &wconn);
-static void on_read_length(Socket *sock, int error, int transfered,
-			const std::shared_ptr<Connection> &conn);
-static void on_read_body(Socket *sock, int error, int transfered,
-			const std::shared_ptr<Connection> &conn);
-static void on_write(Socket *sock, int error, int transfered,
-			const std::shared_ptr<Connection> &conn);
+static void timeout_handler(const std::weak_ptr<Connection> &wconn,
+	const asio::error_code &ec);
+static void on_read_length(const std::shared_ptr<Connection> &conn,
+	const asio::error_code &ec, std::size_t transfered);
+static void on_read_body(const std::shared_ptr<Connection> &conn,
+	const asio::error_code &ec, std::size_t transfered);
+static void on_write(const std::shared_ptr<Connection> &conn,
+	const asio::error_code &ec, std::size_t transfered);
 
 // special helper function to avoid deadlocking
 static void connmgr_internal_close(const std::shared_ptr<Connection> &conn);
 
-static void timeout_handler(const std::weak_ptr<Connection> &wconn){
-	LOG("wconn use_count = %d", wconn.use_count());
-	LOG("wconn expired = %s", wconn.expired() ? "true" : "false");
+static void timeout_handler(const std::weak_ptr<Connection> &wconn,
+		const asio::error_code &ec){
+
 	auto conn = wconn.lock();
-	LOG("wconn.lock = %s", conn ? "valid" : "invalid");
 	if(conn){
-		LOG("conn.use_count() = %d", conn.use_count());
 		std::lock_guard<std::mutex> lock(conn->mtx);
 		if(conn->rdwr_count == 0){
 			connmgr_internal_close(conn);
 		}else{
 			LOG("conn->rdwr_count = %lu", conn->rdwr_count);
 			conn->rdwr_count = 0;
-			conn->timeout = scheduler_add(CONNECTION_TIMEOUT,
-				[wconn](void){ timeout_handler(wconn); });
+			conn->timeout.expires_from_now(
+				std::chrono::milliseconds(CONNECTION_TIMEOUT));
+			conn->timeout.async_wait(
+				[wconn](const asio::error_code &ec)
+					{ timeout_handler(wconn, ec); });
 		}
 	}
 }
 
-static void on_read_length(Socket *sock, int error, int transfered,
-			const std::shared_ptr<Connection> &conn){
+static void on_read_length(const std::shared_ptr<Connection> &conn,
+		const asio::error_code &ec, std::size_t transfered){
 
 	Message *msg = &conn->input;
 	std::lock_guard<std::mutex> lock(conn->mtx);
 	msg->readpos = 0;
 	msg->length = msg->get_u16();
-	if(error == 0 && transfered > 0 && msg->length > 0
-			&& (msg->length+2) < msg->capacity
+	if(!ec && transfered > 0 && msg->length > 0
+			&& (msg->length + 2) < msg->capacity
 			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
+
 		// chain body read
-		auto callback = [conn](Socket *sock, int error, int transfered)
-			{ on_read_body(sock, error, transfered, conn); };
-		if(socket_async_read(sock, (char*)(msg->buffer + 2),
-				msg->length, std::move(callback)))
-			return;
+		asio::async_read(*conn->socket, asio::buffer(msg->buffer, 2),
+			[conn](const asio::error_code &ec, std::size_t transfered)
+				{ on_read_body(conn, ec, transfered); });
+		return;
 	}
 
 	connmgr_internal_close(conn);
 }
 
-static void on_read_body(Socket *sock, int error, int transfered,
-			const std::shared_ptr<Connection> &conn){
+static void on_read_body(const std::shared_ptr<Connection> &conn,
+		const asio::error_code &ec, std::size_t transfered){
 
 	Message *msg = &conn->input;
 	std::lock_guard<std::mutex> lock(conn->mtx);
-	if(error == 0 && transfered > 0
+	if(!ec && transfered > 0
 			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
 
 		// uint32 checksum = adler32(msg->buffer + 6, msg->length - 4);
@@ -106,30 +109,29 @@ static void on_read_body(Socket *sock, int error, int transfered,
 
 			// chain next message read
 			conn->rdwr_count++;
-			auto callback = [conn](Socket *sock, int error, int transfered)
-				{ on_read_length(sock, error, transfered, conn); };
-			if(socket_async_read(sock, (char*)msg->buffer, 2, std::move(callback)))
-				return;
+			asio::async_read(*conn->socket, asio::buffer(msg->buffer, 2),
+				[conn](const asio::error_code &ec, std::size_t transfered)
+					{ on_read_length(conn, ec, transfered); });
+			return;
 		}
 	}
 
 	connmgr_internal_close(conn);
 }
 
-static void on_write(Socket *sock, int error, int transfered,
-			const std::shared_ptr<Connection> &conn){
+static void on_write(const std::shared_ptr<Connection> &conn,
+		const asio::error_code &ec, std::size_t transfered){
 
 	std::lock_guard<std::mutex> lock(conn->mtx);
-	if(error == 0 && transfered > 0){
+	if(!ec && transfered > 0){
 		conn->rdwr_count++;
 		output_pool_release(conn->output_queue.front());
 		conn->output_queue.pop();
 		if(!conn->output_queue.empty()){
 			Message *next = conn->output_queue.front();
-			auto callback = [conn](Socket *sock, int error, int transfered)
-				{ on_write(sock, error, transfered, conn); };
-			if(!socket_async_write(sock, (char*)next->buffer, next->length, std::move(callback)))
-				connmgr_internal_close(conn);
+			asio::async_write(*conn->socket, asio::buffer(next->buffer, next->length),
+				[conn](const asio::error_code &ec, std::size_t transfered)
+					{ on_write(conn, ec, transfered); });
 		}
 	}else{
 		connmgr_internal_close(conn);
@@ -144,7 +146,7 @@ static void on_write(Socket *sock, int error, int transfered,
 static std::vector<std::shared_ptr<Connection>> connections;
 static std::mutex mtx;
 
-void connmgr_accept(Socket *socket, Service *service){
+void connmgr_accept(asio::ip::tcp::socket *socket, Service *service){
 	auto conn = std::make_shared<Connection>(socket, service);
 
 	// initialize connection
@@ -154,19 +156,20 @@ void connmgr_accept(Socket *socket, Service *service){
 			conn->protocol->on_connect();
 		}
 
+
+		// run timeout timer
 		auto wconn = std::weak_ptr<Connection>(conn);
 		conn->rdwr_count = 0;
-		conn->timeout = scheduler_add(CONNECTION_TIMEOUT,
-			[wconn](void){ timeout_handler(wconn); });
-		if(conn->timeout == SCHREF_INVALID)
-			return;
+		conn->timeout.expires_from_now(
+			std::chrono::milliseconds(CONNECTION_TIMEOUT));
+		conn->timeout.async_wait(
+			[wconn](const asio::error_code &ec)
+				{ timeout_handler(wconn, ec); });
 
-		auto callback = [conn](Socket *sock, int error, int transfered)
-			{ on_read_length(sock, error, transfered, conn); };
-		if(!socket_async_read(conn->socket, (char*)conn->input.buffer, 2, std::move(callback))){
-			scheduler_remove(conn->timeout);
-			return;
-		}
+		// start read chain
+		asio::async_read(*conn->socket, asio::buffer(conn->input.buffer, 2),
+			[conn](const asio::error_code &ec, std::size_t transfered)
+				{ on_read_length(conn, ec, transfered); });
 	}
 
 	// insert connection into list
@@ -192,7 +195,7 @@ static void connmgr_internal_close(const std::shared_ptr<Connection> &conn){
 
 		// shutdown connection
 		conn->flags |= CONNECTION_SHUTDOWN;
-		socket_shutdown(conn->socket, SOCKET_SHUT_RD);
+		conn->socket->shutdown(asio::ip::tcp::socket::shutdown_receive);
 		if(conn->protocol)
 			conn->protocol->on_close();
 	}
@@ -210,9 +213,9 @@ void connmgr_send(const std::shared_ptr<Connection> &conn, Message *msg){
 
 	conn->output_queue.push(msg);
 	if(conn->output_queue.size() == 1){
-		auto callback = [conn](Socket *sock, int error, int transfered)
-			{ on_write(sock, error, transfered, conn); };
-		if(!socket_async_write(conn->socket, (char*)msg->buffer, msg->length, callback))
-			connmgr_internal_close(conn);
+		// start write chain
+		asio::async_write(*conn->socket, asio::buffer(msg->buffer, msg->length),
+			[conn](const asio::error_code &ec, std::size_t transfered)
+				{ on_write(conn, ec, transfered); });
 	}
 }

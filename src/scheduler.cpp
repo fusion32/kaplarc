@@ -96,11 +96,10 @@ static void scheduler(void){
 	}
 }
 
-bool scheduler_init(void){
+void scheduler_init(void){
 	// spawn scheduler thread
 	running = true;
 	thr = std::thread(scheduler);
-	return true;
 }
 
 void scheduler_shutdown(void){

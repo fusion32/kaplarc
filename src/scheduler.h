@@ -29,7 +29,7 @@ struct SchRef{
 	}
 };
 
-bool	scheduler_init(void);
+void	scheduler_init(void);
 void	scheduler_shutdown(void);
 SchRef	scheduler_add(int64 delay, const Task &task);
 SchRef	scheduler_add(int64 delay, Task &&task);

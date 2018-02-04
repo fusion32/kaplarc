@@ -5,9 +5,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Source Files\net">
-      <UniqueIdentifier>{17be985e-6359-4e2f-817e-7d9743bb7dd4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\server">
       <UniqueIdentifier>{44f0fa6b-c11c-42c0-943a-0e0d21658b22}</UniqueIdentifier>
     </Filter>
@@ -42,12 +39,6 @@
     </ClCompile>
     <ClCompile Include="..\src\server\server.cpp">
       <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\iocp_net.cpp">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\iocp_socket.cpp">
-      <Filter>Source Files\net</Filter>
     </ClCompile>
     <ClCompile Include="..\src\dispatcher.cpp">
       <Filter>Source Files</Filter>
@@ -99,14 +90,11 @@
     <ClInclude Include="..\src\server\server.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\net\iocp_private.h">
-      <Filter>Source Files\net</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\net\net.h">
-      <Filter>Source Files\net</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\dispatcher.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server\asio.h">
+      <Filter>Source Files\server</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
