@@ -17,7 +17,7 @@
 	- win32: iocp has user events and io (need to check for timers)
 - could use the scheduler for the timers and simply dispatch as an event to the OS io service
 - also the ASIO library doesn't seem to free the lambda resources (std::shared_ptr in this case)
-	which made me think again about replacing it at the next commit but also make lambdas with
-	internal an empty state after a call:	[shared](...){ callback(std::move(shared), ...); }
-						[shared](...){ callback(shared, ...); shared.reset(); }
+	which made me think again about replacing it at the next commit but also leave lambdas
+	empty after a call:	[shared](...){ callback(std::move(shared), ...); }
+				[shared](...){ callback(shared, ...); shared.reset(); }
 	(shared == nullptr) would evaluate true after the first call

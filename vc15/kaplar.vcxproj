@@ -23,6 +23,9 @@
     <ClCompile Include="..\src\env.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\net\impl\iocp_io_context.cpp" />
+    <ClCompile Include="..\src\net\impl\iocp_socket.cpp" />
+    <ClCompile Include="..\src\net\impl\iocp_timer.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
     <ClCompile Include="..\src\server\connection.cpp" />
     <ClCompile Include="..\src\server\message.cpp" />
@@ -34,11 +37,23 @@
   <ItemGroup>
     <ClInclude Include="..\src\avltree.h" />
     <ClInclude Include="..\src\common.h" />
+    <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\cstring.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\env.h" />
     <ClInclude Include="..\src\log.h" />
     <ClInclude Include="..\src\memblock.h" />
+    <ClInclude Include="..\src\net\buffer.h" />
+    <ClInclude Include="..\src\net\config.h" />
+    <ClInclude Include="..\src\net\impl\iocp_operation.h" />
+    <ClInclude Include="..\src\net\impl\iocp_io_context.h" />
+    <ClInclude Include="..\src\net\impl\iocp_socket.h" />
+    <ClInclude Include="..\src\net\impl\iocp_timer.h" />
+    <ClInclude Include="..\src\net\impl\winsock.h" />
+    <ClInclude Include="..\src\net\io_context.h" />
+    <ClInclude Include="..\src\net\net.h" />
+    <ClInclude Include="..\src\net\socket.h" />
+    <ClInclude Include="..\src\net\timer.h" />
     <ClInclude Include="..\src\ringbuffer.h" />
     <ClInclude Include="..\src\scheduler.h" />
     <ClInclude Include="..\src\server\asio.h" />
@@ -49,6 +64,7 @@
     <ClInclude Include="..\src\server\server.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\dispatcher.h" />
+    <ClInclude Include="..\src\throw.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

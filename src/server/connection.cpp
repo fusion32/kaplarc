@@ -30,21 +30,22 @@ Connection::~Connection(void){
 	Connection Callbacks
 
 *************************************/
-static void timeout_handler(const std::weak_ptr<Connection> &wconn,
+static void timeout_handler(std::weak_ptr<Connection> wconn,
 	const asio::error_code &ec);
-static void on_read_length(const std::shared_ptr<Connection> &conn,
+static void on_read_length(std::shared_ptr<Connection> conn,
 	const asio::error_code &ec, std::size_t transfered);
-static void on_read_body(const std::shared_ptr<Connection> &conn,
+static void on_read_body(std::shared_ptr<Connection> conn,
 	const asio::error_code &ec, std::size_t transfered);
-static void on_write(const std::shared_ptr<Connection> &conn,
+static void on_write(std::shared_ptr<Connection> conn,
 	const asio::error_code &ec, std::size_t transfered);
 
 // special helper function to avoid deadlocking
 static void connmgr_internal_close(const std::shared_ptr<Connection> &conn);
 
-static void timeout_handler(const std::weak_ptr<Connection> &wconn,
+static void timeout_handler(std::weak_ptr<Connection> wconn,
 		const asio::error_code &ec){
 
+	LOG("use count = %d", wconn.use_count());
 	auto conn = wconn.lock();
 	if(conn){
 		std::lock_guard<std::mutex> lock(conn->mtx);
@@ -57,12 +58,12 @@ static void timeout_handler(const std::weak_ptr<Connection> &wconn,
 				std::chrono::milliseconds(CONNECTION_TIMEOUT));
 			conn->timeout.async_wait(
 				[wconn](const asio::error_code &ec)
-					{ timeout_handler(wconn, ec); });
+					{ timeout_handler(std::move(wconn), ec); });
 		}
 	}
 }
 
-static void on_read_length(const std::shared_ptr<Connection> &conn,
+static void on_read_length(std::shared_ptr<Connection> conn,
 		const asio::error_code &ec, std::size_t transfered){
 
 	Message *msg = &conn->input;
@@ -76,14 +77,14 @@ static void on_read_length(const std::shared_ptr<Connection> &conn,
 		// chain body read
 		asio::async_read(*conn->socket, asio::buffer(msg->buffer, msg->length),
 			[conn](const asio::error_code &ec, std::size_t transfered)
-				{ on_read_body(conn, ec, transfered); });
+				{ on_read_body(std::move(conn), ec, transfered); });
 		return;
 	}
 
 	connmgr_internal_close(conn);
 }
 
-static void on_read_body(const std::shared_ptr<Connection> &conn,
+static void on_read_body(std::shared_ptr<Connection> conn,
 		const asio::error_code &ec, std::size_t transfered){
 
 	Message *msg = &conn->input;
@@ -111,7 +112,7 @@ static void on_read_body(const std::shared_ptr<Connection> &conn,
 			conn->rdwr_count++;
 			asio::async_read(*conn->socket, asio::buffer(msg->buffer, 2),
 				[conn](const asio::error_code &ec, std::size_t transfered)
-					{ on_read_length(conn, ec, transfered); });
+					{ on_read_length(std::move(conn), ec, transfered); });
 			return;
 		}
 	}
@@ -119,7 +120,7 @@ static void on_read_body(const std::shared_ptr<Connection> &conn,
 	connmgr_internal_close(conn);
 }
 
-static void on_write(const std::shared_ptr<Connection> &conn,
+static void on_write(std::shared_ptr<Connection> conn,
 		const asio::error_code &ec, std::size_t transfered){
 
 	std::lock_guard<std::mutex> lock(conn->mtx);
@@ -131,7 +132,7 @@ static void on_write(const std::shared_ptr<Connection> &conn,
 			Message *next = conn->output_queue.front();
 			asio::async_write(*conn->socket, asio::buffer(next->buffer, next->length),
 				[conn](const asio::error_code &ec, std::size_t transfered)
-					{ on_write(conn, ec, transfered); });
+					{ on_write(std::move(conn), ec, transfered); });
 		}
 	}else{
 		connmgr_internal_close(conn);
@@ -164,12 +165,12 @@ void connmgr_accept(asio::ip::tcp::socket *socket, Service *service){
 			std::chrono::milliseconds(CONNECTION_TIMEOUT));
 		conn->timeout.async_wait(
 			[wconn](const asio::error_code &ec)
-				{ timeout_handler(wconn, ec); });
+				{ timeout_handler(std::move(wconn), ec); });
 
 		// start read chain
 		asio::async_read(*conn->socket, asio::buffer(conn->input.buffer, 2),
 			[conn](const asio::error_code &ec, std::size_t transfered)
-				{ on_read_length(conn, ec, transfered); });
+				{ on_read_length(std::move(conn), ec, transfered); });
 	}
 
 	// insert connection into list
@@ -216,6 +217,6 @@ void connmgr_send(const std::shared_ptr<Connection> &conn, Message *msg){
 		// start write chain
 		asio::async_write(*conn->socket, asio::buffer(msg->buffer, msg->length),
 			[conn](const asio::error_code &ec, std::size_t transfered)
-				{ on_write(conn, ec, transfered); });
+				{ on_write(std::move(conn), ec, transfered); });
 	}
 }

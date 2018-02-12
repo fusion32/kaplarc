@@ -8,6 +8,12 @@
     <Filter Include="Source Files\server">
       <UniqueIdentifier>{44f0fa6b-c11c-42c0-943a-0e0d21658b22}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\net">
+      <UniqueIdentifier>{abc00c5b-3653-4709-863d-8cd4fb2c80b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\net\impl">
+      <UniqueIdentifier>{334fd314-70c1-4bfd-883b-d9b8c319b91e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\adler32.cpp">
@@ -42,6 +48,15 @@
     </ClCompile>
     <ClCompile Include="..\src\dispatcher.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\impl\iocp_io_context.cpp">
+      <Filter>Source Files\net\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\impl\iocp_socket.cpp">
+      <Filter>Source Files\net\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\impl\iocp_timer.cpp">
+      <Filter>Source Files\net\impl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -95,6 +110,45 @@
     </ClInclude>
     <ClInclude Include="..\src\server\asio.h">
       <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\net.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\config.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\buffer.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\io_context.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\socket.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\impl\iocp_io_context.h">
+      <Filter>Source Files\net\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\impl\iocp_socket.h">
+      <Filter>Source Files\net\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\timer.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\impl\iocp_timer.h">
+      <Filter>Source Files\net\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\config.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\throw.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\impl\winsock.h">
+      <Filter>Source Files\net\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\impl\iocp_operation.h">
+      <Filter>Source Files\net\impl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

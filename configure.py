@@ -19,16 +19,16 @@ Options: (options in the same section are mutually exclusive)
 
     [build type]:
         -release (default)  -
-	-debug              -
+        -debug              -
 
     [platform]:
         -win32 (default)    -
         -linux              -
-        -freebsd            -
+        -bsd                -
 
     [byte order]: (defaults to platform's)
-        -le                 compile for little endian arch
-	-be                 compile for big endian arch
+        -le                 - compile for little endian arch
+        -be                 - compile for big endian arch
 '''
 
 MakefileHeader = r'''
@@ -68,7 +68,7 @@ COMMON = [
 
 WIN32 = []
 LINUX = []
-FREEBSD = []
+BSD = []
 
 if __name__ == "__main__":
 	# parse parameters
@@ -124,8 +124,8 @@ if __name__ == "__main__":
 		elif opt == "-linux":
 			platform = "LINUX"
 
-		elif opt == "-freebsd":
-			platform = "FREEBSD"
+		elif opt == "-bsd":
+			platform = "BSD"
 
 		#endianess
 		elif opt == "-le":
@@ -162,8 +162,8 @@ if __name__ == "__main__":
 		OBJECTS.extend(WIN32)
 	elif platform == "LINUX":
 		OBJECTS.extend(LINUX)
-	elif platform == "FREEBSD":
-		OBJECTS.extend(FREEBSD)
+	elif platform == "BSD":
+		OBJECTS.extend(BSD)
 		CDEFS += " -D__BSD_VISIBLE=1"
 	else:
 		print("[error] invalid platform")
