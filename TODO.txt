@@ -16,8 +16,12 @@
 	- bsd: kqueue has user events, timers and io
 	- win32: iocp has user events and io (need to check for timers)
 - could use the scheduler for the timers and simply dispatch as an event to the OS io service
-- also the ASIO library doesn't seem to free the lambda resources (std::shared_ptr in this case)
-	which made me think again about replacing it at the next commit but also leave lambdas
-	empty after a call:	[shared](...){ callback(std::move(shared), ...); }
-				[shared](...){ callback(shared, ...); shared.reset(); }
+- always leave lambdas empty after a call:
+			[shared](...){ callback(std::move(shared), ...); }
+		or	[shared](...){ callback(shared, ...); shared.reset(); }
 	(shared == nullptr) would evaluate true after the first call
+- connections have one read and one write operation at a time so having a way to reuse the memory
+	for the operations would improve the performance:
+		async_accept(socket, newsocket, callback, opdata);
+		async_read(socket, buffer, callback, opdata);
+		async_write(socket, buffer, callback, opdata);
