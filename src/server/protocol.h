@@ -31,9 +31,7 @@ public:
 	static constexpr bool	single = false;
 
 	// protocol interface
-	virtual		~Protocol(void){}
-	virtual void	message_begin(Message *msg) = 0;
-	virtual void	message_end(Message *msg) = 0;
+	virtual		~Protocol(void) {};
 	virtual void	on_connect(void) = 0;
 	virtual void	on_close(void) = 0;
 	virtual void	on_recv_message(Message *msg) = 0;
@@ -48,6 +46,7 @@ public:
 *************************************/
 class IProtocolFactory{
 public:
+	virtual ~IProtocolFactory(void) {};
 	virtual const char *name(void) = 0;
 	virtual const uint32 identifier(void) = 0;
 	virtual const bool single(void) = 0;

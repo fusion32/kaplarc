@@ -56,14 +56,32 @@ MakefileObject = r'''
 '''
 
 DEPS = [
-	"avltree.h", "common.h", "cstring.h", "def.h",
-	"log.h", "memblock.h", "ringbuffer.h", "scheduler.h",
-	"system.h", "work.h", "workgroup.h",
+	"avltree.h", "cstring.h", "def.h", "dispatcher.h",
+	"env.h", "log.h", "memblock.h", "ringbuffer.h",
+	"scheduler.h", "system.h", "throw.h",
+
+	#server core
+	"server/asio.h",
+	"server/connection.h",
+	"server/message.h",
+	"server/protocol.h",
+	"server/server.h",
+
+	#protocols
+	"server/protocol_test.h",
 ]
 
 COMMON = [
-	"log", "main", "scheduler", "system",
-	"work",
+	"adler32", "dispatcher", "env", "log",
+	"main", "scheduler", "system",
+
+	#server core
+	"server/connection",
+	"server/message",
+	"server/server",
+
+	# protocols
+	"server/protocol_test",
 ]
 
 WIN32 = []
@@ -142,10 +160,12 @@ if __name__ == "__main__":
 
 	# set parameters
 	CC	= ""
-	CFLAGS	= "-std=c++14 -Wall -Wno-pointer-sign"
+	CFLAGS	= "-std=c++14 -Wall"
+	CFLAGS += " -Wno-pointer-sign"
+	CFLAGS += " -Wno-writable-strings"
 	CDEFS	= "-D_XOPEN_SOURCE=700"
 	LDFLAGS	= ""
-	LDLIBS	= "-lc++ -lpthread"
+	LDLIBS	= "-lstdc++ -lpthread"
 	OBJECTS	= COMMON[:]
 
 	#check compiler

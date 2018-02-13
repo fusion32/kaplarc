@@ -62,7 +62,7 @@ void log_add1(const char *tag, const char *fmt, va_list ap){
 	}
 
 	// output to console
-	printf(log_entry);
+	printf("%s", log_entry.cstr());
 
 	// if saving, output to log file
 	if(file != nullptr && fwrite(log_entry, 1, log_entry.size(), file) != 1)

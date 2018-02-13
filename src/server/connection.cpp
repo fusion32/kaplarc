@@ -196,7 +196,14 @@ static void connmgr_internal_close(const std::shared_ptr<Connection> &conn){
 
 		// shutdown connection
 		conn->flags |= CONNECTION_SHUTDOWN;
-		conn->socket->shutdown(asio::ip::tcp::socket::shutdown_receive);
+		if(conn->socket->is_open()){
+			std::error_code ec;
+			conn->socket->shutdown(asio::ip::tcp::socket::shutdown_receive, ec);
+			//#ifdef _DEBUG
+			if(ec) LOG_DEBUG("socket->shutdown: %s", ec.message().c_str());
+			//#endif
+		}
+
 		if(conn->protocol)
 			conn->protocol->on_close();
 	}

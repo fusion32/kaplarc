@@ -14,6 +14,7 @@ struct SchRef{
 	  : id(id_), time(time_) {}
 	SchRef &operator=(const int &rhs){
 		id = rhs;
+		return *this;
 	}
 	bool operator==(const int64 &rhs) const{
 		return id == rhs;

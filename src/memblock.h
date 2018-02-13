@@ -20,7 +20,7 @@ public:
 	MemBlock &operator=(const MemBlock&)	= delete;
 	MemBlock &operator=(MemBlock&&)		= delete;
 
-	MemBlock(void) : freelist(nullptr), offset(0) {}
+	MemBlock(void) : offset(0), freelist(nullptr) {}
 	~MemBlock(void){}
 
 	void reset(void){
