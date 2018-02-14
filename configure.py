@@ -32,27 +32,27 @@ Options: (options in the same section are mutually exclusive)
 '''
 
 MakefileHeader = r'''
-CC	= %s
-CFLAGS	= %s
-LDFLAGS	= %s
-LDLIBS	= %s
+CXX		= %s
+CXXFLAGS	= %s
+LFLAGS		= %s
+LIBS		= %s
 
-DEPS	=		\
+DEPS		=	\
 	%s
 
 kaplar:			\
 	%s
-	$(CC) -o %s $^ $(LDLIBS) $(LDFLAGS)
+	$(CXX) -o %s $^ $(LIBS) $(LFLAGS)
 
 .PHONY: clean
 clean:
-	@ rm -fR %s
+	@rm -fR %s
 '''
 
 MakefileObject = r'''
 %s: %s $(DEPS)
 	@mkdir -p $(@D)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
 '''
 
 DEPS = [
@@ -159,20 +159,20 @@ if __name__ == "__main__":
 			sys.exit()
 
 	# set parameters
-	CC	= ""
-	CFLAGS	= "-std=c++14 -Wall"
-	CFLAGS += " -Wno-pointer-sign"
-	CFLAGS += " -Wno-writable-strings"
-	CDEFS	= "-D_XOPEN_SOURCE=700"
-	LDFLAGS	= ""
-	LDLIBS	= "-lstdc++ -lpthread"
-	OBJECTS	= COMMON[:]
+	CXX		= ""
+	CXXFLAGS	= ["-std=c++14", "-Wall",
+				"-Wno-pointer-sign",
+				"-Wno-writable-strings"]
+	LFLAGS		= [] 
+	DEFINES		= ["-D_XOPEN_SOURCE=700"]
+	LIBS		= ["-lstdc++", "-lpthread"]
+	OBJECTS		= COMMON[:]
 
 	#check compiler
 	if compiler == "GCC":
-		CC = "g++"
+		CXX = "g++"
 	elif compiler == "CLANG":
-		CC = "clang++"
+		CXX = "clang++"
 	else:
 		print("[error] invalid compiler")
 		sys.exit()
@@ -184,17 +184,18 @@ if __name__ == "__main__":
 		OBJECTS.extend(LINUX)
 	elif platform == "BSD":
 		OBJECTS.extend(BSD)
-		CDEFS += " -D__BSD_VISIBLE=1"
+		DEFINES.append("-D__BSD_VISIBLE=1")
 	else:
 		print("[error] invalid platform")
 		sys.exit()
 
 	#check build
 	if build == "RELEASE":
-		LDFLAGS = "-s -O2"
+		LFLAGS.append("-s")
+		LFLAGS.append("-O3")
 	elif build == "DEBUG":
-		CFLAGS = "-g " + CFLAGS
-		LDFLAGS = "-g"
+		CXXFLAGS.append("-g")
+		LFLAGS.append("-g")
 	else:
 		print("[error] invalid build type")
 		sys.exit()
@@ -203,13 +204,13 @@ if __name__ == "__main__":
 	if byteorder == "LITTLE":
 		pass
 	elif byteorder == "BIG":
-		CDEFS += " -D__BIG_ENDIAN__"
+		DEFINES.append("-D__BIG_ENDIAN__")
 	else:
 		print("[error] invalid byteorder")
 		sys.exit()
 
-	#concat CFLAGS and CDEFS
-	CFLAGS += " " + CDEFS
+	#concat CXXFLAGS and DEFINES
+	CXXFLAGS.extend(DEFINES)
 
 	#add path to dependencies
 	DEPS	= [srcdir + dep for dep in DEPS]
@@ -228,7 +229,10 @@ if __name__ == "__main__":
 
 	# output to file
 	with open("Makefile", "w") as file:
-		file.write(MakefileHeader % (CC, CFLAGS, LDFLAGS, LDLIBS,
+		file.write(MakefileHeader % (CXX,
+			' '.join(CXXFLAGS),
+			' '.join(LFLAGS),
+			' '.join(LIBS),
 			'\t\\\n\t'.join(DEPS),
 			'\t\\\n\t'.join(list(zip(*OBJECTS))[0]),
 			builddir + output, builddir))
