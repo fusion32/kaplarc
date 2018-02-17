@@ -2,7 +2,6 @@
 #define SERVER_H_
 
 #include "../def.h"
-#include "../log.h"
 #include "asio.h"
 #include "connection.h"
 #include "protocol.h"

@@ -1,9 +1,9 @@
+#include "log.h"
+#include "sstring.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
-
-#include "cstring.h"
-#include "log.h"
 
 #define MAX_FILE_NAME_SIZE 64
 static char	filename[MAX_FILE_NAME_SIZE];
@@ -44,7 +44,7 @@ void log_add1(const char *tag, const char *fmt, va_list ap){
 	time_t curtime;
 	struct tm *timeptr;
 	char timestr[64];
-	CString<256> log_entry;
+	SString<256> log_entry;
 
 	// time str
 	curtime = time(nullptr);
@@ -53,8 +53,8 @@ void log_add1(const char *tag, const char *fmt, va_list ap){
 	strftime(timestr, 64, "%b %d %Y %H:%M:%S", timeptr);
 
 	// concatenate log entry
-	log_entry.format("[%s] %8s | ", timestr, tag);
-	log_entry.vformat_append(fmt, ap);
+	log_entry.copyf("[%s] %8s | ", timestr, tag);
+	log_entry.vappendf(fmt, ap);
 	log_entry.append("\n");
 	if(log_entry.size() <= 0){
 		printf("<ERROR> Failed to concatenate log entry (tag = %s)!\n", tag);
@@ -62,7 +62,7 @@ void log_add1(const char *tag, const char *fmt, va_list ap){
 	}
 
 	// output to console
-	printf("%s", log_entry.cstr());
+	printf("%s", log_entry.c_str());
 
 	// if saving, output to log file
 	if(file != nullptr && fwrite(log_entry, 1, log_entry.size(), file) != 1)

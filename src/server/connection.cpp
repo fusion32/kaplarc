@@ -1,6 +1,8 @@
 #include "connection.h"
 #include "protocol.h"
 #include "server.h"
+#include "../debug.h"
+#include "../log.h"
 
 /*************************************
 
@@ -199,9 +201,7 @@ static void connmgr_internal_close(const std::shared_ptr<Connection> &conn){
 		if(conn->socket != nullptr && conn->socket->is_open()){
 			std::error_code ec;
 			conn->socket->shutdown(asio::ip::tcp::socket::shutdown_receive, ec);
-			//#ifdef _DEBUG
-			if(ec) LOG_DEBUG("socket->shutdown: %s", ec.message().c_str());
-			//#endif
+			DEBUG_CHECK(!ec, "socket shutdown: %s", ec.message().c_str());
 		}
 
 		if(conn->protocol)
