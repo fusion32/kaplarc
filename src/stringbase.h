@@ -9,9 +9,6 @@ protected:
 	int length;
 	char *buffer;
 
-	// delete move
-	StringBase(StringBase&&) = delete;
-	StringBase &operator=(StringBase&&) = delete;
 public:
 	// constructors
 	StringBase(void) : capacity(0), length(0), buffer(nullptr) {}

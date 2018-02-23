@@ -8,11 +8,13 @@
 
 #include <stdlib.h>
 
+static
 void init_interface(const char *name, void(*init)(void), void(*shutdown)(void)){
 	LOG("initializing `%s` interface", name);
 	init(); atexit(shutdown);
 }
 
+static
 void init_interface(const char *name, bool(*init)(void), void(*shutdown)(void)){
 	LOG("initializing `%s` interface", name);
 	if(!init()){
