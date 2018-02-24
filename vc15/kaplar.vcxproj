@@ -42,7 +42,9 @@
     <ClInclude Include="..\src\common.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\crypto\rsa.h" />
+    <ClInclude Include="..\src\crypto\xtea.h" />
     <ClInclude Include="..\src\debug.h" />
+    <ClInclude Include="..\src\endian.h" />
     <ClInclude Include="..\src\game\protocol_game.h" />
     <ClInclude Include="..\src\game\protocol_info.h" />
     <ClInclude Include="..\src\game\protocol_legacy.h" />

@@ -1,41 +1,8 @@
+#include "../endian.h"
 #include "message.h"
 #include <string.h>
 #include <vector>
 #include <mutex>
-
-#ifdef __BIG_ENDIAN__
-// the compiler should optimize these away
-static inline uint16 swap_u16(uint16 x){
-	return x;
-}
-static inline uint32 swap_u32(uint32 x){
-	return x;
-}
-static inline uint64 swap_u64(uint64 x){
-	return x;
-}
-#else
-static inline uint16 swap_u16(uint16 x){
-	return (x & 0xFF00) >> 8
-		| (x & 0x00FF) << 8;
-}
-static inline uint32 swap_u32(uint32 x){
-	return (x & 0xFF000000) >> 24
-		| (x & 0x00FF0000) >> 8
-		| (x & 0x0000FF00) << 8
-		| (x & 0x000000FF) << 24;
-}
-static inline uint64 swap_u64(uint64 x){
-	return (x & 0xFF00000000000000) >> 56
-		| (x & 0x00FF000000000000) >> 40
-		| (x & 0x0000FF0000000000) >> 24
-		| (x & 0x000000FF00000000) >> 8
-		| (x & 0x00000000FF000000) << 8
-		| (x & 0x0000000000FF0000) << 24
-		| (x & 0x000000000000FF00) << 40
-		| (x & 0x00000000000000FF) << 56;
-}
-#endif
 
 /*************************************
 
@@ -53,7 +20,7 @@ Message::~Message(void){
 
 uint32 Message::peek_u32(void){
 	uint32 val = *(uint32*)(buffer + readpos);
-	return swap_u32(val);
+	return u32_from_be(val);
 }
 
 uint8 Message::get_byte(void){
@@ -65,13 +32,13 @@ uint8 Message::get_byte(void){
 uint16 Message::get_u16(void){
 	uint16 val = *(uint16*)(buffer + readpos);
 	readpos += 2;
-	return swap_u16(val);
+	return u16_from_be(val);
 }
 
 uint32 Message::get_u32(void){
 	uint32 val = *(uint32*)(buffer + readpos);
 	readpos += 4;
-	return swap_u32(val);
+	return u32_from_be(val);
 }
 
 void Message::get_str(char *buf, uint16 buflen){
@@ -96,13 +63,13 @@ void Message::add_byte(uint8 val){
 }
 
 void Message::add_u16(uint16 val){
-	*(uint16*)(buffer + readpos) = swap_u16(val);
+	*(uint16*)(buffer + readpos) = u16_to_be(val);
 	readpos += 2;
 	length += 2;
 }
 
 void Message::add_u32(uint32 val){
-	*(uint32*)(buffer + readpos) = swap_u32(val);
+	*(uint32*)(buffer + readpos) = u32_to_be(val);
 	readpos += 4;
 	length += 4;
 }
@@ -125,14 +92,14 @@ void Message::radd_byte(uint8 val){
 void Message::radd_u16(uint16 val){
 	if((readpos - 2) < 0) return;
 	readpos -= 2;
-	*(uint16*)(buffer + readpos) = swap_u16(val);
+	*(uint16*)(buffer + readpos) = u16_to_be(val);
 	length += 2;
 }
 
 void Message::radd_u32(uint32 val){
 	if((readpos - 4) < 0) return;
 	readpos -= 4;
-	*(uint32*)(buffer + readpos) = swap_u32(val);
+	*(uint32*)(buffer + readpos) = u32_to_be(val);
 	length += 4;
 }
 
@@ -140,7 +107,7 @@ void Message::radd_str(const char *buf, uint16 buflen){
 	if(buflen == 0) return;
 	if((readpos - (2 + buflen)) < 0) return;
 	readpos -= (2 + buflen);
-	*(uint16*)(buffer + readpos) = swap_u16(buflen);
+	*(uint16*)(buffer + readpos) = u16_to_be(buflen);
 	memcpy((buffer + readpos + 2), buf, buflen);
 	length += (2 + buflen);
 }

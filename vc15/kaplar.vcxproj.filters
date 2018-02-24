@@ -150,5 +150,11 @@
     <ClInclude Include="..\src\scope_guard.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\crypto\xtea.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\endian.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
