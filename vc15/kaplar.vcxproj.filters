@@ -52,19 +52,16 @@
     <ClCompile Include="..\src\stringbase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\crypto\md5.cpp">
-      <Filter>Source Files\crypto</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\crypto\sha1.cpp">
-      <Filter>Source Files\crypto</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\crypto\sha256.cpp">
-      <Filter>Source Files\crypto</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\crypto\xtea.cpp">
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
     <ClCompile Include="..\src\crypto\rsa.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crypto\bcrypt.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crypto\blowfish.cpp">
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
   </ItemGroup>
@@ -155,6 +152,12 @@
     </ClInclude>
     <ClInclude Include="..\src\endian.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\crypto\bcrypt.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\crypto\blowfish.h">
+      <Filter>Source Files\crypto</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

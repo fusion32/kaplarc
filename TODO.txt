@@ -27,3 +27,4 @@
 		async_write(socket, buffer, callback, opdata);
 - configure .clang-format to actually start using it (even if it doesn't correctly support pointer
 	alignment to the right yet)
+- account passwords should be stored using bcrypt or some sort of hash with salt function

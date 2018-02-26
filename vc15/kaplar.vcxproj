@@ -20,10 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\adler32.cpp" />
-    <ClCompile Include="..\src\crypto\md5.cpp" />
+    <ClCompile Include="..\src\crypto\bcrypt.cpp" />
+    <ClCompile Include="..\src\crypto\blowfish.cpp" />
     <ClCompile Include="..\src\crypto\rsa.cpp" />
-    <ClCompile Include="..\src\crypto\sha1.cpp" />
-    <ClCompile Include="..\src\crypto\sha256.cpp" />
     <ClCompile Include="..\src\crypto\xtea.cpp" />
     <ClCompile Include="..\src\env.cpp" />
     <ClCompile Include="..\src\log.cpp" />
@@ -41,6 +40,8 @@
     <ClInclude Include="..\src\avltree.h" />
     <ClInclude Include="..\src\common.h" />
     <ClInclude Include="..\src\config.h" />
+    <ClInclude Include="..\src\crypto\bcrypt.h" />
+    <ClInclude Include="..\src\crypto\blowfish.h" />
     <ClInclude Include="..\src\crypto\rsa.h" />
     <ClInclude Include="..\src\crypto\xtea.h" />
     <ClInclude Include="..\src\debug.h" />
@@ -148,6 +149,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <AdditionalDependencies>mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
