@@ -1,17 +1,43 @@
 #include "../../src/log.h"
 #include "../../src/crypto/blowfish.h"
-#define round_to_2(x) (((x) + 1) & ~1)
+
+static const char key[] = "KEYTEST";
+static const char iv[] = "12345678"; // this must be at least 8 bytes long
+static const char plain_msg[] = "MESSAGE THAT IS MORE THAN 8 BYTES LONG";
+static const char salt[] = "abcdefghijklmno";
+
+static bool test_ecb_blowfish(blowfish_ctx *b){
+	char msg[64]; strcpy(msg, plain_msg);
+	uint32 len = array_size(plain_msg); // this includes the null terminator
+	blowfish_ecb_encode(b, (uint8*)msg, len);
+	blowfish_ecb_decode(b, (uint8*)msg, len);
+	return strcmp(msg, plain_msg) == 0;
+}
+
+static bool test_cbc_blowfish(blowfish_ctx *b){
+	char msg[64]; strcpy(msg, plain_msg);
+	uint32 len = array_size(plain_msg); // this includes the null terminator
+	blowfish_cbc_encode(b, (uint8*)iv, (uint8*)msg, len);
+	blowfish_cbc_decode(b, (uint8*)iv, (uint8*)msg, len);
+	return strcmp(msg, plain_msg) == 0;
+}
+
 int main(int argc, char **argv){
 	blowfish_ctx b;
-	const char key[] = "KEYTEST";
-	char msg[255] = "MESSAGE";
-	uint32 len = round_to_2(strlen(msg) / 4);
-	blowfish_setkey(&b, key, strlen(key));
-	LOG("plain text: %s", msg);
-	blowfish_encode_le(&b, (uint32*)msg, len);
-	LOG("encoded: %s", msg);
-	blowfish_decode_le(&b, (uint32*)msg, len);
-	LOG("decoded: %s", msg);
+	blowfish_init(&b);
+	for(int i = 0; i < 256; ++i)
+		blowfish_expandkey(&b, (uint8*)key, array_size(key));
+	for(int i = 0; i < 1024; ++i)
+		blowfish_expandkey1(&b, (uint8*)key, array_size(key),
+			(uint8*)salt, array_size(salt));
+	if(test_ecb_blowfish(&b))
+		LOG("blowfish ecb encryption test OK");
+	else
+		LOG("blowfish ecb encryption test FAILED");
+	if(test_cbc_blowfish(&b))
+		LOG("blowfish cbc encryption test OK");
+	else
+		LOG("blowfish cbc encryption test FAILED");
 	getchar();
 	return 0;
 }
