@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\adler32.cpp" />
+    <ClCompile Include="..\src\crypto\arc4random.cpp" />
+    <ClCompile Include="..\src\crypto\base64.cpp" />
     <ClCompile Include="..\src\crypto\bcrypt.cpp" />
     <ClCompile Include="..\src\crypto\blowfish.cpp" />
     <ClCompile Include="..\src\crypto\rsa.cpp" />
@@ -40,6 +42,8 @@
     <ClInclude Include="..\src\avltree.h" />
     <ClInclude Include="..\src\common.h" />
     <ClInclude Include="..\src\config.h" />
+    <ClInclude Include="..\src\crypto\arc4random.h" />
+    <ClInclude Include="..\src\crypto\base64.h" />
     <ClInclude Include="..\src\crypto\bcrypt.h" />
     <ClInclude Include="..\src\crypto\blowfish.h" />
     <ClInclude Include="..\src\crypto\rsa.h" />
@@ -50,6 +54,7 @@
     <ClInclude Include="..\src\game\protocol_info.h" />
     <ClInclude Include="..\src\game\protocol_legacy.h" />
     <ClInclude Include="..\src\game\protocol_login.h" />
+    <ClInclude Include="..\src\platform.h" />
     <ClInclude Include="..\src\scope_guard.h" />
     <ClInclude Include="..\src\sstring.h" />
     <ClInclude Include="..\src\stringbase.h" />

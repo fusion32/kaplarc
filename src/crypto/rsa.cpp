@@ -1,17 +1,27 @@
 #include "rsa.h"
+#include <gmp.h>
+
+struct rsa_ctx{
+	mpz_t p, q, n, e;
+	mpz_t dp, dq, qi;
+	size_t limit;
+};
 
 //#define mpz_sizeinbytes(x) (mpz_size((x)) * sizeof(mp_limb_t))
 #define mpz_sizeinbytes(x) ((mpz_sizeinbase((x), 2) + 7) >> 3)
 
-void rsa_init(struct rsa_ctx *r){
+struct rsa_ctx *rsa_create(void){
+	struct rsa_ctx *r = (struct rsa_ctx*)malloc(sizeof(struct rsa_ctx));
 	mpz_inits(r->p, r->q, r->n, r->e,
 		r->dp, r->dq, r->qi, NULL);
 	r->limit = 0;
+	return r;
 }
 
-void rsa_clear(struct rsa_ctx *r){
+void rsa_destroy(struct rsa_ctx *r){
 	mpz_clears(r->p, r->q, r->n, r->e,
 		r->dp, r->dq, r->qi, NULL);
+	free(r);
 }
 
 bool rsa_setkey(struct rsa_ctx *r, const char *p, const char *q, const char *e){

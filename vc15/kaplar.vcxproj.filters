@@ -64,6 +64,12 @@
     <ClCompile Include="..\src\crypto\blowfish.cpp">
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\crypto\base64.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crypto\arc4random.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\avltree.h">
@@ -157,6 +163,15 @@
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
     <ClInclude Include="..\src\crypto\blowfish.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\crypto\base64.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\platform.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\crypto\arc4random.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
   </ItemGroup>

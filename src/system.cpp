@@ -1,5 +1,6 @@
 #include <chrono>
 #include <thread>
+#include "platform.h"
 #include "system.h"
 
 int64 sys_tick_count(void){

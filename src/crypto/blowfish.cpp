@@ -288,9 +288,9 @@ static inline uint32 f(struct blowfish_ctx *b, uint32 x) {
 		^ b->S[((x >> 8) & 0xFF) + 512]) + b->S[(x & 0xFF) + 768];
 }
 
-static inline void encode_one(struct blowfish_ctx *b, uint32 *pl, uint32 *pr){
+static inline void encode_one(struct blowfish_ctx *b, uint32 *data){
 	uint32 l, r, i;
-	l = *pl; r = *pr;
+	l = data[0]; r = data[1];
 	for(i = 0; i < 16; i += 2){
 		l ^= b->P[i];
 		r ^= f(b, l);
@@ -300,11 +300,26 @@ static inline void encode_one(struct blowfish_ctx *b, uint32 *pl, uint32 *pr){
 	l ^= b->P[16];
 	r ^= b->P[17];
 	// swap l and r
-	*pl = r; *pr = l;
+	data[0] = r; data[1] = l;
+}
+
+static inline void decode_one(struct blowfish_ctx *b, uint32 *data){
+	uint32 l, r, i;
+	l = data[0]; r = data[1];
+	for(i = 16; i > 0; i -= 2){
+		l ^= b->P[i+1];
+		r ^= f(b, l);
+		r ^= b->P[i];
+		l ^= f(b, r);
+	}
+	l ^= b->P[1];
+	r ^= b->P[0];
+	// swap l and r
+	data[0] = r; data[1] = l;
 }
 
 // extract uint32 from a cyclic data stream
-static inline uint32 _stream_get_u32(uint8 *data, uint32 datalen, uint32 *current){
+static inline uint32 _stream_get_u32(uint8 *data, size_t datalen, uint32 *current){
 	uint32 d, i, j;
 	d = 0; j = *current;
 	for(i = 0; i < 4; ++i){
@@ -321,145 +336,113 @@ void blowfish_init(struct blowfish_ctx *b){
 	memcpy(b->S, S, sizeof(S));
 }
 
-void blowfish_setkey(struct blowfish_ctx *b, uint8 *key, uint32 len){
+void blowfish_setkey(struct blowfish_ctx *b, uint8 *key, size_t len){
 	blowfish_init(b);
 	blowfish_expandkey(b, key, len);
 }
 
-void blowfish_expandkey(struct blowfish_ctx *b, uint8 *key, uint32 len){
-	uint32 d0, d1, i, j;
+void blowfish_expandkey(struct blowfish_ctx *b, uint8 *key, size_t len){
+	uint32 d[2], i, j;
 
 	j = 0;
 	for(i = 0; i < 18; ++i)
 		b->P[i] ^= _stream_get_u32(key, len, &j);
 
-	d0 = 0; d1 = 0;
+	d[0] = 0; d[1] = 0;
 	for(i = 0; i < 18; i += 2){
-		encode_one(b, &d0, &d1);
-		b->P[i] = d0;
-		b->P[i+1] = d1;
+		encode_one(b, d);
+		b->P[i] = d[0];
+		b->P[i+1] = d[1];
 	}
 
 	for(i = 0; i < 1024; i += 2){
-		encode_one(b, &d0, &d1);
-		b->S[i] = d0;
-		b->S[i + 1] = d1;
+		encode_one(b, d);
+		b->S[i] = d[0];
+		b->S[i + 1] = d[1];
 	}
 }
 
 void blowfish_expandkey1(struct blowfish_ctx *b,
-			uint8 *key, uint32 keylen,
-			uint8 *data, uint32 datalen){
-	uint32 d0, d1, i, j;
+			uint8 *key, size_t keylen,
+			uint8 *data, size_t datalen){
+	uint32 d[2], i, j;
 
 	j = 0;
 	for(i = 0; i < 18; ++i)
 		b->P[i] ^= _stream_get_u32(key, keylen, &j);
 
-	j = 0; d0 = 0; d1 = 0;
+	j = 0; d[0] = 0; d[1] = 0;
 	for(i = 0; i < 18; i += 2){
-		d0 ^= _stream_get_u32(data, datalen, &j);
-		d1 ^= _stream_get_u32(data, datalen, &j);
-		encode_one(b, &d0, &d1);
-		b->P[i] = d0;
-		b->P[i+1] = d1;
+		d[0] ^= _stream_get_u32(data, datalen, &j);
+		d[1] ^= _stream_get_u32(data, datalen, &j);
+		encode_one(b, d);
+		b->P[i] = d[0];
+		b->P[i+1] = d[1];
 	}
 	for(i = 0; i < 1024; i += 2){
-		d0 ^= _stream_get_u32(data, datalen, &j);
-		d1 ^= _stream_get_u32(data, datalen, &j);
-		encode_one(b, &d0, &d1);
-		b->S[i] = d0;
-		b->S[i + 1] = d1;
+		d[0] ^= _stream_get_u32(data, datalen, &j);
+		d[1] ^= _stream_get_u32(data, datalen, &j);
+		encode_one(b, d);
+		b->S[i] = d[0];
+		b->S[i + 1] = d[1];
 	}
 }
 
-void blowfish_ecb_encode(struct blowfish_ctx *b, uint8 *data, uint32 len){
-	uint32 l, r, i;
+void blowfish_ecb_encode(struct blowfish_ctx *b, uint8 *data, size_t len){
+	uint32 d[2];
 	len = ROUND_TO_8(len);
 	while(len > 0){
-		GET_U32(l, data, 0);
-		GET_U32(r, data, 4);
-		for(i = 0; i < 16; i += 2){
-			l ^= b->P[i];
-			r ^= f(b, l);
-			r ^= b->P[i+1];
-			l ^= f(b, r);
-		}
-		l ^= b->P[16];
-		r ^= b->P[17];
-		// instead of swapping, write them back in reverse order
-		PUT_U32(r, data, 0);
-		PUT_U32(l, data, 4);
+		GET_U32(d[0], data, 0);
+		GET_U32(d[1], data, 4);
+		encode_one(b, d);
+		PUT_U32(d[0], data, 0);
+		PUT_U32(d[1], data, 4);
 		len -= 8; data += 8;
 	}
 }
 
-void blowfish_ecb_decode(struct blowfish_ctx *b, uint8 *data, uint32 len){
-	uint32 l, r, i;
+void blowfish_ecb_decode(struct blowfish_ctx *b, uint8 *data, size_t len){
+	uint32 d[2];
 	len = ROUND_TO_8(len);
 	while(len > 0){
-		GET_U32(l, data, 0);
-		GET_U32(r, data, 4);
-		for(i = 16; i > 0; i -= 2){
-			l ^= b->P[i+1];
-			r ^= f(b, l);
-			r ^= b->P[i];
-			l ^= f(b, r);
-		}
-		l ^= b->P[1];
-		r ^= b->P[0];
-		// instead of swapping, write them back in reverse order
-		PUT_U32(r, data, 0);
-		PUT_U32(l, data, 4);
+		GET_U32(d[0], data, 0);
+		GET_U32(d[1], data, 4);
+		decode_one(b, d);
+		PUT_U32(d[0], data, 0);
+		PUT_U32(d[1], data, 4);
 		len -= 8; data += 8;
 	}
 }
 
-void blowfish_cbc_encode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, uint32 len){
-	uint32 l, r, i;
+void blowfish_cbc_encode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, size_t len){
+	uint32 d[2], i;
 	len = ROUND_TO_8(len);
 	while(len > 0){
 		for(i = 0; i < 8; ++i)
 			data[i] ^= iv[i];
-		GET_U32(l, data, 0);
-		GET_U32(r, data, 4);
-		for(i = 0; i < 16; i += 2){
-			l ^= b->P[i];
-			r ^= f(b, l);
-			r ^= b->P[i+1];
-			l ^= f(b, r);
-		}
-		l ^= b->P[16];
-		r ^= b->P[17];
-		// instead of swapping, write them back in reverse order
-		PUT_U32(r, data, 0);
-		PUT_U32(l, data, 4);
+		GET_U32(d[0], data, 0);
+		GET_U32(d[1], data, 4);
+		encode_one(b, d);
+		PUT_U32(d[0], data, 0);
+		PUT_U32(d[1], data, 4);
 		len -= 8;
 		iv = data; data += 8;
 	}
 }
 
-void blowfish_cbc_decode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, uint32 len){
-	uint32 l, r, i;
+void blowfish_cbc_decode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, size_t len){
+	uint32 d[2], i;
 	uint8 *prev;
 
 	len = ROUND_TO_8(len);
 	data = data + len - 8;
 	prev = data - 8;
 	while(len > 0){
-		GET_U32(l, data, 0);
-		GET_U32(r, data, 4);
-		for(i = 16; i > 0; i -= 2){
-			l ^= b->P[i+1];
-			r ^= f(b, l);
-			r ^= b->P[i];
-			l ^= f(b, r);
-		}
-		l ^= b->P[1];
-		r ^= b->P[0];
-		// instead of swapping, write them back in reverse order
-		PUT_U32(r, data, 0);
-		PUT_U32(l, data, 4);
+		GET_U32(d[0], data, 0);
+		GET_U32(d[1], data, 4);
+		decode_one(b, d);
+		PUT_U32(d[0], data, 0);
+		PUT_U32(d[1], data, 4);
 		if(len > 8){
 			for(i = 0; i < 8; ++i)
 				data[i] ^= prev[i];
