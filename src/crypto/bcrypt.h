@@ -3,7 +3,7 @@
 
 #include "../def.h"
 
-bool bcrypt(const char *pass, int logr, char *hash, size_t hashlen);
-bool bcrypt_check(const char *pass, const char *hash);
+bool bcrypt_newhash(const char *pass, int logr, char *hash, size_t hashlen);
+bool bcrypt_checkpass(const char *pass, const char *hash);
 
 #endif //CRYPTO_BCRYPT_H_

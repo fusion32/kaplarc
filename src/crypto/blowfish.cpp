@@ -454,3 +454,17 @@ void blowfish_cbc_decode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, size_t 
 		prev -= 8; data -= 8;
 	}
 }
+
+void blowfish_ecb_encode_n(struct blowfish_ctx *b, int n, uint8 *data, size_t len){
+	uint32 d[2]; int i;
+	len = ROUND_TO_8(len);
+	while(len > 0){
+		GET_U32(d[0], data, 0);
+		GET_U32(d[1], data, 4);
+		for(i = 0; i < n; i++)
+			encode_one(b, d);
+		PUT_U32(d[0], data, 0);
+		PUT_U32(d[1], data, 4);
+		len -= 8; data += 8;
+	}
+}

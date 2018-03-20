@@ -7,9 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 
-// round to a multiple of 3
-#define ROUND_TO_3(x) (((x) + 2) / 3)
-
 // x -> log_rounds		(2 bytes)
 // y -> salt encoded in base 64	(22 bytes)
 // z -> hash encoded in base 64	(32 bytes)
@@ -62,9 +59,6 @@ static bool generate_hash(const char *key, const char *salt,
 	default:	return false;
 	}
 
-	if(salt[3] != '$')
-		return false;
-
 	// check rounds
 	if(salt[3] != '$' || salt[6] != '$' ||
 	   isdigit(salt[4]) == 0 || isdigit(salt[5]) == 0)
@@ -89,33 +83,33 @@ static bool generate_hash(const char *key, const char *salt,
 
 	// encrypt
 	memcpy(ctext, ptext, BCRYPT_HASH_LEN);
-	for(i = 0; i < 64; i++)
-		blowfish_ecb_encode(&b, ctext, BCRYPT_HASH_LEN);
+	blowfish_ecb_encode_n(&b, 64, ctext, BCRYPT_HASH_LEN);
 
 	// assemble the hash string
 	snprintf(hash, hashlen, "$2%c$%2.2u$", minor, logr);
 	base64_encode(hash + 7, csalt, BCRYPT_SALT_LEN);
 	base64_encode(hash + 7 + 22, ctext, BCRYPT_HASH_LEN);
+	// base64_encode already adds the null terminator
 	return true;
 }
 
-bool bcrypt(const char *pass, int log_rounds, char *hash, size_t hashlen){
-	char salt[BCRYPT_SALT_STRLEN];
-	if(!generate_salt(log_rounds, salt, BCRYPT_SALT_STRLEN))
-		return false;
-	if(!generate_hash(pass, salt, hash, hashlen))
-		return false;
-	return true;
-}
-
-bool hash_cmp(const char *h1, const char *h2, size_t len){
+static bool hash_cmp(const char *h1, const char *h2, size_t len){
 	int res, i;
 	for(res = 0, i = 0; i < len; i++)
 		res += h1[i] ^ h2[i];
 	return res == 0;
 }
 
-bool bcrypt_check(const char *pass, const char *hash){
+bool bcrypt_newhash(const char *pass, int logr, char *hash, size_t hashlen){
+	char salt[BCRYPT_SALT_STRLEN];
+	if(!generate_salt(logr, salt, BCRYPT_SALT_STRLEN))
+		return false;
+	if(!generate_hash(pass, salt, hash, hashlen))
+		return false;
+	return true;
+}
+
+bool bcrypt_checkpass(const char *pass, const char *hash){
 	char test_hash[BCRYPT_HASH_STRLEN];
 	size_t hashlen;
 

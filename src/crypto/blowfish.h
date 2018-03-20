@@ -19,4 +19,7 @@ void blowfish_ecb_decode(struct blowfish_ctx *b, uint8 *data, size_t len);
 void blowfish_cbc_encode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, size_t len);
 void blowfish_cbc_decode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, size_t len);
 
+// this helper function is usefull for implementing bcrypt
+void blowfish_ecb_encode_n(struct blowfish_ctx *b, int n, uint8 *data, size_t len);
+
 #endif //CRYPTO_BLOWFISH_H_
