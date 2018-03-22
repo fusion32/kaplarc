@@ -146,56 +146,40 @@ static void on_write(std::shared_ptr<Connection> conn,
 	Connection Manager
 
 *************************************/
-static std::vector<std::shared_ptr<Connection>> connections;
-static std::mutex mtx;
 
 void connmgr_accept(asio::ip::tcp::socket *socket, Service *service){
 	auto conn = std::make_shared<Connection>(socket, service);
 
 	// initialize connection
-	{	std::lock_guard<std::mutex> lock(conn->mtx);
-		if(service_has_single_protocol(conn->service)){
-			conn->protocol = service_make_protocol(conn->service, conn);
-			conn->protocol->on_connect();
-		}
-
-
-		// run timeout timer
-		auto wconn = std::weak_ptr<Connection>(conn);
-		conn->rdwr_count = 0;
-		conn->timeout.expires_from_now(
-			std::chrono::milliseconds(CONNECTION_TIMEOUT));
-		conn->timeout.async_wait(
-			[wconn](const asio::error_code &ec)
-				{ timeout_handler(std::move(wconn), ec); });
-
-		// start read chain
-		asio::async_read(*conn->socket, asio::buffer(conn->input.buffer, 2),
-			[conn](const asio::error_code &ec, std::size_t transfered)
-				{ on_read_length(std::move(conn), ec, transfered); });
+	std::lock_guard<std::mutex> lock(conn->mtx);
+	if(service_has_single_protocol(conn->service)){
+		conn->protocol = service_make_protocol(conn->service, conn);
+		conn->protocol->on_connect();
 	}
 
-	// insert connection into list
-	{	std::lock_guard<std::mutex> lock(mtx);
-		connections.push_back(conn);
-	}
+
+	// run timeout timer
+	auto wconn = std::weak_ptr<Connection>(conn);
+	conn->rdwr_count = 0;
+	conn->timeout.expires_from_now(
+		std::chrono::milliseconds(CONNECTION_TIMEOUT));
+	conn->timeout.async_wait(
+		[wconn](const asio::error_code &ec)
+			{ timeout_handler(std::move(wconn), ec); });
+
+	// start read chain
+	asio::async_read(*conn->socket, asio::buffer(conn->input.buffer, 2),
+		[conn](const asio::error_code &ec, std::size_t transfered)
+			{ on_read_length(std::move(conn), ec, transfered); });
 }
 
 static void connmgr_internal_close(const std::shared_ptr<Connection> &conn){
 	// the goal here is to shutdown the socket, interrupting the
 	// read chain while keeping it open to send any pending output
-	// messages and also remove the connection manager shared_ptr
-	// reference so when there are no more output messages, the
-	// connection is properly released by it's destructor
+	// messages and when these are done, the connection will be
+	// properly release by it's destructor
 
 	if((conn->flags & CONNECTION_SHUTDOWN) == 0){
-		// remove connection reference from connection list
-		{	std::lock_guard<std::mutex> lock(mtx);
-			auto it = std::find(connections.cbegin(), connections.cend(), conn);
-			if(it != connections.end())
-				connections.erase(it);
-		}
-
 		// shutdown connection
 		conn->flags |= CONNECTION_SHUTDOWN;
 		if(conn->socket != nullptr && conn->socket->is_open()){
@@ -204,8 +188,11 @@ static void connmgr_internal_close(const std::shared_ptr<Connection> &conn){
 			DEBUG_CHECK(!ec, "socket shutdown: %s", ec.message().c_str());
 		}
 
-		if(conn->protocol)
+		// release protocol
+		if(conn->protocol){
 			conn->protocol->on_close();
+			conn->protocol = nullptr;
+		}
 	}
 }
 

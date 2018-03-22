@@ -3,20 +3,14 @@
 
 #include "server.h"
 #include "connection.h"
+#include <atomic>
 
 class ProtocolTest: public Protocol{
-private:
-	std::shared_ptr<Connection> connection;
-
 public:
 	// protocol information
 	static constexpr char	*name = "test";
 	static constexpr uint32	identifier = 0x00;
 	static constexpr bool	single = true;
-
-	// message helpers
-	static void message_begin(Message *msg);
-	static void message_end(Message *msg);
 
 	// protocol interface
 	ProtocolTest(const std::shared_ptr<Connection> &conn);
@@ -26,6 +20,9 @@ public:
 	virtual void on_close(void) override;
 	virtual void on_recv_message(Message *msg) override;
 	virtual void on_recv_first_message(Message *msg) override;
+
+	// protocol specific
+	void send_hello(void);
 };
 
 #endif //PROTOCOL_TEST_H_

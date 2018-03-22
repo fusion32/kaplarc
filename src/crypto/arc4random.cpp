@@ -23,6 +23,12 @@ void arc4random_buf(void *data, size_t len){
 	CryptGenRandom(prov, (DWORD)len, (BYTE*)data);
 }
 
+uint32 arc4random(void){
+	uint32 val;
+	arc4random_buf(&val, 4);
+	return val;
+}
+
 #elif PLATFORM_LINUX
 #include <mutex>
 #include <unistd.h>
@@ -39,10 +45,10 @@ void arc4random_buf(void *data, size_t len, int){
 	read(fd, data, len);
 }
 
-#endif
-
 uint32 arc4random(void){
 	uint32 val;
 	arc4random_buf(&val, 4);
 	return val;
 }
+
+#endif
