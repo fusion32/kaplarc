@@ -3,7 +3,6 @@
 
 #include "server.h"
 #include "connection.h"
-#include <atomic>
 
 class ProtocolTest: public Protocol{
 public:
@@ -21,6 +20,7 @@ public:
 	virtual void on_recv_message(Message *msg) override;
 	virtual void on_recv_first_message(Message *msg) override;
 
+private:
 	// protocol specific
 	void send_hello(void);
 };

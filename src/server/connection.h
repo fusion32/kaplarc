@@ -1,3 +1,8 @@
+// NOTE: the unforunate use of a recursive_mutex here is due to the
+// protocol handlers being called inside the critical section (as doing
+// otherwise, would require an input message pool). This allows the use
+// of connmgr_send or connmgr_close from within these handlers.
+
 #ifndef CONNECTION_H_
 #define CONNECTION_H_
 
@@ -5,6 +10,7 @@
 #include "../scheduler.h"
 #include "asio.h"
 #include "message.h"
+#include "protocol.h"
 
 #include <mutex>
 #include <memory>
@@ -17,26 +23,25 @@
 #define CONNECTION_FIRST_MSG		0x04
 
 // connection settings
-#define CONNECTION_TIMEOUT	10000
+#define CONNECTION_TIMEOUT		10000
 
 class Service;
-class Protocol;
 class Connection{
 // this is a low-level class so making all attributes public will make
 // this interface more readable and easier to implement
 public:
 	// connection control
-	asio::ip::tcp::socket	*socket;
-	Service			*service;
-	Protocol		*protocol;
-	uint32			flags;
-	uint32			rdwr_count;
-	asio::steady_timer	timeout;
-	std::mutex		mtx;
+	asio::ip::tcp::socket		*socket;
+	Service				*service;
+	std::shared_ptr<Protocol>	protocol;
+	uint32				flags;
+	uint32				rdwr_count;
+	asio::steady_timer		timeout;
+	std::recursive_mutex		mtx;
 
 	// connection messages
-	Message			input;
-	std::queue<Message*>	output_queue;
+	Message				input;
+	std::queue<Message*>		output_queue;
 
 	// constructor/destructor
 	Connection(asio::ip::tcp::socket *socket_, Service *service_);

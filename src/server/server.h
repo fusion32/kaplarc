@@ -12,10 +12,10 @@ class Service;
 // Service interface
 int service_port(Service *service);
 bool service_has_single_protocol(Service *service);
-Protocol *service_make_protocol(Service *service,
-		const std::shared_ptr<Connection> &conn);
-Protocol *service_make_protocol(Service *service,
-		const std::shared_ptr<Connection> &conn, uint32 identifier);
+std::shared_ptr<Protocol>
+service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn);
+std::shared_ptr<Protocol>
+service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn, uint32 identifier);
 
 // Server interface
 void server_run(void);

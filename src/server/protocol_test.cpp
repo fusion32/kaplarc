@@ -5,6 +5,11 @@
 #include "../log.h"
 #include "../dispatcher.h"
 
+// Every protocol must implement something similar when making use of the
+// shared_from_this function. It is used to convert from shared_ptr<Protocol>
+// to shared_ptr<ProtocolName>
+#define C(x) std::static_pointer_cast<ProtocolTest>(x)
+
 // message helpers for sending a message over this protocol
 static void message_begin(Message *msg){
 	msg->readpos = 2;
@@ -23,26 +28,23 @@ ProtocolTest::ProtocolTest(const std::shared_ptr<Connection> &conn)
 ProtocolTest::~ProtocolTest(void){
 }
 
-// !!! TODO: figure how to make this more feasible
-// (this is where C pointers would make it simpler)
-#define CAST_TO_SELF(x)		std::static_pointer_cast<ProtocolTest>(x)
-#define CAST_TO_SELF_REF(x)	static_cast<ProtocolTest&>(*(x))
-
 void ProtocolTest::on_connect(void){
 	LOG("on_connect");
-	dispatcher_add([p = self](void)
-		{ CAST_TO_SELF(p)->send_hello(); });
+	send_hello();
 }
 
 void ProtocolTest::on_close(void){
-	release();
+	LOG("on_close");
 }
 
 void ProtocolTest::on_recv_message(Message *msg){
 	char buf[64];
 	msg->get_str(buf, 64);
-	dispatcher_add([p = self](void)
-		{ CAST_TO_SELF(p)->send_hello(); });
+	LOG("on_recv_message: %s", buf);
+	// this dispatch is just to illustrate the use of shared_from_this()
+	dispatcher_add([p = C(shared_from_this())](void){
+			p->send_hello();
+		});
 }
 
 void ProtocolTest::on_recv_first_message(Message *msg){

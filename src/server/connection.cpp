@@ -15,10 +15,15 @@ Connection::Connection(asio::ip::tcp::socket *socket_, Service *service_)
 	protocol(nullptr),
 	flags(0),
 	rdwr_count(0),
-	timeout(socket->get_io_service()) {
+	timeout(socket_->get_io_service()) {
 }
 
 Connection::~Connection(void){
+	if(protocol != nullptr){
+		protocol->on_close();
+		protocol = nullptr;
+	}
+
 	if(socket != nullptr){
 		socket->close();
 		delete socket;
@@ -41,7 +46,6 @@ static void on_read_body(std::shared_ptr<Connection> conn,
 static void on_write(std::shared_ptr<Connection> conn,
 	const asio::error_code &ec, std::size_t transfered);
 
-// special helper function to avoid deadlocking
 static void connmgr_internal_close(const std::shared_ptr<Connection> &conn);
 
 static void timeout_handler(std::weak_ptr<Connection> wconn,
@@ -50,7 +54,7 @@ static void timeout_handler(std::weak_ptr<Connection> wconn,
 	LOG("use count = %d", wconn.use_count());
 	auto conn = wconn.lock();
 	if(conn){
-		std::lock_guard<std::mutex> lock(conn->mtx);
+		std::lock_guard<std::recursive_mutex> lock(conn->mtx);
 		if(conn->rdwr_count == 0){
 			connmgr_internal_close(conn);
 		}else{
@@ -67,77 +71,80 @@ static void timeout_handler(std::weak_ptr<Connection> wconn,
 
 static void on_read_length(std::shared_ptr<Connection> conn,
 		const asio::error_code &ec, std::size_t transfered){
-
 	Message *msg = &conn->input;
-	std::lock_guard<std::mutex> lock(conn->mtx);
+	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
 	msg->readpos = 0;
 	msg->length = msg->get_u16();
-	if(!ec && transfered > 0 && msg->length > 0
-			&& (msg->length + 2) < msg->capacity
-			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
-
-		// chain body read
-		asio::async_read(*conn->socket, asio::buffer(msg->buffer, msg->length),
-			[conn](const asio::error_code &ec, std::size_t transfered)
-				{ on_read_body(std::move(conn), ec, transfered); });
+	if(ec || (conn->flags & CONNECTION_SHUTDOWN) != 0 ||
+			transfered == 0 || msg->length == 0 ||
+			(msg->length + 2) > msg->capacity){
+		connmgr_internal_close(conn);
 		return;
 	}
 
-	connmgr_internal_close(conn);
+	// chain body read
+	asio::async_read(*conn->socket, asio::buffer(msg->buffer+2, msg->length),
+		[conn](const asio::error_code &ec, std::size_t transfered)
+			{ on_read_body(std::move(conn), ec, transfered); });
 }
 
 static void on_read_body(std::shared_ptr<Connection> conn,
 		const asio::error_code &ec, std::size_t transfered){
-
 	Message *msg = &conn->input;
-	std::lock_guard<std::mutex> lock(conn->mtx);
-	if(!ec && transfered > 0
-			&& (conn->flags & CONNECTION_SHUTDOWN) == 0){
+	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
+	if(ec || transfered == 0 || (conn->flags & CONNECTION_SHUTDOWN) != 0){
+		connmgr_internal_close(conn);
+		return;
+	}
 
-		// uint32 checksum = adler32(msg->buffer + 6, msg->length - 4);
-		// if(checksum == msg->peek_u32())
-		//	msg->readpos += 4;
+	//uint32 checksum = adler32(msg->buffer + 6, msg->length - 4);
+	//if(checksum == msg->peek_u32())
+	//	msg->readpos += 4;
 
-		if(conn->protocol == nullptr)
-			conn->protocol = service_make_protocol(
-				conn->service, conn, msg->get_byte());
-
-		if(conn->protocol != nullptr){
-			if((conn->flags & CONNECTION_FIRST_MSG) == 0){
-				conn->flags |= CONNECTION_FIRST_MSG;
-				conn->protocol->on_recv_first_message(msg);
-			}else{
-				conn->protocol->on_recv_message(msg);
-			}
-
-			// chain next message read
-			conn->rdwr_count++;
-			asio::async_read(*conn->socket, asio::buffer(msg->buffer, 2),
-				[conn](const asio::error_code &ec, std::size_t transfered)
-					{ on_read_length(std::move(conn), ec, transfered); });
+	// create protocol if the connection doesn't have it yet
+	if(conn->protocol == nullptr){
+		conn->protocol = service_make_protocol(
+			conn->service, conn, msg->get_byte());
+		if(conn->protocol == nullptr){
+			connmgr_internal_close(conn);
 			return;
 		}
 	}
 
-	connmgr_internal_close(conn);
+	// dispatch message to protocol
+	if((conn->flags & CONNECTION_FIRST_MSG) == 0){
+		conn->flags |= CONNECTION_FIRST_MSG;
+		conn->protocol->on_recv_first_message(msg);
+	}else{
+		conn->protocol->on_recv_message(msg);
+	}
+
+	// chain next message read
+	conn->rdwr_count++;
+	asio::async_read(*conn->socket, asio::buffer(msg->buffer, 2),
+		[conn](const asio::error_code &ec, std::size_t transfered)
+			{ on_read_length(std::move(conn), ec, transfered); });
 }
 
 static void on_write(std::shared_ptr<Connection> conn,
 		const asio::error_code &ec, std::size_t transfered){
-
-	std::lock_guard<std::mutex> lock(conn->mtx);
-	if(!ec && transfered > 0){
-		conn->rdwr_count++;
-		output_pool_release(conn->output_queue.front());
-		conn->output_queue.pop();
-		if(!conn->output_queue.empty()){
-			Message *next = conn->output_queue.front();
-			asio::async_write(*conn->socket, asio::buffer(next->buffer, next->length),
-				[conn](const asio::error_code &ec, std::size_t transfered)
-					{ on_write(std::move(conn), ec, transfered); });
-		}
-	}else{
+	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
+	if(ec || transfered == 0){
 		connmgr_internal_close(conn);
+		return;
+	}
+
+	// release written message back to the pool
+	conn->rdwr_count++;
+	output_pool_release(conn->output_queue.front());
+	conn->output_queue.pop();
+
+	// chain next message write if output_queue is not empty
+	if(!conn->output_queue.empty()){
+		Message *next = conn->output_queue.front();
+		asio::async_write(*conn->socket, asio::buffer(next->buffer, next->length),
+			[conn](const asio::error_code &ec, std::size_t transfered)
+				{ on_write(std::move(conn), ec, transfered); });
 	}
 }
 
@@ -149,17 +156,17 @@ static void on_write(std::shared_ptr<Connection> conn,
 
 void connmgr_accept(asio::ip::tcp::socket *socket, Service *service){
 	auto conn = std::make_shared<Connection>(socket, service);
+	auto wconn = std::weak_ptr<Connection>(conn);
 
 	// initialize connection
-	std::lock_guard<std::mutex> lock(conn->mtx);
+	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
 	if(service_has_single_protocol(conn->service)){
 		conn->protocol = service_make_protocol(conn->service, conn);
 		conn->protocol->on_connect();
 	}
 
 
-	// run timeout timer
-	auto wconn = std::weak_ptr<Connection>(conn);
+	// setup timeout timer
 	conn->rdwr_count = 0;
 	conn->timeout.expires_from_now(
 		std::chrono::milliseconds(CONNECTION_TIMEOUT));
@@ -177,8 +184,7 @@ static void connmgr_internal_close(const std::shared_ptr<Connection> &conn){
 	// the goal here is to shutdown the socket, interrupting the
 	// read chain while keeping it open to send any pending output
 	// messages and when these are done, the connection will be
-	// properly release by it's destructor
-
+	// properly released by it's destructor
 	if((conn->flags & CONNECTION_SHUTDOWN) == 0){
 		// shutdown connection
 		conn->flags |= CONNECTION_SHUTDOWN;
@@ -197,15 +203,14 @@ static void connmgr_internal_close(const std::shared_ptr<Connection> &conn){
 }
 
 void connmgr_close(const std::shared_ptr<Connection> &conn){
-	std::lock_guard<std::mutex> lock(conn->mtx);
+	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
 	connmgr_internal_close(conn);
 }
 
 void connmgr_send(const std::shared_ptr<Connection> &conn, Message *msg){
-	std::lock_guard<std::mutex> lock(conn->mtx);
+	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
 	if(conn->flags & CONNECTION_SHUTDOWN)
 		return;
-
 	conn->output_queue.push(msg);
 	if(conn->output_queue.size() == 1){
 		// start write chain

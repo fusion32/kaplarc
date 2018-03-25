@@ -174,5 +174,8 @@
     <ClInclude Include="..\src\crypto\arc4random.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\shared.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

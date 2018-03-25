@@ -132,15 +132,15 @@ bool service_has_single_protocol(Service *service){
 	return service->factories[0]->single();
 }
 
-Protocol *service_make_protocol(Service *service,
-		const std::shared_ptr<Connection> &conn){
+std::shared_ptr<Protocol>
+service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn){
 	if(service->factories.empty())
 		return nullptr;
 	return service->factories[0]->make_protocol(conn);
 }
 
-Protocol *service_make_protocol(Service *service,
-		const std::shared_ptr<Connection> &conn, uint32 identifier){
+std::shared_ptr<Protocol>
+service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn, uint32 identifier){
 	for(IProtocolFactory *factory : service->factories){
 		if(factory->identifier() == identifier)
 			return factory->make_protocol(conn);
