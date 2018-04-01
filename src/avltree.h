@@ -1,10 +1,32 @@
+// C compatible source: don't change if you are
+// going to break compatibility
+
+// NOTE: this interface is totally compatible with the `tree` object
+// and only extends a few of the functions to properly balance the
+// tree in the avl form
+
 #ifndef AVLTREE_H_
 #define AVLTREE_H_
 
-#include "memblock.h"
-#include "log.h"
+struct tree;
+struct tree_node;
 
-template<typename T, int N>
+// avl tree interface
+struct tree_node *avl_insert(struct tree *t, void *key);
+struct tree_node *avl_erase(struct tree *t, struct tree_node *n);
+void avl_remove(struct tree *t, struct tree_node *n);
+
+// avl tree utility
+void avl_insert_node(struct tree *t, struct tree_node *n);
+void avl_remove_node(struct tree *t, struct tree_node *n);
+void avl_retrace(struct tree *t, struct tree_node *n);
+
+// avl tree node specific utility
+struct tree_node *avl_node_rotate_left(struct tree_node *a);
+struct tree_node *avl_node_rotate_right(struct tree_node *a);
+
+#if 0
+template<typename T, long N>
 class AVLTree{
 private:
 	struct node{
@@ -19,7 +41,8 @@ private:
 	node *root;
 
 	// tree memory
-	MemBlock<node, N> blk;
+	node *node_pool[N];
+	struct memblock *blk;
 
 	// fix node height
 	static void fix_height(node *x){
@@ -228,13 +251,15 @@ private:
 public:
 	class iterator{
 	private:
-		node *cur;
+		AVLTree	*tree;
+		node	*cur;
 		friend AVLTree;
 
 	public:
-		iterator(void) : cur(nullptr) {}
-		iterator(node *x) : cur(x) {}
-		iterator(const iterator &it) : cur(it.cur) {}
+		iterator(void) : tree(nullptr), cur(nullptr) {}
+		iterator(AVLTree *tree_) : tree(tree_), cur(nullptr) {}
+		iterator(AVLTree *tree_, node *cur_) : tree(tree_), cur(cur_) {}
+		iterator(const iterator &it) : tree(it.tree), cur(it.cur) {}
 
 		T &operator*(void) const{
 			return cur->key;
@@ -245,53 +270,77 @@ public:
 		}
 
 		bool operator==(const iterator &rhs) const{
-			return cur == rhs.cur;
+			return tree == rhs.tree && cur == rhs.cur;
 		}
 
 		bool operator!=(const iterator &rhs) const{
-			return cur != rhs.cur;
+			return tree != rhs.tree || cur != rhs.cur;
 		}
 
 		iterator &operator++(void){
-			if(cur != nullptr){
-				if(cur->right != nullptr){
-					// elements from the right subtree are all
-					// greater than the current node so we need
-					// to find the leftmost(smallest) element
-					// from that subtree
-					cur = cur->right;
+			if(tree == nullptr)
+				return *this;
+
+			// wrap around behaviour
+			if(cur == nullptr){
+				cur = tree->root;
+				if(cur != nullptr){
 					while(cur->left != nullptr)
 						cur = cur->left;
-				}else{
-					// if there is no right subtree, we need to
-					// iterate back to a parent greater than its
-					// previous element
-					while(cur->parent && cur->parent->left != cur)
-						cur = cur->parent;
-
-					if(cur->parent && cur->parent->left == cur)
-						cur = cur->parent;
-					else
-						cur = nullptr;
 				}
+				return *this;
+			}
+
+			// find next element
+			if(cur->right != nullptr){
+				// elements from the right subtree are all
+				// greater than the current node so we need
+				// to find the leftmost(smallest) element
+				// from that subtree
+				cur = cur->right;
+				while(cur->left != nullptr)
+					cur = cur->left;
+			}else{
+				// if there is no right subtree, we need to
+				// iterate back to a parent greater than its
+				// previous element
+				while(cur->parent && cur->parent->left != cur)
+					cur = cur->parent;
+
+				if(cur->parent && cur->parent->left == cur)
+					cur = cur->parent;
+				else
+					cur = nullptr;
 			}
 			return *this;
 		}
 
 		iterator &operator--(void){
-			if(cur != nullptr){
-				if(cur->left != nullptr){
-					cur = cur->left;
+			if(tree == nullptr)
+				return *this;
+
+			// wrap around behaviour
+			if(cur == nullptr){
+				cur = tree->root;
+				if(cur != nullptr){
 					while(cur->right != nullptr)
 						cur = cur->right;
-				}else{
-					while(cur->parent && cur->parent->right != cur)
-						cur = cur->parent;
-					if(cur->parent && cur->parent->right == cur)
-						cur = cur->parent;
-					else
-						cur = nullptr;
 				}
+				return *this;
+			}
+
+			// find previous element
+			if(cur->left != nullptr){
+				cur = cur->left;
+				while(cur->right != nullptr)
+					cur = cur->right;
+			}else{
+				while(cur->parent && cur->parent->right != cur)
+					cur = cur->parent;
+				if(cur->parent && cur->parent->right == cur)
+					cur = cur->parent;
+				else
+					cur = nullptr;
 			}
 			return *this;
 		}
@@ -303,15 +352,20 @@ public:
 	AVLTree &operator=(const AVLTree&)	= delete;
 	AVLTree &operator=(AVLTree&&)		= delete;
 
-	AVLTree(void) : root(nullptr), blk() {}
-	~AVLTree(void){}
+	AVLTree(void) : root(nullptr){
+		blk = memblock_create1(node_pool,
+			sizeof(node) * N, sizeof(node));
+	}
+	~AVLTree(void){
+		memblock_destroy(blk);
+	}
 
 	template<typename G>
 	iterator insert(G &&value){
 		// allocate node
-		node *x = blk.alloc();
+		node *x = (node*)memblock_alloc(blk);
 		if(x == nullptr)
-			return nullptr;
+			return iterator(this);
 
 		// initialize node
 		x->key = std::forward<G>(value);
@@ -322,15 +376,15 @@ public:
 
 		// insert into the tree
 		insert_node(x);
-		return x;
+		return iterator(this, x);
 	}
 
 	template <typename... Args>
 	iterator emplace(Args&&... args){
 		// allocate node
-		node *x = blk.alloc();
+		node *x = (node*)memblock_alloc(blk);
 		if(x == nullptr)
-			return nullptr;
+			return iterator(this);
 
 		// initialize node
 		new(&x->key) T{std::forward<Args>(args)...};
@@ -341,7 +395,7 @@ public:
 
 		// insert into the tree
 		insert_node(x);
-		return x;
+		return iterator(this, x);
 	}
 
 	void remove(iterator it){
@@ -350,17 +404,17 @@ public:
 			return;
 		remove_node(x);
 		x->key.~T();
-		blk.free(x);
+		memblock_free(blk, x);
 	}
 
 	iterator erase(iterator it){
 		node *x = it.cur;
 		iterator next = ++it;
 		if(x == nullptr)
-			return nullptr;
+			return iterator(this);
 		remove_node(x);
 		x->key.~T();
-		blk.free(x);
+		memblock_free(blk, x);
 		return next;
 	}
 
@@ -381,34 +435,33 @@ public:
 	template<typename G>
 	iterator find(const G &value){
 		node *x = find_node(value);
-		if(x == nullptr)
-			return nullptr;
-		return x;
+		return iterator(this, x);
 	}
 
 	iterator begin(void){
 		if(root == nullptr)
-			return nullptr;
+			return iterator(this);
 
 		node *x = root;
 		while(x->left != nullptr)
 			x = x->left;
-		return x;
+		return iterator(this, x);
 	}
 
 	iterator rbegin(void){
 		if(root == nullptr)
-			return nullptr;
+			return iterator(this);
 
 		node *x = root;
 		while(x->right != nullptr)
 			x = x->right;
-		return x;
+		return iterator(this, x);
 	}
 
 	iterator end(void){
-		return nullptr;
+		return iterator(this);
 	}
 };
+#endif // 0
 
 #endif //AVLTREE_H_

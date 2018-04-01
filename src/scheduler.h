@@ -12,7 +12,7 @@ struct SchRef{
 
 	SchRef(int64 id_, int64 time_ = 0)
 	  : id(id_), time(time_) {}
-	SchRef &operator=(const int &rhs){
+	SchRef &operator=(const int64 &rhs){
 		id = rhs;
 		return *this;
 	}
@@ -30,7 +30,7 @@ struct SchRef{
 	}
 };
 
-void	scheduler_init(void);
+bool	scheduler_init(void);
 void	scheduler_shutdown(void);
 SchRef	scheduler_add(int64 delay, const Task &task);
 SchRef	scheduler_add(int64 delay, Task &&task);

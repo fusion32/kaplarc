@@ -1,3 +1,5 @@
+#include "adler32.h"
+
 #define BASE 65521U
 #define NMAX 5552
 
@@ -7,12 +9,11 @@
 #define DO8(buf, i)	DO4(buf,i); DO4(buf,i+4);
 #define DO16(buf)	DO8(buf,0); DO8(buf,8);
 
-unsigned long adler32(const unsigned char *buf, unsigned long len)
+uint32 adler32(const uint8 *buf, size_t len)
 {
-	unsigned long a = 1;
-	unsigned long b = 0;
+	uint32 a = 1;
+	uint32 b = 0;
 	int k;
-
 	while(len > 0){
 		k = len > NMAX ? NMAX : len;
 		len -= k;

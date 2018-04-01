@@ -16,9 +16,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\adler32.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\env.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -70,12 +67,27 @@
     <ClCompile Include="..\src\crypto\arc4random.cpp">
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\crypto\adler32.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stringutil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memblock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\channel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\avltree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\avltree.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\common.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\def.h">
@@ -120,9 +132,6 @@
     <ClInclude Include="..\src\server\asio.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\config.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\throw.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -130,9 +139,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\sstring.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\debug.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\game\protocol_game.h">
@@ -174,7 +180,22 @@
     <ClInclude Include="..\src\crypto\arc4random.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\shared.h">
+    <ClInclude Include="..\src\crypto\adler32.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\debug.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\stringutil.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\channel.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\spinlock.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tree.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

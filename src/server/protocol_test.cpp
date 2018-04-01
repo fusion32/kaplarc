@@ -9,6 +9,7 @@
 // shared_from_this function. It is used to convert from shared_ptr<Protocol>
 // to shared_ptr<ProtocolName>
 #define C(x) std::static_pointer_cast<ProtocolTest>(x)
+#define SELF (C(shared_from_this()))
 
 // message helpers for sending a message over this protocol
 static void message_begin(Message *msg){

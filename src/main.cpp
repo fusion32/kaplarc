@@ -30,6 +30,14 @@ int main(int argc, char **argv){
 	init_interface("dispatcher", dispatcher_init, dispatcher_shutdown);
 	init_interface("scheduler", scheduler_init, scheduler_shutdown);
 
+	scheduler_add(5000, [](void){
+		LOG("hello");
+	});
+
+	for(int i = 0; i < 1000; i++)
+		scheduler_add(i * 1000,
+			[i](void){ LOG("%d", i); });
+
 	server_add_protocol<ProtocolTest>(7171);
 	server_run();
 	return 0;

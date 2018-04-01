@@ -1,60 +1,16 @@
+// C compatible source: don't change if you are
+// going to break compatibility
+
 #ifndef MEMBLOCK_H_
 #define MEMBLOCK_H_
 
-template<typename T, int N>
-class MemBlock{
-private:
-	static_assert(sizeof(T) >= sizeof(T*),
-		"MemBlock: T must be big enough to hold a pointer");
-
-	int offset;
-	T *freelist;
-
-	// i'm assuming the compiler will properly align this buffer
-	T base[N];
-
-public:
-	// delete move and copy operations
-	MemBlock(const MemBlock&)		= delete;
-	MemBlock(MemBlock&&)			= delete;
-	MemBlock &operator=(const MemBlock&)	= delete;
-	MemBlock &operator=(MemBlock&&)		= delete;
-
-	MemBlock(void) : offset(0), freelist(nullptr) {}
-	~MemBlock(void){}
-
-	void reset(void){
-		offset = 0;
-		freelist = nullptr;
-	}
-
-	bool owns(T *ptr){
-		return (ptr >= base || ptr < (base + N));
-	}
-
-	T *alloc(void){
-		T *ptr = nullptr;
-		if(freelist != nullptr){
-			ptr = freelist;
-			freelist = *(T**)freelist;
-		} else if(offset < N) {
-			ptr = &base[offset];
-			offset += 1;
-		}
-		return ptr;
-	}
-
-	void free(T *ptr){
-		if(!owns(ptr))
-			return;
-
-		if(ptr == &base[offset - 1]){
-			offset -= 1;
-		} else {
-			*(T**)ptr = freelist;
-			freelist = ptr;
-		}
-	}
-};
+struct memblock;
+struct memblock *memblock_create(long slots, long stride);
+struct memblock *memblock_create1(void *data, size_t datalen, long stride);
+void memblock_destroy(struct memblock *blk);
+void *memblock_alloc(struct memblock *blk);
+void memblock_free(struct memblock *blk, void *ptr);
+bool memblock_contains(struct memblock *blk, void *ptr);
+long memblock_stride(struct memblock *blk);
 
 #endif //MEMBLOCK_H_
