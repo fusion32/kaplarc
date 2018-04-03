@@ -2,7 +2,12 @@
 #include "../../src/log.h"
 
 int main(int argc, char **argv){
-	AVLTree<int, 256> tree;
+	AVLTree<int> tree;
+	if(!tree.create(256)){
+		LOG("failed to create tree");
+		return -1;
+	}
+
 	for(int i = 0; i < 256; ++i)
 		tree.insert((i * 1337) % 256);
 
@@ -18,6 +23,5 @@ int main(int argc, char **argv){
 	for(const int &num : tree)
 		LOG("2 - %d", num);
 
-	getchar();
 	return 0;
 }

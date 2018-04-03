@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\avltree.h" />
+    <ClInclude Include="..\src\avltree.hpp" />
     <ClInclude Include="..\src\channel.h" />
     <ClInclude Include="..\src\crypto\adler32.h" />
     <ClInclude Include="..\src\crypto\arc4random.h" />
@@ -81,6 +82,7 @@
     <ClInclude Include="..\src\dispatcher.h" />
     <ClInclude Include="..\src\throw.h" />
     <ClInclude Include="..\src\tree.h" />
+    <ClInclude Include="..\src\tree.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

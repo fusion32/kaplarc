@@ -198,5 +198,11 @@
     <ClInclude Include="..\src\tree.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\avltree.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tree.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

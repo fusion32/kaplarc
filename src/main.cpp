@@ -25,6 +25,15 @@ void init_interface(const char *name, bool(*init)(void), void(*shutdown)(void)){
 	atexit(shutdown);
 }
 
+#include "avltree.hpp"
+void print_node(struct tree_node *n){
+	if(n->left != nullptr)
+		print_node(n->left);
+	LOG("%d", *(int*)(n->key));
+	if(n->right != nullptr)
+		print_node(n->right);
+}
+
 int main(int argc, char **argv){
 	// initialize core interfaces
 	init_interface("dispatcher", dispatcher_init, dispatcher_shutdown);

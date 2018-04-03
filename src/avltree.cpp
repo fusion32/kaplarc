@@ -11,7 +11,7 @@
 static void fix_height(struct tree_node *n){
 	int height = 0;
 	if(n->right != nullptr)
-		height = n->data;
+		height = n->right->data;
 	if(n->left != nullptr && n->left->data > height)
 		height = n->left->data;
 	n->data = height + 1;
@@ -51,6 +51,12 @@ void avl_remove(struct tree *t, struct tree_node *n){
 		avl_remove_node(t, n);
 		tree_free_node(t, n);
 	}
+}
+
+int avl_height(struct tree *t){
+	if(t->root != NULL)
+		return t->root->data;
+	return 0;
 }
 
 // avl tree utility
@@ -96,7 +102,7 @@ void avl_retrace(struct tree *t, struct tree_node *n){
 			return;
 		}
 
-		// advance to the next step
+		// climb to parent
 		n = p;
 	}
 }

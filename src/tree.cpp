@@ -139,8 +139,14 @@ void tree_remove_node(struct tree *t, struct tree_node *n, struct tree_node **pl
 		y = n->right;
 		while(y->left != NULL)
 			y = y->left;
-		// lowest modified element will be y->parent
-		lowest = y->parent;
+
+		// if y is n->right, it will be the lowest modified node
+		if(y == n->right)
+			lowest = y;
+		// else the lowest modified node will be y->parent
+		else
+			lowest = y->parent;
+
 		// pop y from the tree
 		if(y->right != NULL)
 			y->right->parent = y->parent;

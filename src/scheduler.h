@@ -10,23 +10,32 @@ struct SchRef{
 	int64 id;
 	int64 time;
 
+	SchRef(void) : SchRef(SCHREF_INVALID) {}
 	SchRef(int64 id_, int64 time_ = 0)
 	  : id(id_), time(time_) {}
+
 	SchRef &operator=(const int64 &rhs){
 		id = rhs;
 		return *this;
 	}
+
 	bool operator==(const int64 &rhs) const{
 		return id == rhs;
-	}
-	bool operator!=(const int64 &rhs) const{
-		return id != rhs;
 	}
 	bool operator==(const SchRef &rhs) const{
 		return id == rhs.id;
 	}
+	bool operator!=(const int64 &rhs) const{
+		return id != rhs;
+	}
 	bool operator!=(const SchRef &rhs) const{
 		return id != rhs.id;
+	}
+	bool operator<(const SchRef &rhs) const{
+		return id != rhs.id && time < rhs.time;
+	}
+	bool operator>(const SchRef &rhs) const{
+		return id != rhs.id && time >= rhs.time;
 	}
 };
 

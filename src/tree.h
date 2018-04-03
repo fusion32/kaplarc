@@ -51,5 +51,4 @@ struct tree_node *tree_node_prev(struct tree_node *cur);
 struct tree_node *tree_node_rotate_left(struct tree_node *a);
 struct tree_node *tree_node_rotate_right(struct tree_node *a);
 
-
 #endif //TREE_H_

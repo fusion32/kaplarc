@@ -5,29 +5,21 @@
 #include "scheduler.h"
 #include "log.h"
 #include "system.h"
+#include "avltree.hpp"
 
-#include "avltree.h"
-#include "tree.h"
-
-struct SchEntry{
-	int64 id;
-	int64 time;
+struct SchEntry : public SchRef{
 	Task task;
-};
 
-int SchEntry_cmp(void *a, void *b){
-	SchEntry *lhs = (SchEntry*)a;
-	SchEntry *rhs = (SchEntry*)b;
-	if(lhs->id == rhs->id)
-		return 0;
-	if(lhs->time < rhs->time)
-		return -1;
-	return 1;
-}
+	SchEntry(void) : SchRef() {}
+	SchEntry(int64 id_, int64 time_, const Task &task_)
+		: SchRef(id_, time_), task(task_) {}
+	SchEntry(int64 id_, int64 time_, Task &&task_)
+		: SchRef(id_, time_), task(std::move(task_)) {}
+};
 
 // scheduler entries
 #define SCH_MAX_ENTRIES 0x3FFF
-static struct tree *entries = NULL;
+static AVLTree<SchEntry, std::less<SchRef>> entries;
 
 // scheduler control
 static std::thread thr;
@@ -39,28 +31,25 @@ static bool running = false;
 static void scheduler(void){
 	int64			delta;
 	Task			task;
-	struct tree_node	*node;
-	SchEntry		*entry;
+	TreeIterator<SchEntry>	entry;
 
 	std::unique_lock<std::mutex> ulock(mtx, std::defer_lock);
 	while(running){
 		ulock.lock();
-		if(tree_empty(entries)){
+		if(entries.empty()){
 			cond.wait(ulock);
-			if(tree_empty(entries)){
+			if(entries.empty()){
 				ulock.unlock();
 				continue;
 			}
 		}
 
-		node = tree_min(entries);
-		entry = (SchEntry*)tree_node_key(node);
+		entry = entries.min();
 		delta = entry->time - sys_tick_count();
 		if(delta > 0){
 			cond.wait_for(ulock, std::chrono::milliseconds(delta));
-			node = tree_min(entries);
-			entry = (SchEntry*)tree_node_key(node);
-			if(entry == NULL || entry->time > sys_tick_count()){
+			entry = entries.min();
+			if(entry == entries.end() || entry->time > sys_tick_count()){
 				ulock.unlock();
 				continue;
 			}
@@ -68,7 +57,7 @@ static void scheduler(void){
 
 		// get work and remove entry
 		task = std::move(entry->task);
-		avl_remove(entries, node);
+		entries.remove(entry);
 		ulock.unlock();
 
 		dispatcher_add(std::move(task));
@@ -86,9 +75,7 @@ static void scheduler(void){
 
 bool scheduler_init(void){
 	// create entries tree
-	entries = tree_create(SCH_MAX_ENTRIES,
-		sizeof(SchEntry), SchEntry_cmp);
-	if(entries == nullptr){
+	if(!entries.create(SCH_MAX_ENTRIES)){
 		LOG_ERROR("scheduler_init: failed to create entries tree");
 		return false;
 	}
@@ -107,16 +94,8 @@ void scheduler_shutdown(void){
 	mtx.unlock();
 	thr.join();
 
-	// release entries tasks
-	struct tree_node *node = tree_min(entries);
-	while(node != NULL){
-		// release task
-		((SchEntry*)tree_node_key(node))->task = nullptr;
-		node = tree_node_next(node);
-	}
-
-	// release entries tree
-	tree_destroy(entries);
+	// release entries
+	entries.destroy();
 }
 
 SchRef scheduler_add(int64 delay, const Task &task){
@@ -124,71 +103,53 @@ SchRef scheduler_add(int64 delay, const Task &task){
 }
 
 SchRef scheduler_add(int64 delay, Task &&task){
-	struct tree_node	*node;
-	SchEntry		*entry;
+	TreeIterator<SchEntry> entry;
 	int64 time = delay + sys_tick_count();
 	std::lock_guard<std::mutex> lock(mtx);
-	node = tree_alloc_node(entries);
-	if(node == nullptr){
+	entry = entries.insert(next_id++, time, std::move(task));
+	if(entry == entries.end()){
 		LOG("scheduler_add: scheduler is at maximum capacity (%d)", SCH_MAX_ENTRIES);
 		return SCHREF_INVALID;
 	}
-	entry = (SchEntry*)tree_node_key(node);
-	entry->id = next_id++;
-	entry->time = time;
-	entry->task = std::move(task);
-	avl_insert_node(entries, node);
-	if(node == tree_min(entries))
+	if(entry == entries.min())
 		cond.notify_one();
 	return SchRef(entry->id, entry->time);
 }
 
 bool scheduler_remove(const SchRef &ref){
-	struct tree_node *node;
+	TreeIterator<SchEntry> entry;
 	std::lock_guard<std::mutex> lock(mtx);
-	node = tree_find_node(entries, (void*)&ref);
-	if(node == NULL){
+	entry = entries.find(ref);
+	if(entry == entries.end()){
 		LOG("scheduler_remove: trying to remove invalid entry");
 		return false;
 	}
-	// release task
-	((SchEntry*)tree_node_key(node))->task = nullptr;
-	avl_remove(entries, node);
+	entries.remove(entry);
 	return true;
 }
 
 bool scheduler_reschedule(int64 delay, SchRef &ref){
-	struct tree_node	*old_node;
-	struct tree_node	*new_node;
-	SchEntry		*old;
-	SchEntry		*entry;
+	TreeIterator<SchEntry> old, entry;
 	int64 time = delay + sys_tick_count();
 	std::lock_guard<std::mutex> lock(mtx);
-	old_node = tree_find(entries, (void*)&ref);
-	if(old_node == NULL){
+	old = entries.find(ref);
+	if(old == entries.end()){
 		LOG("scheduler_reschedule: trying to reschedule invalid entry");
 		return false;
 	}
-
-	new_node = tree_alloc_node(entries);
-	if(new_node == NULL){
+	entry = entries.insert(next_id++, time, std::move(old->task));
+	if(entry == entries.end()){
 		LOG("scheduler_reschedule: failed to re-insert entry"
 			"(scheduler is at maximum capactity `%d`)", SCH_MAX_ENTRIES);
 		return false;
 	}
 
-	old = (SchEntry*)tree_node_key(old_node);
-	entry = (SchEntry*)tree_node_key(new_node);
-	entry->id = next_id++;
-	entry->time = time;
-	entry->task = std::move(old->task);
-
 	// remove old entry and update SchRef
-	avl_remove(entries, old_node);
+	entries.remove(old);
 	ref.id = entry->id;
 	ref.time = entry->time;
 
-	if(new_node == tree_min(entries))
+	if(entry == entries.min())
 		cond.notify_one();
 	return true;
 }
