@@ -1,12 +1,12 @@
-#include <vector>
-#include <condition_variable>
-#include <mutex>
-#include <thread>
-
 #include "dispatcher.h"
 #include "log.h"
 #include "ringbuffer.h"
 #include "system.h"
+
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 class Dispatcher{
 public:
@@ -50,12 +50,11 @@ static void dispatcher_thread(Dispatcher *d){
 	}
 }
 
-
-void dispatcher_create(Dispatcher **d, uint32 capacity){
-	// TODO: variable capacity here
-	*d = new Dispatcher;
-	(*d)->running = true;
-	(*d)->thr = std::thread(dispatcher_thread, *d);
+Dispatcher *dispatcher_create(void){
+	Dispatcher *d = new Dispatcher;
+	d->running = true;
+	d->thr = std::thread(dispatcher_thread, d);
+	return d;
 }
 
 void dispatcher_destroy(Dispatcher *d){
@@ -86,20 +85,17 @@ void dispatcher_add(Dispatcher *d, Task &&task){
 
 *************************************/
 static Dispatcher *disp = nullptr;
-
-void dispatcher_init(void){
-	dispatcher_create(&disp, 1);
-}
-
-void dispatcher_shutdown(void){
-	if(disp != nullptr)
-		dispatcher_destroy(disp);
+static void dispatcher_check(void){
+	if(disp == nullptr)
+		disp = dispatcher_create();
 }
 
 void dispatcher_add(const Task &task){
+	dispatcher_check();
 	dispatcher_add(disp, Task(task));
 }
 
 void dispatcher_add(Task &&task){
+	dispatcher_check();
 	dispatcher_add(disp, std::move(task));
 }

@@ -2,27 +2,27 @@
 // going to break compatibility
 
 #include "avltree.h"
-#include "tree.h"
 #include "def.h"
 #include "log.h"
+#include "tree.h"
 
 #include <string.h>
 
 static void fix_height(struct tree_node *n){
 	int height = 0;
 	if(n->right != nullptr)
-		height = n->right->data;
+		height = (int)n->right->data;
 	if(n->left != nullptr && n->left->data > height)
-		height = n->left->data;
+		height = (int)n->left->data;
 	n->data = height + 1;
 }
 
 static int balance_factor(struct tree_node *n){
 	int balance = 0;
 	if(n->right != nullptr)
-		balance += n->right->data;
+		balance += (int)n->right->data;
 	if(n->left != nullptr)
-		balance -= n->left->data;
+		balance -= (int)n->left->data;
 	return balance;
 }
 
@@ -55,7 +55,7 @@ void avl_remove(struct tree *t, struct tree_node *n){
 
 int avl_height(struct tree *t){
 	if(t->root != NULL)
-		return t->root->data;
+		return (int)t->root->data;
 	return 0;
 }
 

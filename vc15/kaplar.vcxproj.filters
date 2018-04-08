@@ -16,16 +16,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\env.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\scheduler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\system.cpp">
@@ -42,9 +36,6 @@
     </ClCompile>
     <ClCompile Include="..\src\server\server.cpp">
       <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\dispatcher.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\stringbase.cpp">
       <Filter>Source Files</Filter>
@@ -76,13 +67,19 @@
     <ClCompile Include="..\src\memblock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\channel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\avltree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\tree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scheduler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dispatcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -93,9 +90,6 @@
     <ClInclude Include="..\src\def.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\env.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\log.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -103,9 +97,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\ringbuffer.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\scheduler.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\system.h">
@@ -125,9 +116,6 @@
     </ClInclude>
     <ClInclude Include="..\src\server\server.h">
       <Filter>Source Files\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\dispatcher.h">
-      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\server\asio.h">
       <Filter>Source Files\server</Filter>
@@ -189,12 +177,6 @@
     <ClInclude Include="..\src\stringutil.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\channel.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\spinlock.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\tree.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -202,6 +184,15 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\tree.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\scheduler.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\dispatcher.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\config.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

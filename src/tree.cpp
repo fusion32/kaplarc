@@ -1,13 +1,12 @@
 // C compatible source: don't change if you are
 // going to break compatibility
 
-#include "tree.h"
-
 #include "log.h"
 #include "memblock.h"
+#include "tree.h"
 
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
 // tree interface
 struct tree *tree_create(long slots, long keysize, int(*cmp)(void*, void*)){

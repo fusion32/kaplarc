@@ -1,6 +1,7 @@
 #ifndef DEF_H_
 #define DEF_H_
 
+#include "debug.h"
 #include <stdint.h>
 using int8	= int8_t;
 using uint8	= uint8_t;
@@ -12,8 +13,8 @@ using int64	= int64_t;
 using uint64	= uint64_t;
 using uintptr	= uintptr_t;
 
-template<typename T, uint32 N>
-constexpr uint32 array_size(T (&arr)[N]){
+template<typename T, size_t N>
+constexpr size_t array_size(T (&arr)[N]){
 	return N;
 }
 

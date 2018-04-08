@@ -1,10 +1,9 @@
 // C compatible file: don't change if you are
 // going to break compatibility
 
-#include "memblock.h"
-
 #include "def.h"
 #include "log.h"
+#include "memblock.h"
 
 #include <stdlib.h>
 
@@ -68,7 +67,7 @@ struct memblock *memblock_create1(void *data, size_t datalen, long stride){
 		return NULL;
 	}
 	blk->stride = stride;
-	blk->capacity = datalen;
+	blk->capacity = (long)datalen;
 	blk->offset = 0;
 	blk->freelist = NULL;
 	blk->base = (void*)base;

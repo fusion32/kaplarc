@@ -1,7 +1,6 @@
 #include "connection.h"
 #include "protocol.h"
 #include "server.h"
-#include "../debug.h"
 #include "../log.h"
 
 /*************************************

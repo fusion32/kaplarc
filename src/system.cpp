@@ -1,7 +1,6 @@
+#include "def.h"
 #include <chrono>
 #include <thread>
-#include "platform.h"
-#include "system.h"
 
 int64 sys_tick_count(void){
 	auto now = std::chrono::steady_clock::now();

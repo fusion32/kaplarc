@@ -1,8 +1,9 @@
 #include "log.h"
 #include "sstring.h"
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
 #include <time.h>
 
 #define MAX_FILE_NAME_SIZE 64
@@ -14,7 +15,7 @@ bool log_start(void){
 	struct tm *timeptr;
 
 	if(file == nullptr){
-		// name example: "Jan-01-1999-133700.log"
+		// name example: "Dec-31-1999-235959.log"
 		curTime = time(nullptr);
 		timeptr = localtime(&curTime);
 		strftime(filename, MAX_FILE_NAME_SIZE, "%b-%d-%Y-%H%M%S.log", timeptr);
@@ -44,12 +45,12 @@ void log_add1(const char *tag, const char *fmt, va_list ap){
 	time_t curtime;
 	struct tm *timeptr;
 	char timestr[64];
-	SString<256> log_entry;
+	SString<1024> log_entry;
 
 	// time str
 	curtime = time(nullptr);
 	timeptr = localtime(&curtime);
-	// format example: "Jan 01 1999 13:37:00"
+	// format example: "Dec 31 1999 23:59:59"
 	strftime(timestr, 64, "%b %d %Y %H:%M:%S", timeptr);
 
 	// concatenate log entry

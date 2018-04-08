@@ -1,0 +1,10 @@
+sv_login_port = "7171"
+sv_info_port = "7171"
+sv_game_port = "7172"
+
+db_type = "mysql"
+db_name = "kaplar"
+db_address = "localhost"
+db_port = "3306"
+db_username = "username"
+db_password = "password"

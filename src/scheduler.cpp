@@ -1,11 +1,11 @@
+#include "avltree.hpp"
+#include "log.h"
+#include "scheduler.h"
+#include "system.h"
+
 #include <chrono>
 #include <condition_variable>
 #include <thread>
-
-#include "scheduler.h"
-#include "log.h"
-#include "system.h"
-#include "avltree.hpp"
 
 struct SchEntry : public SchRef{
 	Task task;

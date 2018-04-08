@@ -1,5 +1,6 @@
 #include "stringbase.h"
 
+#include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
 

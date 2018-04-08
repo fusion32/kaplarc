@@ -5,13 +5,13 @@ template<typename F>
 class ScopeGuard{
 private:
 	F	func;
-	bool	exec;
+	bool	active;
 
 public:
 	ScopeGuard(F &&func_)
-	 : func(std::forward<F>(func_)), exec(true) {}
-	~ScopeGuard(void) { if(exec) func(); }
-	void release(void) { exec = false; }
+	 : func(std::forward<F>(func_)), active(true) {}
+	~ScopeGuard(void) { if(active) func(); }
+	void release(void) { active = false; }
 };
 
 // if `f` is a l-value reference of type U, F will be deduced to be U&

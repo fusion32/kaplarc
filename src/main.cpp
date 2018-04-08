@@ -1,10 +1,11 @@
+#include "config.h"
+#include "def.h"
+#include "dispatcher.h"
 #include "log.h"
 #include "scheduler.h"
-#include "system.h"
-#include "dispatcher.h"
-
-#include "server/server.h"
 #include "server/protocol_test.h"
+#include "server/server.h"
+#include "system.h"
 
 #include <stdlib.h>
 
@@ -25,29 +26,29 @@ void init_interface(const char *name, bool(*init)(void), void(*shutdown)(void)){
 	atexit(shutdown);
 }
 
-#include "avltree.hpp"
-void print_node(struct tree_node *n){
-	if(n->left != nullptr)
-		print_node(n->left);
-	LOG("%d", *(int*)(n->key));
-	if(n->right != nullptr)
-		print_node(n->right);
-}
 
 int main(int argc, char **argv){
+	// parse command line
+	config_cmdline(argc, argv);
+
+	// load config
+	const char *config = config_get("config");
+	if(!config){
+		UNREACHABLE();
+		return -1;
+	}
+	if(!config_load(config))
+		return -1;
+
 	// initialize core interfaces
-	init_interface("dispatcher", dispatcher_init, dispatcher_shutdown);
+	//init_interface("dispatcher", dispatcher_init, dispatcher_shutdown);
 	init_interface("scheduler", scheduler_init, scheduler_shutdown);
 
-	scheduler_add(5000, [](void){
-		LOG("hello");
-	});
-
-	for(int i = 0; i < 1000; i++)
-		scheduler_add(i * 1000,
-			[i](void){ LOG("%d", i); });
-
+	// initialize server
 	server_add_protocol<ProtocolTest>(7171);
+	//server_add_protocol<ProtocolLogin>(config_geti("sv_login_port"));
+	//server_add_protocol<ProtocolInfo>(config_geti("sv_info_port"));
+	//server_add_protocol<ProtocolGame>(config_geti("sv_game_port"));
 	server_run();
 	return 0;
 }

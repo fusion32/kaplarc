@@ -15,7 +15,7 @@ uint32 adler32(const uint8 *buf, size_t len)
 	uint32 b = 0;
 	int k;
 	while(len > 0){
-		k = len > NMAX ? NMAX : len;
+		k = (int)(len > NMAX ? NMAX : len);
 		len -= k;
 		while(k >= 16){
 			DO16(buf);
