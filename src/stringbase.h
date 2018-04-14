@@ -21,6 +21,7 @@ public:
 	// info
 	bool empty(void) { return length == 0; }
 	int size(void) { return length; }
+	const char *str(void) { return buffer; }
 
 	// conversion
 	const char *c_str(void){

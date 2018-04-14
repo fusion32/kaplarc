@@ -1,4 +1,5 @@
 #include "avltree.hpp"
+#include "dispatcher.h"
 #include "log.h"
 #include "scheduler.h"
 #include "system.h"
@@ -8,13 +9,14 @@
 #include <thread>
 
 struct SchEntry : public SchRef{
-	Task task;
+	Dispatcher	*disp;
+	Task		task;
 
 	SchEntry(void) : SchRef() {}
-	SchEntry(int64 id_, int64 time_, const Task &task_)
-		: SchRef(id_, time_), task(task_) {}
-	SchEntry(int64 id_, int64 time_, Task &&task_)
-		: SchRef(id_, time_), task(std::move(task_)) {}
+	SchEntry(int64 id_, int64 time_, Dispatcher *disp_, const Task &task_)
+		: SchRef(id_, time_), disp(disp_), task(task_) {}
+	SchEntry(int64 id_, int64 time_, Dispatcher *disp_, Task &&task_)
+		: SchRef(id_, time_), disp(disp_), task(std::move(task_)) {}
 };
 
 // scheduler entries
@@ -30,6 +32,7 @@ static bool running = false;
 
 static void scheduler(void){
 	int64			delta;
+	Dispatcher		*disp;
 	Task			task;
 	TreeIterator<SchEntry>	entry;
 
@@ -56,20 +59,16 @@ static void scheduler(void){
 		}
 
 		// get work and remove entry
+		disp = entry->disp;
 		task = std::move(entry->task);
 		entries.remove(entry);
 		ulock.unlock();
 
-		dispatcher_add(std::move(task));
-
-		// TODO: each task has a dispatcher
-		//before unlocking:
-		//disp = task->dispatcher;
-		//after unlocking
-		//if(disp != nullptr)
-		//	dispatcher_add(disp, std::move(task));
-		//else
-		//	dispatcher_add(std::move(task));
+		// dispatch task or execute in here
+		if(disp != nullptr)
+			dispatcher_add(disp, std::move(task));
+		else
+			task();
 	}
 }
 
@@ -98,15 +97,15 @@ void scheduler_shutdown(void){
 	entries.destroy();
 }
 
-SchRef scheduler_add(int64 delay, const Task &task){
-	return scheduler_add(delay, Task(task));
+SchRef scheduler_add(int64 delay, Dispatcher *disp, const Task &task){
+	return scheduler_add(delay, disp, Task(task));
 }
 
-SchRef scheduler_add(int64 delay, Task &&task){
+SchRef scheduler_add(int64 delay, Dispatcher *disp, Task &&task){
 	TreeIterator<SchEntry> entry;
 	int64 time = delay + sys_tick_count();
 	std::lock_guard<std::mutex> lock(mtx);
-	entry = entries.insert(next_id++, time, std::move(task));
+	entry = entries.insert(next_id++, time, disp, std::move(task));
 	if(entry == entries.end()){
 		LOG("scheduler_add: scheduler is at maximum capacity (%d)", SCH_MAX_ENTRIES);
 		return SCHREF_INVALID;
@@ -137,7 +136,7 @@ bool scheduler_reschedule(int64 delay, SchRef &ref){
 		LOG("scheduler_reschedule: trying to reschedule invalid entry");
 		return false;
 	}
-	entry = entries.insert(next_id++, time, std::move(old->task));
+	entry = entries.insert(next_id++, time, old->disp, std::move(old->task));
 	if(entry == entries.end()){
 		LOG("scheduler_reschedule: failed to re-insert entry"
 			"(scheduler is at maximum capactity `%d`)", SCH_MAX_ENTRIES);

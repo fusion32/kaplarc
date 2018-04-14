@@ -140,9 +140,9 @@ service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn)
 }
 
 std::shared_ptr<Protocol>
-service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn, uint32 identifier){
+service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn, Message *first){
 	for(IProtocolFactory *factory : service->factories){
-		if(factory->identifier() == identifier)
+		if(factory->identify(first))
 			return factory->make_protocol(conn);
 	}
 	return nullptr;

@@ -8,8 +8,7 @@
 #include <thread>
 #include <vector>
 
-class Dispatcher{
-public:
+struct Dispatcher{
 	RingBuffer<Task, 0x8000> rb;
 	std::thread thr;
 	std::mutex mtx;
@@ -76,26 +75,4 @@ void dispatcher_add(Dispatcher *d, Task &&task){
 		LOG_ERROR("dispatcher_add: task ring buffer is at maximum capacity (%d)", d->rb.capacity());
 	else
 		d->cond.notify_one();
-}
-
-
-/*************************************
-
-	Temporary interface
-
-*************************************/
-static Dispatcher *disp = nullptr;
-static void dispatcher_check(void){
-	if(disp == nullptr)
-		disp = dispatcher_create();
-}
-
-void dispatcher_add(const Task &task){
-	dispatcher_check();
-	dispatcher_add(disp, Task(task));
-}
-
-void dispatcher_add(Task &&task){
-	dispatcher_check();
-	dispatcher_add(disp, std::move(task));
 }

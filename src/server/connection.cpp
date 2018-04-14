@@ -73,7 +73,7 @@ static void on_read_length(std::shared_ptr<Connection> conn,
 	Message *msg = &conn->input;
 	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
 	msg->readpos = 0;
-	msg->length = msg->get_u16();
+	msg->length = msg->get_u16() + 2;
 	if(ec || (conn->flags & CONNECTION_SHUTDOWN) != 0 ||
 			transfered == 0 || msg->length == 0 ||
 			(msg->length + 2) > msg->capacity){
@@ -82,7 +82,7 @@ static void on_read_length(std::shared_ptr<Connection> conn,
 	}
 
 	// chain body read
-	asio::async_read(*conn->socket, asio::buffer(msg->buffer+2, msg->length),
+	asio::async_read(*conn->socket, asio::buffer(msg->buffer+2, msg->length-2),
 		[conn](const asio::error_code &ec, std::size_t transfered)
 			{ on_read_body(std::move(conn), ec, transfered); });
 }
@@ -96,14 +96,9 @@ static void on_read_body(std::shared_ptr<Connection> conn,
 		return;
 	}
 
-	//uint32 checksum = adler32(msg->buffer + 6, msg->length - 4);
-	//if(checksum == msg->peek_u32())
-	//	msg->readpos += 4;
-
 	// create protocol if the connection doesn't have it yet
 	if(conn->protocol == nullptr){
-		conn->protocol = service_make_protocol(
-			conn->service, conn, msg->get_byte());
+		conn->protocol = service_make_protocol(conn->service, conn, msg);
 		if(conn->protocol == nullptr){
 			connmgr_internal_close(conn);
 			return;
@@ -152,7 +147,6 @@ static void on_write(std::shared_ptr<Connection> conn,
 	Connection Manager
 
 *************************************/
-
 void connmgr_accept(asio::ip::tcp::socket *socket, Service *service){
 	auto conn = std::make_shared<Connection>(socket, service);
 	auto wconn = std::weak_ptr<Connection>(conn);
@@ -163,7 +157,6 @@ void connmgr_accept(asio::ip::tcp::socket *socket, Service *service){
 		conn->protocol = service_make_protocol(conn->service, conn);
 		conn->protocol->on_connect();
 	}
-
 
 	// setup timeout timer
 	conn->rdwr_count = 0;

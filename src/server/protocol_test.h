@@ -1,15 +1,13 @@
 #ifndef PROTOCOL_TEST_H_
 #define PROTOCOL_TEST_H_
 
-#include "server.h"
-#include "connection.h"
-
+#include "protocol.h"
 class ProtocolTest: public Protocol{
 public:
 	// protocol information
 	static constexpr char	*name = "test";
-	static constexpr uint32	identifier = 0x00;
 	static constexpr bool	single = true;
+	static bool		identify(Message *first);
 
 	// protocol interface
 	ProtocolTest(const std::shared_ptr<Connection> &conn);
@@ -22,6 +20,7 @@ public:
 
 private:
 	// protocol specific
+	void parse(Message *msg);
 	void send_hello(void);
 };
 

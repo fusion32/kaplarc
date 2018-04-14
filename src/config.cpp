@@ -14,7 +14,7 @@ extern "C" {
 
 static struct {
 	char name[64];
-	char value[64];
+	char value[128];
 } table[] = {
 	// command line
 	{"config",		"config.lua"},
@@ -121,28 +121,22 @@ const char *config_get(const char *name){
 			return table[i].value;
 	}
 	LOG_WARNING("config_get: trying to fetch invalid variable `%s`", name);
-	return nullptr;
+	return "";
 }
 
 bool config_getb(const char *name){
 	const char *value = config_get(name);
-	if(value != nullptr)
-		return strcmp(value, "false") != 0;
-	return false;
+	return strcmp(value, "false") != 0;
 }
 
 int config_geti(const char *name){
 	const char *value = config_get(name);
-	if(value != nullptr)
-		return (int)strtol(value, NULL, 10);
-	return -1;
+	return (int)strtol(value, NULL, 10);
 }
 
 float config_getf(const char *name){
 	const char *value = config_get(name);
-	if(value != nullptr)
-		return strtof(value, nullptr);
-	return -1.0f;
+	return strtof(value, nullptr);
 }
 
 static void config_vset(const char *name, const char *fmt, ...){

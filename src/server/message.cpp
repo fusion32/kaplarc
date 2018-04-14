@@ -74,7 +74,11 @@ void Message::add_u32(uint32 val){
 	length += 4;
 }
 
-void Message::add_str(const char *buf, uint16 buflen){
+void Message::add_str(const char *str){
+	add_lstr(str, (uint16)strlen(str));
+}
+
+void Message::add_lstr(const char *buf, uint16 buflen){
 	if(buflen == 0) return;
 	add_u16(buflen);
 	memcpy((buffer + readpos), buf, buflen);
@@ -103,7 +107,11 @@ void Message::radd_u32(uint32 val){
 	length += 4;
 }
 
-void Message::radd_str(const char *buf, uint16 buflen){
+void Message::radd_str(const char *str){
+	radd_lstr(str, (uint16)strlen(str));
+}
+
+void Message::radd_lstr(const char *buf, uint16 buflen){
 	if(buflen == 0) return;
 	if((readpos - (2 + buflen)) < 0) return;
 	readpos -= (2 + buflen);

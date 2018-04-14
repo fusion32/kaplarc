@@ -3,7 +3,7 @@
 
 #include "def.h"
 
-template<typename T, uint32 N>
+template<typename T, size_t N>
 class RingBuffer{
 private:
 	uint32 readpos;
@@ -23,7 +23,7 @@ public:
 	RingBuffer(void) : readpos(0), writepos(0) {}
 	~RingBuffer(void){}
 
-	constexpr uint32 capacity(void) const { return N; }
+	constexpr size_t capacity(void) const { return N; }
 	uint32 size(void) const { return writepos - readpos; }
 	bool empty(void) const { return writepos == readpos; }
 	bool full(void) const { return size() >= N; }

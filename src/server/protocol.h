@@ -23,8 +23,10 @@ protected:
 public:
 	// protocol information
 	static constexpr char	*name = "none";
-	static constexpr uint32	identifier = 0x00;
 	static constexpr bool	single = false;
+	static bool		identify(Message *first){
+		return false;
+	}
 
 	// delete default constructor
 	Protocol(void) = delete;
@@ -41,10 +43,10 @@ public:
 
 	// protocol interface
 	virtual		~Protocol(void) { LOG("protocol released"); }
-	virtual void	on_connect(void) = 0;
-	virtual void	on_close(void) = 0;
-	virtual void	on_recv_message(Message *msg) = 0;
-	virtual void	on_recv_first_message(Message *msg) = 0;
+	virtual void	on_connect(void) {}
+	virtual void	on_close(void) {}
+	virtual void	on_recv_message(Message *msg) {}
+	virtual void	on_recv_first_message(Message *msg) {}
 };
 
 /*************************************
@@ -56,8 +58,8 @@ class IProtocolFactory{
 public:
 	virtual ~IProtocolFactory(void) {};
 	virtual const char *name(void) = 0;
-	virtual const uint32 identifier(void) = 0;
 	virtual const bool single(void) = 0;
+	virtual const bool identify(Message *first) = 0;
 	virtual std::shared_ptr<Protocol>
 	make_protocol(const std::shared_ptr<Connection> &conn) = 0;
 };
@@ -66,8 +68,10 @@ template <typename T>
 class ProtocolFactory: public IProtocolFactory{
 public:
 	virtual const char *name(void) override{ return T::name; }
-	virtual const uint32 identifier(void) override{ return T::identifier; }
 	virtual const bool single(void) override{ return T::single; }
+	virtual const bool identify(Message *first) override{
+		return T::identify(first);
+	}
 	virtual std::shared_ptr<Protocol>
 	make_protocol(const std::shared_ptr<Connection> &conn) override{
 		return std::static_pointer_cast<Protocol>(

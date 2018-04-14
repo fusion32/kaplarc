@@ -1,9 +1,4 @@
 - improve output message pool
-- came to know that most implementations of std::map and std::set use red-black trees as the
-	underlying tree so it might be better to use std::set instead of the AVLTree for the
-	scheduler as red-black trees have better performance when inserting/removing often
-	but it still needs to be measured whether or not it would improve its performance
-- add variable capacity to dispatchers (requires a dynamic capacity ringbuffer)
 - divide the map into sectors with each sector having it's own dispatcher and effectively
 	having better multithreaded performance without the need of locking
 	-- edge problem: essentialy try to keep a whole zone within a sector and if the zone is
@@ -11,11 +6,6 @@
 		phased from the people of the other sector or add two instances of the same zone
 		and splitting the players but that will require more computation for NPCs etc etc
 		which wouldn't be better in the end
-- every platform i'm targeting here has an async io, timer, and event mechanism:
-	- linux: epoll has eventfd, timerfd, and io
-	- bsd: kqueue has user events, timers and io
-	- win32: iocp has user events and io (need to check for timers)
-- could use the scheduler for the timers and simply dispatch as an event to the OS io service
 - always leave lambdas empty after a call:
 			[shared](...){ callback(std::move(shared), ...); }
 		or	[shared](...){ callback(shared, ...); shared.reset(); }
@@ -27,4 +17,4 @@
 		async_write(socket, buffer, callback, opdata);
 - configure .clang-format to actually start using it (even if it doesn't correctly support pointer
 	alignment to the right yet)
-- account passwords should be stored using bcrypt or some sort of hash with salt function
+

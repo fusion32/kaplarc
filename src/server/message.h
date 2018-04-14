@@ -31,13 +31,15 @@ public:
 	void	add_byte(uint8 val);
 	void	add_u16(uint16 val);
 	void	add_u32(uint32 val);
-	void	add_str(const char *buf, uint16 buflen);
+	void	add_str(const char *str);
+	void	add_lstr(const char *buf, uint16 buflen);
 
 	// reverse add
 	void	radd_byte(uint8 val);
 	void	radd_u16(uint16 val);
 	void	radd_u32(uint32 val);
-	void	radd_str(const char *buf, uint16 buflen);
+	void	radd_str(const char *str);
+	void	radd_lstr(const char *buf, uint16 buflen);
 };
 
 Message *output_pool_acquire(const long capacity);

@@ -14,6 +14,9 @@
     <Filter Include="Source Files\crypto">
       <UniqueIdentifier>{b87c92df-e49e-4b64-87cb-092b57db411b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\db">
+      <UniqueIdentifier>{2561bc72-d272-4110-8a79-61c43c558339}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\log.cpp">
@@ -81,6 +84,18 @@
     </ClCompile>
     <ClCompile Include="..\src\config.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\protocol_login.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\srsa.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\cassandra.cpp">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\database.cpp">
+      <Filter>Source Files\db</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -194,6 +209,18 @@
     </ClInclude>
     <ClInclude Include="..\src\config.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game\srsa.h">
+      <Filter>Source Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game\account.h">
+      <Filter>Source Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\db\cassandra.h">
+      <Filter>Source Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\db\database.h">
+      <Filter>Source Files\db</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

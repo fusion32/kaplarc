@@ -28,6 +28,10 @@
     <ClCompile Include="..\src\crypto\blowfish.cpp" />
     <ClCompile Include="..\src\crypto\rsa.cpp" />
     <ClCompile Include="..\src\crypto\xtea.cpp" />
+    <ClCompile Include="..\src\db\cassandra.cpp" />
+    <ClCompile Include="..\src\db\database.cpp" />
+    <ClCompile Include="..\src\game\protocol_login.cpp" />
+    <ClCompile Include="..\src\game\srsa.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\memblock.cpp" />
@@ -53,12 +57,16 @@
     <ClInclude Include="..\src\crypto\blowfish.h" />
     <ClInclude Include="..\src\crypto\rsa.h" />
     <ClInclude Include="..\src\crypto\xtea.h" />
+    <ClInclude Include="..\src\db\cassandra.h" />
+    <ClInclude Include="..\src\db\database.h" />
     <ClInclude Include="..\src\debug.h" />
     <ClInclude Include="..\src\endian.h" />
+    <ClInclude Include="..\src\game\account.h" />
     <ClInclude Include="..\src\game\protocol_game.h" />
     <ClInclude Include="..\src\game\protocol_info.h" />
     <ClInclude Include="..\src\game\protocol_legacy.h" />
     <ClInclude Include="..\src\game\protocol_login.h" />
+    <ClInclude Include="..\src\game\srsa.h" />
     <ClInclude Include="..\src\platform.h" />
     <ClInclude Include="..\src\scope_guard.h" />
     <ClInclude Include="..\src\sstring.h" />
@@ -105,7 +113,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -133,12 +141,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>X:\libs\mpir\include;X:\libs\asio\include;X:\libs\lua-5.1.5\include;$(IncludePath)</IncludePath>
-    <LibraryPath>X:\libs\mpir\bin;X:\libs\lua-5.1.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>X:\libs\cassandra-cpp-driver\include;X:\libs\mpir\include;X:\libs\asio\include;X:\libs\lua-5.1.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>X:\libs\cassandra-cpp-driver\lib;X:\libs\mpir\bin;X:\libs\lua-5.1.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>X:\libs\mpir\include;X:\libs\asio\include;X:\libs\lua-5.1.5\include;$(IncludePath)</IncludePath>
-    <LibraryPath>X:\libs\mpir\bin;X:\libs\lua-5.1.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>X:\libs\cassandra-cpp-driver\include;X:\libs\mpir\include;X:\libs\asio\include;X:\libs\lua-5.1.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>X:\libs\cassandra-cpp-driver\lib;X:\libs\mpir\bin;X:\libs\lua-5.1.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -164,7 +174,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>cassandra.lib;lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -199,7 +209,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>cassandra.lib;lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

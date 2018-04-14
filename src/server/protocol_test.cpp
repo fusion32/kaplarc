@@ -1,9 +1,10 @@
+#include "protocol_test.h"
+
 #include "connection.h"
 #include "message.h"
-#include "protocol_test.h"
-#include "server.h"
-#include "../log.h"
+#include "../crypto/adler32.h"
 #include "../dispatcher.h"
+#include "../log.h"
 
 // Every protocol must implement something similar when making use of the
 // shared_from_this function. It is used to convert from shared_ptr<Protocol>
@@ -12,6 +13,11 @@
 #define SELF (C(shared_from_this()))
 
 // message helpers for sending a message over this protocol
+static bool checksum(Message *msg){
+	uint32 offset = msg->readpos + 4;
+	uint32 sum = adler32(msg->buffer + offset, msg->length - offset);
+	return sum == msg->peek_u32();
+}
 static void message_begin(Message *msg){
 	msg->readpos = 2;
 	msg->length = 0;
@@ -22,8 +28,17 @@ static void message_end(Message *msg){
 }
 
 // protocol implementation
+bool ProtocolTest::identify(Message *first){
+	uint32 offset = first->readpos;
+	// skip checksum
+	if(checksum(first))
+		offset += 4;
+	// check protocol identifier
+	return first->buffer[offset] == 0xA3;
+}
+
 ProtocolTest::ProtocolTest(const std::shared_ptr<Connection> &conn)
-	: Protocol(conn) {
+  : Protocol(conn) {
 }
 
 ProtocolTest::~ProtocolTest(void){
@@ -39,25 +54,34 @@ void ProtocolTest::on_close(void){
 }
 
 void ProtocolTest::on_recv_message(Message *msg){
-	char buf[64];
-	msg->get_str(buf, 64);
-	LOG("on_recv_message: %s", buf);
-	// this dispatch is just to illustrate the use of shared_from_this()
-	dispatcher_add([p = C(shared_from_this())](void){
-			p->send_hello();
-		});
+	if(checksum(msg))
+		msg->readpos += 4;
+
+	parse(msg);
 }
 
 void ProtocolTest::on_recv_first_message(Message *msg){
-	LOG("on_recv_first_message: %d", msg->get_byte());
-	on_recv_message(msg);
+	if(checksum(msg))
+		msg->readpos += 4;
+
+	if(msg->get_byte() != 0xA3)
+		UNREACHABLE();
+
+	parse(msg);
+}
+
+void ProtocolTest::parse(Message *msg){
+	char buf[64];
+	msg->get_str(buf, 64);
+	LOG("on_recv_message: %s", buf);
+	send_hello();
 }
 
 void ProtocolTest::send_hello(void){
 	Message *msg = output_pool_acquire(MSG_CAPACITY_SMALL);
 	if(msg != nullptr){
 		message_begin(msg);
-		msg->add_str("Hello World", 11);
+		msg->add_lstr("Hello World", 11);
 		message_end(msg);
 		connmgr_send(connection, msg);
 	}
