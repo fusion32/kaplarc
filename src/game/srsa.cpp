@@ -17,7 +17,6 @@ static std::mutex mtx;
 static struct rsa_ctx *ctx = nullptr;
 
 bool srsa_init(void){
-	std::lock_guard<std::mutex> guard(mtx);
 	if(ctx == nullptr){
 		ctx = rsa_create();
 		// set key
@@ -32,7 +31,6 @@ bool srsa_init(void){
 }
 
 void srsa_shutdown(void){
-	std::lock_guard<std::mutex> guard(mtx);
 	if(ctx != nullptr){
 		rsa_destroy(ctx);
 		ctx = nullptr;

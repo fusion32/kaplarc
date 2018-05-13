@@ -1,14 +1,15 @@
 #include "config.h"
-#include "db/cassandra.h"
 #include "def.h"
 #include "dispatcher.h"
-#include "game/protocol_login.h"
-#include "game/srsa.h"
 #include "log.h"
 #include "scheduler.h"
+#include "system.h"
+
+#include "db/database.h"
+#include "game/protocol_login.h"
+#include "game/srsa.h"
 #include "server/protocol_test.h"
 #include "server/server.h"
-#include "system.h"
 
 #include <stdlib.h>
 
@@ -30,36 +31,24 @@ void init_interface(const char *name, bool(*init)(void), void(*shutdown)(void)){
 }
 
 int main(int argc, char **argv){
-	// parse command line
+	// parse command line and load config
 	config_cmdline(argc, argv);
-
-	// load config
-	const char *config = config_get("config");
-	if(!config){
-		UNREACHABLE();
-		return -1;
-	}
-	if(!config_load(config))
+	if(!config_load())
 		return -1;
 
 	// initialize core interfaces
 	//init_interface("dispatcher", dispatcher_init, dispatcher_shutdown);
 	init_interface("scheduler", scheduler_init, scheduler_shutdown);
-	init_interface("cassandra backend", cass_init, cass_shutdown);
+	//init_interface("database", database_init, database_shutdown);
 
 	// initialize game interfaces
 	init_interface("RSA", srsa_init, srsa_shutdown);
 
-	cass_test();
-	getchar();
-
-/*
 	// initialize server
-	server_add_protocol<ProtocolTest>(7171);
+	server_add_protocol<ProtocolTest>(config_geti("sv_test_port"));
 	server_add_protocol<ProtocolLogin>(config_geti("sv_login_port"));
 	//server_add_protocol<ProtocolInfo>(config_geti("sv_info_port"));
 	//server_add_protocol<ProtocolGame>(config_geti("sv_game_port"));
 	server_run();
-*/
 	return 0;
 }

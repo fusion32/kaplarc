@@ -53,10 +53,10 @@ void StringBase::appendf(const char *fmt, ...){
 	va_end(ap);
 }
 
-void StringBase::copyf(const char *fmt, ...){
+void StringBase::format(const char *fmt, ...){
 	va_list ap;
 	va_start(ap, fmt);
-	vcopyf(fmt, ap);
+	vformat(fmt, ap);
 	va_end(ap);
 }
 
@@ -70,7 +70,7 @@ void StringBase::vappendf(const char *fmt, va_list ap){
 		length += l;
 }
 
-void StringBase::vcopyf(const char *fmt, va_list ap){
+void StringBase::vformat(const char *fmt, va_list ap){
 	length = vsnprintf(buffer, capacity, fmt, ap);
 	if(length < 0) length = 0;
 }

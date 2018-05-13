@@ -21,7 +21,7 @@ public:
 	// info
 	bool empty(void) { return length == 0; }
 	int size(void) { return length; }
-	const char *str(void) { return buffer; }
+	const char *ptr(void) { return buffer; }
 
 	// conversion
 	const char *c_str(void){
@@ -40,9 +40,9 @@ public:
 
 	// utility
 	void appendf(const char *fmt, ...);
-	void copyf(const char *fmt, ...);
+	void format(const char *fmt, ...);
 	void vappendf(const char *fmt, va_list ap);
-	void vcopyf(const char *fmt, va_list ap);
+	void vformat(const char *fmt, va_list ap);
 
 };
 

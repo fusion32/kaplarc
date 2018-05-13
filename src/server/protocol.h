@@ -1,5 +1,5 @@
-#ifndef PROTOCOL_H_
-#define PROTOCOL_H_
+#ifndef SERVER_PROTOCOL_H_
+#define SERVER_PROTOCOL_H_
 
 #include "../def.h"
 #include "../log.h"

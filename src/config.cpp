@@ -14,23 +14,25 @@ extern "C" {
 
 static struct {
 	char name[64];
-	char value[128];
+	char value[64];
 } table[] = {
 	// command line
 	{"config",		"config.lua"},
 
 	// server variables
+	{"sv_test_port",	"7777"},
 	{"sv_login_port",	"7171"},
 	{"sv_info_port",	"7171"},
 	{"sv_game_port",	"7172"},
 
-	// database variables
-	{"db_type",		"mysql"},
-	{"db_name",		"name"},
-	{"db_address",		"localhost"},
-	{"db_port",		"3306"},
-	{"db_username",		"username"},
-	{"db_password",		"password"},
+	// cassandra variables
+	{"cass_contact_points", "localhost"},
+	{"cass_auth_role",	"cassandra"},
+	{"cass_auth_pwd",	"cassandra"},
+	{"cass_keyspace",	"kaplar"},
+
+	// mongodb variables
+	{"mongo_?",		"?"}
 };
 
 void config_cmdline(int argc, char **argv){
@@ -59,6 +61,13 @@ void config_cmdline(int argc, char **argv){
 	}
 }
 
+bool config_load(void){
+	const char *config = config_get("config");
+	if(*config == 0)
+		return false;
+	return config_load(config);
+}
+
 bool config_load(const char *path){
 	lua_State *L;
 	int i;
@@ -85,7 +94,7 @@ bool config_load(const char *path){
 	for(i = 0; i < array_size(table); i++){
 		lua_getglobal(L, table[i].name);
 		if(lua_isstring(L, -1) != 0)
-			strcpy(table[i].value, lua_tostring(L, -1));
+			snprintf(table[i].value, 64, "%s", lua_tostring(L, -1));
 		lua_pop(L, 1);
 	}
 	lua_close(L);

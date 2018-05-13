@@ -1,0 +1,8 @@
+* Local Storage
+	- Involves serialization of objects that would rather be saved into the database. These are closely tied to the current version of the server so it's only purpose is to prevent data loss in case of network isolation.
+
+* Remote Manager
+	- Also uses serialization of objects to send them over a protocol to a remote server. That other server is responsible for storing these objects into whatever database it's using. This requires further elaboration and is closely tied to the current version of structures used and being necessary an update to the remote server whenever these structures suffer minor changes.
+
+* MongoDB, CassandraDB, MySQL
+	- Specific database backends that will connect directly to the database server and issue inserts/updates.

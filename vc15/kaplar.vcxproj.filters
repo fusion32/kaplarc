@@ -31,9 +31,6 @@
     <ClCompile Include="..\src\server\connection.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server\message.cpp">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\server\protocol_test.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>
@@ -67,15 +64,6 @@
     <ClCompile Include="..\src\stringutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\memblock.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\avltree.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\tree.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\scheduler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -94,21 +82,30 @@
     <ClCompile Include="..\src\db\cassandra.cpp">
       <Filter>Source Files\db</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\db\database.cpp">
+    <ClCompile Include="..\src\db\local.cpp">
       <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\mongo.cpp">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\mysql.cpp">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\remote.cpp">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\message.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\outputmessage.cpp">
+      <Filter>Source Files\server</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\avltree.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\def.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\log.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\memblock.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\ringbuffer.h">
@@ -118,9 +115,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\server\connection.h">
-      <Filter>Source Files\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\server\message.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
     <ClInclude Include="..\src\server\protocol.h">
@@ -177,28 +171,13 @@
     <ClInclude Include="..\src\crypto\base64.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\platform.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\crypto\arc4random.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
     <ClInclude Include="..\src\crypto\adler32.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\debug.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\stringutil.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\tree.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\avltree.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\tree.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\scheduler.h">
@@ -216,11 +195,17 @@
     <ClInclude Include="..\src\game\account.h">
       <Filter>Source Files\game</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\db\cassandra.h">
-      <Filter>Source Files\db</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\db\database.h">
       <Filter>Source Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\db\local.h">
+      <Filter>Source Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\message.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server\outputmessage.h">
+      <Filter>Source Files\server</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

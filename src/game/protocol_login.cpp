@@ -6,7 +6,7 @@
 #include "../dispatcher.h"
 #include "../log.h"
 #include "../server/connection.h"
-#include "../server/message.h"
+#include "../message.h"
 #include "../sstring.h"
 #include "srsa.h"
 
@@ -38,13 +38,13 @@ static void message_end(Message *msg, uint32 *xtea, bool checksum){
 }
 
 void ProtocolLogin::disconnect(const char *message, uint32 *xtea, bool checksum){
-	Message *output = output_pool_acquire(MSG_CAPACITY_SMALL);
+	auto output = output_message(256);
 	if(output != nullptr){
-		message_begin(output, xtea, checksum);
+		message_begin(output.get(), xtea, checksum);
 		output->add_byte(0x0A);
 		output->add_str(message);
-		message_end(output, xtea, checksum);
-		connmgr_send(connection, output);
+		message_end(output.get(), xtea, checksum);
+		connmgr_send(connection, std::move(output));
 	}
 	connmgr_close(connection);
 }
@@ -114,16 +114,16 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 		return;
 	}
 
-	Message *output = output_pool_acquire(MSG_CAPACITY_SMALL);
-	if(output != nullptr){
-		message_begin(output, key, checksum);
+	auto output = output_message(256);
+	if(output){
+		message_begin(output.get(), key, checksum);
 
 		// send motd
 		SString<256> motd;
-		motd.copyf("%d\n", config_geti("motd_num"));
+		motd.format("%d\n", config_geti("motd_num"));
 		motd.append(config_get("motd_message"));
-		output->add_byte(0x14);
-		output->add_lstr(motd.str(), motd.size());
+		output->add_byte(0x14);					// motd identifier
+		output->add_lstr(motd.ptr(), motd.size());		// motd string
 
 		// send character list
 		output->add_byte(0x64);					// character list identifier
@@ -136,8 +136,8 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 		// }
 		output->add_u16(1);					// premium days left
 
-		message_end(output, key, checksum);
-		connmgr_send(connection, output);
+		message_end(output.get(), key, checksum);
+		connmgr_send(connection, std::move(output));
 	}
 
 	// close connection

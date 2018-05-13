@@ -3,13 +3,14 @@
 // otherwise, would require an input message pool). This allows the use
 // of connmgr_send or connmgr_close from within these handlers.
 
-#ifndef CONNECTION_H_
-#define CONNECTION_H_
+#ifndef SERVER_CONNECTION_H_
+#define SERVER_CONNECTION_H_
 
 #include "../def.h"
+#include "../message.h"
 #include "../scheduler.h"
 #include "asio.h"
-#include "message.h"
+#include "outputmessage.h"
 #include "protocol.h"
 
 #include <mutex>
@@ -41,7 +42,7 @@ public:
 
 	// connection messages
 	Message				input;
-	std::queue<Message*>		output_queue;
+	std::queue<OutputMessage>	output_queue;
 
 	// constructor/destructor
 	Connection(asio::ip::tcp::socket *socket_, Service *service_);
@@ -57,6 +58,6 @@ public:
 
 void connmgr_accept(asio::ip::tcp::socket *socket, Service *service);
 void connmgr_close(const std::shared_ptr<Connection> &conn);
-void connmgr_send(const std::shared_ptr<Connection> &conn, Message *msg);
+void connmgr_send(const std::shared_ptr<Connection> &conn, OutputMessage msg);
 
 #endif //CONNECTION_H_

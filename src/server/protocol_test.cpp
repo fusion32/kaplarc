@@ -1,9 +1,10 @@
 #include "protocol_test.h"
 
 #include "connection.h"
-#include "message.h"
+#include "outputmessage.h"
 #include "../crypto/adler32.h"
 #include "../dispatcher.h"
+#include "../message.h"
 #include "../log.h"
 
 // Every protocol must implement something similar when making use of the
@@ -78,11 +79,11 @@ void ProtocolTest::parse(Message *msg){
 }
 
 void ProtocolTest::send_hello(void){
-	Message *msg = output_pool_acquire(MSG_CAPACITY_SMALL);
-	if(msg != nullptr){
-		message_begin(msg);
+	auto msg = output_message(128);
+	if(msg){
+		message_begin(msg.get());
 		msg->add_lstr("Hello World", 11);
-		message_end(msg);
-		connmgr_send(connection, msg);
+		message_end(msg.get());
+		connmgr_send(connection, std::move(msg));
 	}
 }

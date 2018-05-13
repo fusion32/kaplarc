@@ -1,10 +1,13 @@
-#include "cassandra.h"
+#include "database.h"
+
+#ifdef __DB_CASSANDRA__
 #include "../log.h"
+#include <cassandra.h>
 
 static CassCluster *cluster = nullptr;
 static CassSession *session = nullptr;
 
-bool cass_init(void){
+bool database_init(void){
 	CassFuture *future;
 	CassError res;
 
@@ -56,7 +59,7 @@ err0:	cass_cluster_free(cluster);
 	return false;
 }
 
-void cass_shutdown(void){
+void database_shutdown(void){
 	if(session != nullptr){
 		cass_session_free(session);
 		session = nullptr;
@@ -67,15 +70,7 @@ void cass_shutdown(void){
 	}
 }
 
-bool row_get_column_string(const CassRow *row, const char *name, const char **output, size_t *output_size){
-	const CassValue *value = cass_row_get_column_by_name(row, name);
-	if(value == nullptr)
-		return false;
-	cass_value_get_string(value, output, output_size);
-	return true;
-}
-
-void cass_test(void){
+void database_test(void){
 	const CassResult *result;
 	const CassValue *value;
 	const CassRow *row;
@@ -112,13 +107,18 @@ void cass_test(void){
 	}
 
 	// get value
-	//cass_row_get_column_by_name(row, "release_version");
+	//value = cass_row_get_column_by_name(row, "release_version");
 	value = cass_row_get_column(row, 0);
-	cass_value_get_string(value, &version, &version_len);
-	if(row_get_column_string(row, "release_version", &version, &version_len))
-		LOG("cass_test: release_version = %.*s", version_len, version);
-	else
-		LOG_ERROR("cass_test: failed to convert `release_version` to string");
-
+	if(value != nullptr){
+		if(cass_value_get_string(value, &version, &version_len) == CASS_OK)
+			LOG("cass_test: release_version = %.*s", version_len, version);
+		else
+			LOG_ERROR("cass_test: failed to covert `release_version` to string");
+	} else {
+		LOG_ERROR("cass_test: failed to fetch first column");
+	}
 	cass_result_free(result);
 }
+
+
+#endif //__DB_CASSANDRA__

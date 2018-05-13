@@ -1,24 +1,26 @@
 #ifndef MESSAGE_H_
 #define MESSAGE_H_
 
-#include "../def.h"
+#include "def.h"
 
-#define MSG_CAPACITY_DEFAULT	4096
-#define MSG_CAPACITY_SMALL	256
+#define MESSAGE_DEFAULT_CAPACITY 4096
+
 class Message{
 // this is a low-level class so making all attributes public is fine
 // as adding getters and setters here would just increase code bloat
 public:
-	long capacity;
-	long readpos;
-	long length;
 	uint8 *buffer;
+	size_t capacity;
+	size_t length;
+	uint32 readpos;
 
 	// constructor/destructor
-	Message(const long capacity_ = MSG_CAPACITY_DEFAULT);
+	Message(size_t capacity_ = MESSAGE_DEFAULT_CAPACITY);
 	~Message(void);
 
 	// peek data
+	uint8 peek_byte(void);
+	uint16 peek_u16(void);
 	uint32 peek_u32(void);
 
 	// get data
@@ -41,8 +43,5 @@ public:
 	void	radd_str(const char *str);
 	void	radd_lstr(const char *buf, uint16 buflen);
 };
-
-Message *output_pool_acquire(const long capacity);
-void output_pool_release(Message *msg);
 
 #endif //MESSAGE_H_

@@ -31,15 +31,9 @@ struct SchRef{
 	bool operator!=(const SchRef &rhs) const{
 		return id != rhs.id;
 	}
-	bool operator<(const SchRef &rhs) const{
-		return id != rhs.id && time < rhs.time;
-	}
-	bool operator>(const SchRef &rhs) const{
-		return id != rhs.id && time >= rhs.time;
-	}
 };
 
-bool	scheduler_init(void);
+void	scheduler_init(void);
 void	scheduler_shutdown(void);
 SchRef	scheduler_add(int64 delay, Dispatcher *disp, const Task &task);
 SchRef	scheduler_add(int64 delay, Dispatcher *disp, Task &&task);

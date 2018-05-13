@@ -2,6 +2,7 @@
 #define CONFIG_H_
 
 void config_cmdline(int argc, char **argv);
+bool config_load(void);
 bool config_load(const char *path);
 bool config_save(const char *path, bool overwrite);
 const char *config_get(const char *name);

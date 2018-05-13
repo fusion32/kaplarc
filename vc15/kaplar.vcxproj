@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\avltree.cpp" />
     <ClCompile Include="..\src\config.cpp" />
     <ClCompile Include="..\src\crypto\adler32.cpp" />
     <ClCompile Include="..\src\crypto\arc4random.cpp" />
@@ -29,26 +28,26 @@
     <ClCompile Include="..\src\crypto\rsa.cpp" />
     <ClCompile Include="..\src\crypto\xtea.cpp" />
     <ClCompile Include="..\src\db\cassandra.cpp" />
-    <ClCompile Include="..\src\db\database.cpp" />
+    <ClCompile Include="..\src\db\local.cpp" />
+    <ClCompile Include="..\src\db\mongo.cpp" />
+    <ClCompile Include="..\src\db\mysql.cpp" />
+    <ClCompile Include="..\src\db\remote.cpp" />
     <ClCompile Include="..\src\game\protocol_login.cpp" />
     <ClCompile Include="..\src\game\srsa.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\memblock.cpp" />
+    <ClCompile Include="..\src\message.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
     <ClCompile Include="..\src\server\connection.cpp" />
-    <ClCompile Include="..\src\server\message.cpp" />
+    <ClCompile Include="..\src\server\outputmessage.cpp" />
     <ClCompile Include="..\src\server\protocol_test.cpp" />
     <ClCompile Include="..\src\server\server.cpp" />
     <ClCompile Include="..\src\stringbase.cpp" />
     <ClCompile Include="..\src\stringutil.cpp" />
     <ClCompile Include="..\src\system.cpp" />
     <ClCompile Include="..\src\dispatcher.cpp" />
-    <ClCompile Include="..\src\tree.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\avltree.h" />
-    <ClInclude Include="..\src\avltree.hpp" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\crypto\adler32.h" />
     <ClInclude Include="..\src\crypto\arc4random.h" />
@@ -57,9 +56,8 @@
     <ClInclude Include="..\src\crypto\blowfish.h" />
     <ClInclude Include="..\src\crypto\rsa.h" />
     <ClInclude Include="..\src\crypto\xtea.h" />
-    <ClInclude Include="..\src\db\cassandra.h" />
     <ClInclude Include="..\src\db\database.h" />
-    <ClInclude Include="..\src\debug.h" />
+    <ClInclude Include="..\src\db\local.h" />
     <ClInclude Include="..\src\endian.h" />
     <ClInclude Include="..\src\game\account.h" />
     <ClInclude Include="..\src\game\protocol_game.h" />
@@ -67,18 +65,17 @@
     <ClInclude Include="..\src\game\protocol_legacy.h" />
     <ClInclude Include="..\src\game\protocol_login.h" />
     <ClInclude Include="..\src\game\srsa.h" />
-    <ClInclude Include="..\src\platform.h" />
+    <ClInclude Include="..\src\message.h" />
     <ClInclude Include="..\src\scope_guard.h" />
     <ClInclude Include="..\src\sstring.h" />
     <ClInclude Include="..\src\stringbase.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\log.h" />
-    <ClInclude Include="..\src\memblock.h" />
     <ClInclude Include="..\src\ringbuffer.h" />
     <ClInclude Include="..\src\scheduler.h" />
     <ClInclude Include="..\src\server\asio.h" />
     <ClInclude Include="..\src\server\connection.h" />
-    <ClInclude Include="..\src\server\message.h" />
+    <ClInclude Include="..\src\server\outputmessage.h" />
     <ClInclude Include="..\src\server\protocol.h" />
     <ClInclude Include="..\src\server\protocol_test.h" />
     <ClInclude Include="..\src\server\server.h" />
@@ -86,8 +83,6 @@
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\dispatcher.h" />
     <ClInclude Include="..\src\throw.h" />
-    <ClInclude Include="..\src\tree.h" />
-    <ClInclude Include="..\src\tree.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

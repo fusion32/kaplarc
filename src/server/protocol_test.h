@@ -1,5 +1,5 @@
-#ifndef PROTOCOL_TEST_H_
-#define PROTOCOL_TEST_H_
+#ifndef SERVER_PROTOCOL_TEST_H_
+#define SERVER_PROTOCOL_TEST_H_
 
 #include "protocol.h"
 class ProtocolTest: public Protocol{
@@ -24,4 +24,4 @@ private:
 	void send_hello(void);
 };
 
-#endif //PROTOCOL_TEST_H_
+#endif //SERVER_PROTOCOL_TEST_H_

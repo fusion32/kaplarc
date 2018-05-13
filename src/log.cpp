@@ -54,7 +54,7 @@ void log_add1(const char *tag, const char *fmt, va_list ap){
 	strftime(timestr, 64, "%b %d %Y %H:%M:%S", timeptr);
 
 	// concatenate log entry
-	log_entry.copyf("[%s] %8s | ", timestr, tag);
+	log_entry.format("[%s] %8s | ", timestr, tag);
 	log_entry.vappendf(fmt, ap);
 	log_entry.append("\n");
 	if(log_entry.size() <= 0){
