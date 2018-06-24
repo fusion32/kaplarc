@@ -1,7 +1,7 @@
-#ifndef MESSAGE_H_
-#define MESSAGE_H_
+#ifndef SERVER_MESSAGE_H_
+#define SERVER_MESSAGE_H_
 
-#include "def.h"
+#include "../def.h"
 
 #define MESSAGE_DEFAULT_CAPACITY 4096
 
@@ -12,7 +12,7 @@ public:
 	uint8 *buffer;
 	size_t capacity;
 	size_t length;
-	uint32 readpos;
+	size_t readpos;
 
 	// constructor/destructor
 	Message(size_t capacity_ = MESSAGE_DEFAULT_CAPACITY);
@@ -27,21 +27,21 @@ public:
 	uint8	get_byte(void);
 	uint16	get_u16(void);
 	uint32	get_u32(void);
-	void	get_str(char *buf, uint16 buflen);
+	void	get_str(char *buf, size_t buflen);
 
 	// add data
 	void	add_byte(uint8 val);
 	void	add_u16(uint16 val);
 	void	add_u32(uint32 val);
 	void	add_str(const char *str);
-	void	add_lstr(const char *buf, uint16 buflen);
+	void	add_lstr(const char *buf, size_t buflen);
 
 	// reverse add
 	void	radd_byte(uint8 val);
 	void	radd_u16(uint16 val);
 	void	radd_u32(uint32 val);
 	void	radd_str(const char *str);
-	void	radd_lstr(const char *buf, uint16 buflen);
+	void	radd_lstr(const char *buf, size_t buflen);
 };
 
-#endif //MESSAGE_H_
+#endif //SERVER_MESSAGE_H_

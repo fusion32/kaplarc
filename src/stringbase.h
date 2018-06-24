@@ -25,6 +25,8 @@ public:
 
 	// conversion
 	const char *c_str(void){
+		if(length == capacity)
+			length -= 1;
 		buffer[length] = 0x00;
 		return buffer;
 	}

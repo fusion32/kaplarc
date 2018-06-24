@@ -1,36 +1,70 @@
 #include "connection.h"
+#include "message.h"
 #include "outputmessage.h"
 #include "protocol.h"
 #include "server.h"
 #include "../log.h"
+#include "asio.h"
+
+#include <mutex>
+#include <queue>
 
 /*************************************
 
 	Connection
 
 *************************************/
-Connection::Connection(asio::ip::tcp::socket *socket_, Service *service_)
-  :	socket(socket_),
-	service(service_),
-	protocol(nullptr),
-	flags(0),
-	rdwr_count(0),
-	timeout(socket_->get_io_service()) {
-}
+// connection flags
+#define CONNECTION_CLOSED		0x03 // (0x01 | CONNECTION_SHUTDOWN)
+#define CONNECTION_SHUTDOWN		0x02
+#define CONNECTION_FIRST_MSG		0x04
 
-Connection::~Connection(void){
-	if(protocol != nullptr){
-		protocol->on_close();
-		protocol = nullptr;
-	}
+// connection settings
+#define CONNECTION_TIMEOUT		10000
 
-	if(socket != nullptr){
-		socket->close();
-		delete socket;
-		socket = nullptr;
+class Connection{
+public:
+	// deleted operations
+	Connection(void) = delete;
+	Connection(const Connection&) = delete;
+	Connection &operator=(const Connection&) = delete;
+
+	// connection control
+	asio::ip::tcp::socket		*socket;
+	Service				*service;
+	std::shared_ptr<Protocol>	protocol;
+	uint32				flags;
+	uint32				rdwr_count;
+	asio::steady_timer		timeout;
+	std::recursive_mutex		mtx;
+
+	// connection messages
+	Message				input;
+	std::queue<OutputMessage>	output_queue;
+
+	// constructor/destructor
+	Connection(asio::ip::tcp::socket *socket_, Service *service_)
+	  :	socket(socket_),
+		service(service_),
+		protocol(nullptr),
+		flags(0),
+		rdwr_count(0),
+		timeout(socket_->get_io_service()){
 	}
-	LOG("connection released");
-}
+	~Connection(void){
+		if(protocol != nullptr){
+			protocol->on_close();
+			protocol = nullptr;
+		}
+
+		if(socket != nullptr){
+			socket->close();
+			delete socket;
+			socket = nullptr;
+		}
+		LOG("connection released");
+	}
+};
 
 /*************************************
 
@@ -145,14 +179,15 @@ static void on_write(std::shared_ptr<Connection> conn,
 	Connection Manager
 
 *************************************/
-void connmgr_accept(asio::ip::tcp::socket *socket, Service *service){
+void connmgr_accept(void *socket_ptr, Service *service){
+	auto socket = (asio::ip::tcp::socket*)socket_ptr;
 	auto conn = std::make_shared<Connection>(socket, service);
 	auto wconn = std::weak_ptr<Connection>(conn);
 
 	// initialize connection
 	std::lock_guard<std::recursive_mutex> lock(conn->mtx);
-	if(service_has_single_protocol(conn->service)){
-		conn->protocol = service_make_protocol(conn->service, conn);
+	if(service_has_single_protocol(service)){
+		conn->protocol = service_make_protocol(service, conn);
 		conn->protocol->on_connect();
 	}
 
@@ -165,18 +200,17 @@ void connmgr_accept(asio::ip::tcp::socket *socket, Service *service){
 			{ timeout_handler(std::move(wconn), ec); });
 
 	// start read chain
-	asio::async_read(*conn->socket, asio::buffer(conn->input.buffer, 2),
+	asio::async_read(*socket, asio::buffer(conn->input.buffer, 2),
 		[conn](const asio::error_code &ec, std::size_t transfered)
 			{ on_read_length(std::move(conn), ec, transfered); });
 }
 
 static void connmgr_internal_close(const std::shared_ptr<Connection> &conn, bool forced){
-	std::error_code ec;
-
 	// the goal here is to shutdown the socket, interrupting the
 	// read chain while keeping it open to send any pending output
 	// messages and when these are done, the connection will be
 	// properly released by it's destructor
+	std::error_code ec;
 	if(forced && conn->socket != nullptr){
 		conn->socket->cancel(ec);
 		DEBUG_CHECK(!ec, "socket cancel: %s", ec.message().c_str());

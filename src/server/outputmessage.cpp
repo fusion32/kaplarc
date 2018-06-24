@@ -1,5 +1,5 @@
 #include "outputmessage.h"
-#include "../message.h"
+#include "message.h"
 #include <string.h>
 #include <map>
 #include <vector>

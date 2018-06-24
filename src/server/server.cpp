@@ -1,47 +1,41 @@
 
-#include <algorithm>
-#include <vector>
 #include "../log.h"
 #include "connection.h"
 #include "server.h"
 #include "protocol.h"
+#include "asio.h"
 
+#include <algorithm>
+#include <vector>
 
 /*************************************
 
 	Service Class
 
 *************************************/
-
 class Service{
 public:
+	// deleted operations
+	Service(void) = delete;
+	Service(const Service&) = delete;
+	Service &operator=(const Service&) = delete;
+
 	// service control
 	std::vector<IProtocolFactory*>	factories;
 	asio::ip::tcp::acceptor		acceptor;
 	int				port;
 
 	// constructor/destructor
-	Service(asio::io_service &ios_, int port_);
-	~Service(void);
-
-	// delete operations
-	Service(void) = delete;
-	Service(const Service&) = delete;
-	Service(Service&&) = delete;
-	Service &operator=(const Service&) = delete;
-	Service &operator=(Service&&) = delete;
+	Service(asio::io_service &ios_, int port_)
+	  : acceptor(ios_), port(port_) {}
+	~Service(void){
+		if(acceptor.is_open())
+			acceptor.close();
+		for(IProtocolFactory *factory : factories)
+			delete factory;
+		factories.clear();
+	}
 };
-
-Service::Service(asio::io_service &ios_, int port_)
- : acceptor(ios_), port(port_) {}
-
-Service::~Service(void){
-	if(acceptor.is_open())
-		acceptor.close();
-	for(IProtocolFactory *factory : factories)
-		delete factory;
-	factories.clear();
-}
 
 /*************************************
 
@@ -154,18 +148,20 @@ service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn,
 	Server Public Interface
 
 *************************************/
+static bool running = false;
 static asio::io_service io_service;
 static std::vector<Service*> services;
 
 void server_run(void){
+	if(running) return;
 	for(Service *service : services)
 		service_open(service);
-
-	//asio::io_service::work work(io_service);
+	running = true;
 	io_service.run();
-
+	running = false;
 	for(Service *service : services)
 		service_close(service);
+	io_service.reset();
 }
 
 void server_stop(void){
@@ -173,7 +169,7 @@ void server_stop(void){
 }
 
 bool server_add_factory(int port, IProtocolFactory *factory){
-	if(io_service.stopped()){
+	if(running){
 		LOG_ERROR("server_add_factory: server already running");
 		return false;
 	}
@@ -187,10 +183,5 @@ bool server_add_factory(int port, IProtocolFactory *factory){
 	}else{
 		service = *it;
 	}
-
 	return service_add_factory(service, factory);
-}
-
-asio::io_service &server_io_service(void){
-	return io_service;
 }

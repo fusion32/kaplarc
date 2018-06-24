@@ -27,18 +27,17 @@
     <ClCompile Include="..\src\crypto\blowfish.cpp" />
     <ClCompile Include="..\src\crypto\rsa.cpp" />
     <ClCompile Include="..\src\crypto\xtea.cpp" />
+    <ClCompile Include="..\src\db\blob.cpp" />
     <ClCompile Include="..\src\db\cassandra.cpp" />
     <ClCompile Include="..\src\db\local.cpp" />
-    <ClCompile Include="..\src\db\mongo.cpp" />
-    <ClCompile Include="..\src\db\mysql.cpp" />
-    <ClCompile Include="..\src\db\remote.cpp" />
+    <ClCompile Include="..\src\db\pgsql.cpp" />
     <ClCompile Include="..\src\game\protocol_login.cpp" />
     <ClCompile Include="..\src\game\srsa.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\message.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
     <ClCompile Include="..\src\server\connection.cpp" />
+    <ClCompile Include="..\src\server\message.cpp" />
     <ClCompile Include="..\src\server\outputmessage.cpp" />
     <ClCompile Include="..\src\server\protocol_test.cpp" />
     <ClCompile Include="..\src\server\server.cpp" />
@@ -56,8 +55,8 @@
     <ClInclude Include="..\src\crypto\blowfish.h" />
     <ClInclude Include="..\src\crypto\rsa.h" />
     <ClInclude Include="..\src\crypto\xtea.h" />
-    <ClInclude Include="..\src\db\database.h" />
-    <ClInclude Include="..\src\db\local.h" />
+    <ClInclude Include="..\src\db\blob.h" />
+    <ClInclude Include="..\src\db\db.h" />
     <ClInclude Include="..\src\endian.h" />
     <ClInclude Include="..\src\game\account.h" />
     <ClInclude Include="..\src\game\protocol_game.h" />
@@ -65,8 +64,8 @@
     <ClInclude Include="..\src\game\protocol_legacy.h" />
     <ClInclude Include="..\src\game\protocol_login.h" />
     <ClInclude Include="..\src\game\srsa.h" />
-    <ClInclude Include="..\src\message.h" />
     <ClInclude Include="..\src\scope_guard.h" />
+    <ClInclude Include="..\src\server\message.h" />
     <ClInclude Include="..\src\sstring.h" />
     <ClInclude Include="..\src\stringbase.h" />
     <ClInclude Include="..\src\def.h" />
@@ -83,6 +82,7 @@
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\dispatcher.h" />
     <ClInclude Include="..\src\throw.h" />
+    <ClInclude Include="..\src\buffer_util.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

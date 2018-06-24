@@ -24,32 +24,32 @@ static inline uint64 swap_u64(uint64 x){
 		| (x & 0x00000000000000FF) << 56;
 }
 
-#ifdef __BIG_ENDIAN__
-#define u16_from_be(x)	(x)
-#define u16_from_le(x)	swap_u16(x)
-#define u32_from_be(x)	(x)
-#define u32_from_le(x)	swap_u32(x)
-#define u64_from_be(x)	(x)
-#define u64_from_le(x)	swap_u64(x)
-#define u16_to_be(x)	(x)
-#define u16_to_le(x)	swap_u16(x)
-#define u32_to_be(x)	(x)
-#define u32_to_le(x)	swap_u32(x)
-#define u64_to_be(x)	(x)
-#define u64_to_le(x)	swap_u64(x)
-#else //__BIG_ENDIAN__
-#define u16_from_be(x)	swap_u16(x)
-#define u16_from_le(x)	(x)
-#define u32_from_be(x)	swap_u32(x)
-#define u32_from_le(x)	(x)
-#define u64_from_be(x)	swap_u64(x)
-#define u64_from_le(x)	(x)
-#define u16_to_be(x)	swap_u16(x)
-#define u16_to_le(x)	(x)
-#define u32_to_be(x)	swap_u32(x)
-#define u32_to_le(x)	(x)
-#define u64_to_be(x)	swap_u64(x)
-#define u64_to_le(x)	(x)
-#endif //__BIG_ENDIAN__
+#ifdef ARCH_BIG_ENDIAN
+#define u16_be_to_cpu(x)	(x)
+#define u16_le_to_cpu(x)	swap_u16(x)
+#define u32_be_to_cpu(x)	(x)
+#define u32_le_to_cpu(x)	swap_u32(x)
+#define u64_be_to_cpu(x)	(x)
+#define u64_le_to_cpu(x)	swap_u64(x)
+#define u16_cpu_to_be(x)	(x)
+#define u16_cpu_to_le(x)	swap_u16(x)
+#define u32_cpu_to_be(x)	(x)
+#define u32_cpu_to_le(x)	swap_u32(x)
+#define u64_cpu_to_be(x)	(x)
+#define u64_cpu_to_le(x)	swap_u64(x)
+#else //ARCH_BIG_ENDIAN
+#define u16_be_to_cpu(x)	swap_u16(x)
+#define u16_le_to_cpu(x)	(x)
+#define u32_be_to_cpu(x)	swap_u32(x)
+#define u32_le_to_cpu(x)	(x)
+#define u64_be_to_cpu(x)	swap_u64(x)
+#define u64_le_to_cpu(x)	(x)
+#define u16_cpu_to_be(x)	swap_u16(x)
+#define u16_cpu_to_le(x)	(x)
+#define u32_cpu_to_be(x)	swap_u32(x)
+#define	u32_cpu_to_le(x)	(x)
+#define u64_cpu_to_be(x)	swap_u64(x)
+#define u64_cpu_to_le(x)	(x)
+#endif //ARCH_BIG_ENDIAN
 
 #endif //ENDIAN_H_

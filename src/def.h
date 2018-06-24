@@ -17,6 +17,14 @@ constexpr size_t array_size(T (&arr)[N]){
 	return N;
 }
 
+constexpr bool is_power_of_two(size_t size){
+	return (size != 0) && ((size & (size - 1)) == 0);
+}
+
+// arch settings (these options should be ajusted to the arch being used)
+//#define ARCH_BIG_ENDIAN 1
+#define ARCH_UNALIGNED_ACCESS 1
+
 // platform settings
 #if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
 #	define PLATFORM_WINDOWS 1
@@ -46,30 +54,14 @@ constexpr size_t array_size(T (&arr)[N]){
 #endif
 
 // database settings
-#define __DB_CASSANDRA__ 1
-#if defined(__DB_MYSQL__)
-#	if defined(__DB_MONGO__)
-#		undef __DB_MONGO__
+#if defined(__DB_CASSANDRA__)
+#	if defined(__DB_PGSQL__)
+#		undef __DB_PGSQL__
 #	endif
-#	if defined(__DB_CASSANDRA__)
-#		undef __DB_CASSANDRA__
-#	endif
-#	if defined(__DB_REMOTE__)
-#		undef __DB_REMOTE__
-#	endif
-#elif defined(__DB_MONGO__)
-#	if defined(__DB_CASSANDRA__)
-#		undef __DB_CASSANDRA__
-#	endif
-#	if defined(__DB_REMOTE__)
-#		undef __DB_REMOTE__
-#	endif
-#elif defined(__DB_CASSANDRA__)
-#	if defined(__DB_REMOTE__)
-#		undef __DB_REMOTE__
-#	endif
-#elif !defined(__DB_REMOTE__)
-#	define __DB_MYSQL__ 1
+#elif defined(__DB_PGSQL__)
+#	error PGSQL DB Interface not yet implemented.
+#else
+#	define __DB_CASSANDRA__ 1
 #endif
 
 #endif //DEF_H_

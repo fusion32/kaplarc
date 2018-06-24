@@ -3,13 +3,15 @@
 *.dll
 *.so
 
+# VS Code
+.vscode/
+
 # VS directories
 .vs/
 [Dd]ebug/
 [Rr]elease/
 x64/
 x86/
-
 
 # Makefile directories
 [Bb]uild/

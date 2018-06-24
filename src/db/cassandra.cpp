@@ -1,4 +1,4 @@
-#include "database.h"
+#include "db.h"
 
 #ifdef __DB_CASSANDRA__
 #include "../log.h"
@@ -7,7 +7,7 @@
 static CassCluster *cluster = nullptr;
 static CassSession *session = nullptr;
 
-bool database_init(void){
+bool db_init(void){
 	CassFuture *future;
 	CassError res;
 
@@ -59,7 +59,7 @@ err0:	cass_cluster_free(cluster);
 	return false;
 }
 
-void database_shutdown(void){
+void db_shutdown(void){
 	if(session != nullptr){
 		cass_session_free(session);
 		session = nullptr;
@@ -70,7 +70,7 @@ void database_shutdown(void){
 	}
 }
 
-void database_test(void){
+void db_test(void){
 	const CassResult *result;
 	const CassValue *value;
 	const CassRow *row;
@@ -92,6 +92,7 @@ void database_test(void){
 	// execute query
 	future = cass_session_execute(session, stmt);
 	result = cass_future_get_result(future);
+	cass_statement_free(stmt);
 	cass_future_free(future);
 	if(result == nullptr){
 		LOG_ERROR("cass_test: failed to execute statement");

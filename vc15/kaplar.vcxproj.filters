@@ -85,20 +85,17 @@
     <ClCompile Include="..\src\db\local.cpp">
       <Filter>Source Files\db</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\db\mongo.cpp">
-      <Filter>Source Files\db</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\db\mysql.cpp">
-      <Filter>Source Files\db</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\db\remote.cpp">
-      <Filter>Source Files\db</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\message.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\server\outputmessage.cpp">
       <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\pgsql.cpp">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\message.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\blob.cpp">
+      <Filter>Source Files\db</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -195,17 +192,20 @@
     <ClInclude Include="..\src\game\account.h">
       <Filter>Source Files\game</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\db\database.h">
-      <Filter>Source Files\db</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\db\local.h">
-      <Filter>Source Files\db</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\message.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\server\outputmessage.h">
       <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\db\db.h">
+      <Filter>Source Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server\message.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\db\blob.h">
+      <Filter>Source Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\buffer_util.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

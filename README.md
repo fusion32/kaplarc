@@ -5,13 +5,14 @@ This is hobby project. I'm aiming to remake the original OpenTibia Server (initi
 
 ## License
 I chose the MIT License because it is a simple permissive license.
-Refer to LICENSE inside the project directory for details.
+Refer to LICENSE in the root directory for details.
 
 ## Project Layout
 ```
 data/           data folder
-src/            source
-test/		unit tests
+docs/           couple notes
+src/            source code
+test/           unit tests
 vc15/           Visual Studio 15
 ```
 
@@ -21,17 +22,11 @@ A server is made up of various systems and before i begin implementation of the 
 The status for these systems are listed below:
 ```
 [x] configuration
-[x] networking protocols
 [ ] scripting
+[+] networking
+[x]     test protocol
 [+] database
-[ ]	MongoDB backend
-[ ]	Cassandra backend
+[ ]     Local
+[ ]     CassandraDB
+[ ]     PostgreSQL
 ```
-
-REMARK: for the official database backend, i'm still divided between MongoDB and Cassandra. Both have appealing features but i'm leaning towards MongoDB simply because it's developed in C++ and the connectors are provided by the same guys. Whereas Cassandra is developed in Java and it's connectors are distributed from a third-party company.
-
-## Contributors
-
-- fusion32
-
-> **Note:** Anyone is welcome to contribute with the project.

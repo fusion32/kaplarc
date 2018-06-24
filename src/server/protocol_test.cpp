@@ -1,10 +1,10 @@
 #include "protocol_test.h"
 
 #include "connection.h"
+#include "message.h"
 #include "outputmessage.h"
 #include "../crypto/adler32.h"
 #include "../dispatcher.h"
-#include "../message.h"
 #include "../log.h"
 
 // Every protocol must implement something similar when making use of the
@@ -15,7 +15,7 @@
 
 // message helpers for sending a message over this protocol
 static bool checksum(Message *msg){
-	uint32 offset = msg->readpos + 4;
+	size_t offset = msg->readpos + 4;
 	uint32 sum = adler32(msg->buffer + offset, msg->length - offset);
 	return sum == msg->peek_u32();
 }
@@ -30,7 +30,7 @@ static void message_end(Message *msg){
 
 // protocol implementation
 bool ProtocolTest::identify(Message *first){
-	uint32 offset = first->readpos;
+	size_t offset = first->readpos;
 	// skip checksum
 	if(checksum(first))
 		offset += 4;

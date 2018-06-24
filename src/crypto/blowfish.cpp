@@ -1,20 +1,8 @@
-#include "../endian.h"
 #include "blowfish.h"
+#include "../buffer_util.h"
 #include <string.h>
 
 #define ROUND_TO_8(x) (((x) + 7) & ~7)
-#define GET_U32(x, d, i)					\
-	(x) = ((d)[(i)+0] << 24)				\
-		| ((d)[(i)+1] << 16)				\
-		| ((d)[(i)+2] << 8)				\
-		| ((d)[(i)+3])
-#define PUT_U32(x, d, i)					\
-	do{							\
-		(d)[(i)+0] = ((x) >> 24) & 0xFF;		\
-		(d)[(i)+1] = ((x) >> 16) & 0xFF;		\
-		(d)[(i)+2] = ((x) >> 8) & 0xFF;			\
-		(d)[(i)+3] = (x) & 0xFF;			\
-	}while(0)
 
 static const uint32 P[] = {
 	0x243f6a88L, 0x85a308d3L, 0x13198a2eL, 0x03707344L,
@@ -319,7 +307,7 @@ static inline void decode_one(struct blowfish_ctx *b, uint32 *data){
 }
 
 // extract uint32 from a cyclic data stream
-static inline uint32 _stream_get_u32(uint8 *data, size_t datalen, uint32 *current){
+static inline uint32 cyclic_buffer_get_u32(uint8 *data, size_t datalen, uint32 *current){
 	uint32 d, i, j;
 	d = 0; j = *current;
 	for(i = 0; i < 4; ++i){
@@ -346,7 +334,7 @@ void blowfish_expandkey(struct blowfish_ctx *b, uint8 *key, size_t len){
 
 	j = 0;
 	for(i = 0; i < 18; ++i)
-		b->P[i] ^= _stream_get_u32(key, len, &j);
+		b->P[i] ^= cyclic_buffer_get_u32(key, len, &j);
 
 	d[0] = 0; d[1] = 0;
 	for(i = 0; i < 18; i += 2){
@@ -369,19 +357,19 @@ void blowfish_expandkey1(struct blowfish_ctx *b,
 
 	j = 0;
 	for(i = 0; i < 18; ++i)
-		b->P[i] ^= _stream_get_u32(key, keylen, &j);
+		b->P[i] ^= cyclic_buffer_get_u32(key, keylen, &j);
 
 	j = 0; d[0] = 0; d[1] = 0;
 	for(i = 0; i < 18; i += 2){
-		d[0] ^= _stream_get_u32(data, datalen, &j);
-		d[1] ^= _stream_get_u32(data, datalen, &j);
+		d[0] ^= cyclic_buffer_get_u32(data, datalen, &j);
+		d[1] ^= cyclic_buffer_get_u32(data, datalen, &j);
 		encode_one(b, d);
 		b->P[i] = d[0];
 		b->P[i+1] = d[1];
 	}
 	for(i = 0; i < 1024; i += 2){
-		d[0] ^= _stream_get_u32(data, datalen, &j);
-		d[1] ^= _stream_get_u32(data, datalen, &j);
+		d[0] ^= cyclic_buffer_get_u32(data, datalen, &j);
+		d[1] ^= cyclic_buffer_get_u32(data, datalen, &j);
 		encode_one(b, d);
 		b->S[i] = d[0];
 		b->S[i + 1] = d[1];
@@ -392,11 +380,11 @@ void blowfish_ecb_encode(struct blowfish_ctx *b, uint8 *data, size_t len){
 	uint32 d[2];
 	len = ROUND_TO_8(len);
 	while(len > 0){
-		GET_U32(d[0], data, 0);
-		GET_U32(d[1], data, 4);
+		d[0] = decode_u32_be(data);
+		d[1] = decode_u32_be(data + 4);
 		encode_one(b, d);
-		PUT_U32(d[0], data, 0);
-		PUT_U32(d[1], data, 4);
+		encode_u32_be(data, d[0]);
+		encode_u32_be(data, d[1]);
 		len -= 8; data += 8;
 	}
 }
@@ -405,11 +393,11 @@ void blowfish_ecb_decode(struct blowfish_ctx *b, uint8 *data, size_t len){
 	uint32 d[2];
 	len = ROUND_TO_8(len);
 	while(len > 0){
-		GET_U32(d[0], data, 0);
-		GET_U32(d[1], data, 4);
+		d[0] = decode_u32_be(data);
+		d[1] = decode_u32_be(data + 4);
 		decode_one(b, d);
-		PUT_U32(d[0], data, 0);
-		PUT_U32(d[1], data, 4);
+		encode_u32_be(data, d[0]);
+		encode_u32_be(data, d[1]);
 		len -= 8; data += 8;
 	}
 }
@@ -420,11 +408,11 @@ void blowfish_cbc_encode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, size_t 
 	while(len > 0){
 		for(i = 0; i < 8; ++i)
 			data[i] ^= iv[i];
-		GET_U32(d[0], data, 0);
-		GET_U32(d[1], data, 4);
+		d[0] = decode_u32_be(data);
+		d[1] = decode_u32_be(data + 4);
 		encode_one(b, d);
-		PUT_U32(d[0], data, 0);
-		PUT_U32(d[1], data, 4);
+		encode_u32_be(data, d[0]);
+		encode_u32_be(data, d[1]);
 		len -= 8;
 		iv = data; data += 8;
 	}
@@ -438,11 +426,11 @@ void blowfish_cbc_decode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, size_t 
 	data = data + len - 8;
 	prev = data - 8;
 	while(len > 0){
-		GET_U32(d[0], data, 0);
-		GET_U32(d[1], data, 4);
+		d[0] = decode_u32_be(data);
+		d[1] = decode_u32_be(data + 4);
 		decode_one(b, d);
-		PUT_U32(d[0], data, 0);
-		PUT_U32(d[1], data, 4);
+		encode_u32_be(data, d[0]);
+		encode_u32_be(data, d[1]);
 		if(len > 8){
 			for(i = 0; i < 8; ++i)
 				data[i] ^= prev[i];
@@ -459,12 +447,12 @@ void blowfish_ecb_encode_n(struct blowfish_ctx *b, int n, uint8 *data, size_t le
 	uint32 d[2]; int i;
 	len = ROUND_TO_8(len);
 	while(len > 0){
-		GET_U32(d[0], data, 0);
-		GET_U32(d[1], data, 4);
+		d[0] = decode_u32_be(data);
+		d[1] = decode_u32_be(data + 4);
 		for(i = 0; i < n; i++)
 			encode_one(b, d);
-		PUT_U32(d[0], data, 0);
-		PUT_U32(d[1], data, 4);
+		encode_u32_be(data, d[0]);
+		encode_u32_be(data, d[1]);
 		len -= 8; data += 8;
 	}
 }

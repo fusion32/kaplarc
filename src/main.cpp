@@ -5,7 +5,7 @@
 #include "scheduler.h"
 #include "system.h"
 
-#include "db/database.h"
+#include "db/db.h"
 #include "game/protocol_login.h"
 #include "game/srsa.h"
 #include "server/protocol_test.h"

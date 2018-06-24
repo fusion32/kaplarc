@@ -1,5 +1,5 @@
-#ifndef ASIO_H_
-#define ASIO_H_
+#ifndef SERVER_ASIO_H_
+#define SERVER_ASIO_H_
 
 #ifdef _WIN32
 #include <sdkddkver.h>
@@ -8,4 +8,4 @@
 #define ASIO_STANDALONE 1
 #include <asio.hpp>
 
-#endif //ASIO_H_
+#endif //SERVER_ASIO_H_

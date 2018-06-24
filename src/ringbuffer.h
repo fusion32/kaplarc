@@ -11,8 +11,8 @@ private:
 	T buf[N];
 
 	static constexpr int clamp_mask = (N - 1);
-	static_assert((N != 0) && ((N & (N - 1)) == 0),
-		"Ringbuffer requires N to be a power of 2.");
+	static_assert(is_power_of_two(N),
+		"Ringbuffer requires N to be a power of two.");
 public:
 	// delete copy and move operations
 	RingBuffer(const RingBuffer&)			= delete;
