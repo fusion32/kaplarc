@@ -10,7 +10,7 @@ private:
 	uint32 writepos;
 	T buf[N];
 
-	static constexpr int clamp_mask = (N - 1);
+	static constexpr int bitmask = (N - 1);
 	static_assert(is_power_of_two(N),
 		"Ringbuffer requires N to be a power of two.");
 public:
@@ -28,13 +28,13 @@ public:
 	bool empty(void) const { return writepos == readpos; }
 	bool full(void) const { return size() >= N; }
 
-	T &front(void){ return buf[readpos & clamp_mask]; }
+	T &front(void){ return buf[readpos & bitmask]; }
 	void pop(void){ if(!empty()) readpos++; }
 
 	template<typename G>
 	bool push(G &&item){
 		if(full()) return false;
-		buf[writepos++ & clamp_mask] = std::forward<G>(item);
+		buf[writepos++ & bitmask] = std::forward<G>(item);
 		return true;
 	}
 };

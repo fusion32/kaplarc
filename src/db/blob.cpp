@@ -11,11 +11,6 @@
 
 #define ROUND_TO_64(x) (((x) + 63) & ~63)
 
-/*************************************
-
-	Blob Implementation
-
-*************************************/
 Blob::Blob(size_t initial_capacity)
 	: capacity_(initial_capacity), size_(0) {
 	if(capacity_ == 0)

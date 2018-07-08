@@ -10,9 +10,8 @@ public:
 	static bool		identify(Message *first);
 
 	// protocol interface
-	ProtocolTest(const std::shared_ptr<Connection> &conn);
+	ProtocolTest(Connection *conn);
 	virtual ~ProtocolTest(void) override;
-
 	virtual void on_connect(void) override;
 	virtual void on_close(void) override;
 	virtual void on_recv_message(Message *msg) override;

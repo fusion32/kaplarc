@@ -32,7 +32,7 @@
     <ClCompile Include="..\src\db\local.cpp" />
     <ClCompile Include="..\src\db\pgsql.cpp" />
     <ClCompile Include="..\src\game\protocol_login.cpp" />
-    <ClCompile Include="..\src\game\srsa.cpp" />
+    <ClCompile Include="..\src\game\grsa.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
@@ -63,9 +63,10 @@
     <ClInclude Include="..\src\game\protocol_info.h" />
     <ClInclude Include="..\src\game\protocol_legacy.h" />
     <ClInclude Include="..\src\game\protocol_login.h" />
-    <ClInclude Include="..\src\game\srsa.h" />
+    <ClInclude Include="..\src\game\rsa.h" />
     <ClInclude Include="..\src\scope_guard.h" />
     <ClInclude Include="..\src\server\message.h" />
+    <ClInclude Include="..\src\shared.h" />
     <ClInclude Include="..\src\sstring.h" />
     <ClInclude Include="..\src\stringbase.h" />
     <ClInclude Include="..\src\def.h" />

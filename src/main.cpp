@@ -7,7 +7,7 @@
 
 #include "db/db.h"
 #include "game/protocol_login.h"
-#include "game/srsa.h"
+#include "game/rsa.h"
 #include "server/protocol_test.h"
 #include "server/server.h"
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv){
 	//init_interface("database", database_init, database_shutdown);
 
 	// initialize game interfaces
-	init_interface("RSA", srsa_init, srsa_shutdown);
+	init_interface("RSA", grsa_init, grsa_shutdown);
 
 	// initialize server
 	server_add_protocol<ProtocolTest>(config_geti("sv_test_port"));

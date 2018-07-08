@@ -8,13 +8,14 @@
 
 #include "../def.h"
 #include "outputmessage.h"
-#include <memory>
 
 class Service;
 class Connection;
 // putting void here to avoid including asio from a header
-void connmgr_accept(void *socket_ptr, Service *service);
-void connmgr_close(const std::shared_ptr<Connection> &conn);
-void connmgr_send(const std::shared_ptr<Connection> &conn, OutputMessage msg);
+void connection_accept(void *socket_ptr, Service *service);
+void connection_close(Connection *conn);
+void connection_send(Connection *conn, OutputMessage msg);
+void connection_incref(Connection *conn);
+void connection_decref(Connection *conn);
 
 #endif //CONNECTION_H_

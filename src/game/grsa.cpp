@@ -16,12 +16,11 @@ static const char e[] = "65537";
 static std::mutex mtx;
 static struct rsa_ctx *ctx = nullptr;
 
-bool srsa_init(void){
+bool grsa_init(void){
 	if(ctx == nullptr){
 		ctx = rsa_create();
-		// set key
 		if(!rsa_setkey(ctx, p, q, e)){
-			LOG_ERROR("srsa_init: failed to set key");
+			LOG_ERROR("grsa_init: failed to set key");
 			rsa_destroy(ctx);
 			ctx = nullptr;
 			return false;
@@ -30,25 +29,25 @@ bool srsa_init(void){
 	return true;
 }
 
-void srsa_shutdown(void){
+void grsa_shutdown(void){
 	if(ctx != nullptr){
 		rsa_destroy(ctx);
 		ctx = nullptr;
 	}
 }
 
-bool srsa_encode(char *msg, size_t len, size_t *plen){
+bool grsa_encode(uint8 *data, size_t len, size_t *plen){
 	std::lock_guard<std::mutex> guard(mtx);
 	if(!rsa_can_encode(ctx, len))
 		return false;
-	rsa_encode(ctx, msg, len, plen);
+	rsa_encode(ctx, data, len, plen);
 	return true;
 }
 
-bool srsa_decode(char *msg, size_t len, size_t *plen){
+bool grsa_decode(uint8 *data, size_t len, size_t *plen){
 	std::lock_guard<std::mutex> guard(mtx);
 	if(!rsa_can_encode(ctx, len))
 		return false;
-	rsa_decode(ctx, msg, len, plen);
+	rsa_decode(ctx, data, len, plen);
 	return true;
 }

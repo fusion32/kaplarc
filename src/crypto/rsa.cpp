@@ -80,19 +80,19 @@ size_t rsa_encoding_limit(struct rsa_ctx *r){
 	return r->limit;
 }
 
-void rsa_encode(struct rsa_ctx *r, char *msg, size_t len, size_t *plen){
+void rsa_encode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *plen){
 	mpz_t m, c;
 	mpz_inits(m, c, NULL);
-	mpz_import(m, len, 1, 1, 0, 0, msg);
+	mpz_import(m, len, 1, 1, 0, 0, data);
 	mpz_powm(c, m, r->e, r->n);
-	mpz_export(msg, plen, 1, 1, 0, 0, c);
+	mpz_export(data, plen, 1, 1, 0, 0, c);
 	mpz_clears(m, c, NULL);
 }
 
-void rsa_decode(struct rsa_ctx *r, char *msg, size_t len, size_t *plen){
+void rsa_decode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *plen){
 	mpz_t c, m1, m2, h;
 	mpz_inits(c, m1, m2, h, NULL);
-	mpz_import(c, len, 1, 1, 0, 0, msg);
+	mpz_import(c, len, 1, 1, 0, 0, data);
 	mpz_powm(m1, c, r->dp, r->p);
 	mpz_powm(m2, c, r->dq, r->q);
 	mpz_sub(h, m1, m2);
@@ -101,6 +101,6 @@ void rsa_decode(struct rsa_ctx *r, char *msg, size_t len, size_t *plen){
 	mpz_mul(h, h, r->qi);
 	mpz_mod(h, h, r->p);
 	mpz_addmul(m2, h, r->q);
-	mpz_export(msg, plen, 1, 1, 0, 0, m2);
+	mpz_export(data, plen, 1, 1, 0, 0, m2);
 	mpz_clears(c, m1, m2, h, NULL);
 }

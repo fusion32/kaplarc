@@ -3,9 +3,9 @@
 
 #include "../def.h"
 #include "../log.h"
-
+#include "../shared.h"
+#include "connection.h"
 #include <atomic>
-#include <memory>
 
 class Connection;
 class Message;
@@ -15,10 +15,11 @@ class Message;
 	Protocol Interface
 
 *************************************/
+
 class Protocol
- : public std::enable_shared_from_this<Protocol>{
+  : public Shared<Protocol>{
 protected:
-	std::shared_ptr<Connection> connection;
+	Connection * const connection;
 
 public:
 	// protocol information
@@ -30,19 +31,20 @@ public:
 
 	// delete default constructor
 	Protocol(void) = delete;
-	// delete move operations
-	Protocol(Protocol&&) = delete;
-	Protocol &operator=(Protocol&&) = delete;
-	// delete copy operations
+	// delete copy
 	Protocol(const Protocol&) = delete;
 	Protocol &operator=(const Protocol&) = delete;
 
-	// construct from a connection
-	Protocol(const std::shared_ptr<Connection> &conn)
+	// construct from connection
+	Protocol(Connection *conn)
 		: connection(conn) {}
 
 	// protocol interface
-	virtual		~Protocol(void) { LOG("protocol released"); }
+	virtual ~Protocol(void){
+		// release internal reference of connection
+		connection_decref(connection);
+		LOG("protocol released");
+	}
 	virtual void	on_connect(void) {}
 	virtual void	on_close(void) {}
 	virtual void	on_recv_message(Message *msg) {}
@@ -60,8 +62,7 @@ public:
 	virtual const char *name(void) = 0;
 	virtual const bool single(void) = 0;
 	virtual const bool identify(Message *first) = 0;
-	virtual std::shared_ptr<Protocol>
-	make_protocol(const std::shared_ptr<Connection> &conn) = 0;
+	virtual Protocol *make_protocol(Connection *conn) = 0;
 };
 
 template <typename T>
@@ -72,10 +73,8 @@ public:
 	virtual const bool identify(Message *first) override{
 		return T::identify(first);
 	}
-	virtual std::shared_ptr<Protocol>
-	make_protocol(const std::shared_ptr<Connection> &conn) override{
-		return std::static_pointer_cast<Protocol>(
-			std::make_shared<T>(conn));
+	virtual Protocol *make_protocol(Connection *conn) override{
+		return new T(conn);
 	}
 };
 

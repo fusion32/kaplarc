@@ -9,7 +9,7 @@
 #include "../server/message.h"
 #include "../server/outputmessage.h"
 #include "../sstring.h"
-#include "srsa.h"
+#include "rsa.h"
 
 // helpers for this protocol
 static uint32 checksum(Message *msg){
@@ -45,9 +45,9 @@ void ProtocolLogin::disconnect(const char *message, uint32 *xtea, bool checksum_
 		output->add_byte(0x0A);
 		output->add_str(message);
 		message_end(output.get(), xtea, checksum_enabled);
-		connmgr_send(connection, std::move(output));
+		connection_send(connection, std::move(output));
 	}
-	connmgr_close(connection);
+	connection_close(connection);
 }
 
 
@@ -59,7 +59,7 @@ bool ProtocolLogin::identify(Message *first){
 	return first->buffer[offset] == 0x01;
 }
 
-ProtocolLogin::ProtocolLogin(const std::shared_ptr<Connection> &conn)
+ProtocolLogin::ProtocolLogin(Connection *conn)
   : Protocol(conn) {
 }
 
@@ -90,7 +90,7 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 	}
 
 	msg->readpos += 12;
-	if(!srsa_decode((char*)(msg->buffer + msg->readpos),
+	if(!grsa_decode(msg->buffer + msg->readpos,
 			(msg->length - msg->readpos), nullptr)){
 		disconnect("internal error", nullptr, checksum_enabled);
 		return;
@@ -138,9 +138,9 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 		output->add_u16(1);					// premium days left
 
 		message_end(output.get(), key, checksum_enabled);
-		connmgr_send(connection, std::move(output));
+		connection_send(connection, std::move(output));
 	}
 
 	// close connection
-	connmgr_close(connection);
+	connection_close(connection);
 }

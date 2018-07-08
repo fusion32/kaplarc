@@ -1,4 +1,5 @@
 #include "../buffer_util.h"
+#include "../system.h"
 #include "message.h"
 #include <string.h>
 #include <vector>
@@ -6,11 +7,12 @@
 
 Message::Message(size_t capacity_)
  : capacity(capacity_), readpos(0), length(0) {
-	buffer = new uint8[capacity];
+	buffer = (uint8*)sys_aligned_alloc(
+		sizeof(void*), capacity);
 }
 
 Message::~Message(void){
-	delete[] buffer;
+	sys_aligned_free(buffer);
 }
 
 uint8 Message::peek_byte(void){

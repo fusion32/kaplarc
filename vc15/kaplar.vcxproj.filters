@@ -76,9 +76,6 @@
     <ClCompile Include="..\src\game\protocol_login.cpp">
       <Filter>Source Files\game</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game\srsa.cpp">
-      <Filter>Source Files\game</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\db\cassandra.cpp">
       <Filter>Source Files\db</Filter>
     </ClCompile>
@@ -96,6 +93,9 @@
     </ClCompile>
     <ClCompile Include="..\src\db\blob.cpp">
       <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\grsa.cpp">
+      <Filter>Source Files\game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -186,9 +186,6 @@
     <ClInclude Include="..\src\config.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\game\srsa.h">
-      <Filter>Source Files\game</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\game\account.h">
       <Filter>Source Files\game</Filter>
     </ClInclude>
@@ -205,6 +202,12 @@
       <Filter>Source Files\db</Filter>
     </ClInclude>
     <ClInclude Include="..\src\buffer_util.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game\rsa.h">
+      <Filter>Source Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\shared.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

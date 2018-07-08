@@ -27,12 +27,16 @@ static struct {
 
 	// cassandra variables
 	{"cass_contact_points", "localhost"},
+	{"cass_keyspace",	"kaplar"},
 	{"cass_auth_role",	"cassandra"},
 	{"cass_auth_pwd",	"cassandra"},
-	{"cass_keyspace",	"kaplar"},
 
-	// mongodb variables
-	{"mongo_?",		"?"}
+	// postgres variables
+	{"pgsql_host",		"localhost"},
+	{"pgsql_port",		"5432"},
+	{"pgsql_dbname",	"kaplar"},
+	{"pgsql_user",		"admin"},
+	{"pgsql_pwd",		"admin"},
 };
 
 void config_cmdline(int argc, char **argv){

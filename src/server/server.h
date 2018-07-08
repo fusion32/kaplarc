@@ -11,10 +11,9 @@ class Connection;
 // Service interface
 int service_port(Service *service);
 bool service_has_single_protocol(Service *service);
-std::shared_ptr<Protocol> service_make_protocol(Service *service,
-	const std::shared_ptr<Connection> &conn);
-std::shared_ptr<Protocol> service_make_protocol(Service *service,
-	const std::shared_ptr<Connection> &conn, Message *first);
+Protocol *service_make_protocol(Service *service, Connection *conn);
+Protocol *service_make_protocol(Service *service, Connection *conn,
+	Message *first);
 
 // Server interface
 void server_run(void);
@@ -26,7 +25,6 @@ bool server_add_protocol(int port){
 	IProtocolFactory *factory = new ProtocolFactory<T>;
 	if(server_add_factory(port, factory))
 		return true;
-
 	delete factory;
 	return false;
 }

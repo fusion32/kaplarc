@@ -13,7 +13,7 @@ public:
 	static bool		identify(Message *first);
 
 	// protocol interface
-	ProtocolLogin(const std::shared_ptr<Connection> &conn);
+	ProtocolLogin(Connection *conn);
 	virtual ~ProtocolLogin(void) override;
 	virtual void on_recv_first_message(Message *msg) override;
 };

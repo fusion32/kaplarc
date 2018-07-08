@@ -17,7 +17,7 @@ struct Dispatcher{
 
 	Dispatcher(void){}
 	~Dispatcher(void){
-		// release std::function resources
+		// release std::function stuff
 		while(!rb.empty()){
 			rb.front() = nullptr;
 			rb.pop();
@@ -44,7 +44,7 @@ static void dispatcher_thread(Dispatcher *d){
 
 		// execute task
 		task();
-		// release std::function resources
+		// release std::function stuff
 		task = nullptr;
 	}
 }

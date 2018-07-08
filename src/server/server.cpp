@@ -99,7 +99,7 @@ static void service_on_accept(asio::ip::tcp::socket *socket,
 	Service *service, const asio::error_code &err){
 
 	if(!err){
-		connmgr_accept(socket, service);
+		connection_accept(socket, service);
 		// chain next accept
 		service_start_accept(service);
 	}else{
@@ -126,15 +126,14 @@ bool service_has_single_protocol(Service *service){
 	return service->factories[0]->single();
 }
 
-std::shared_ptr<Protocol>
-service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn){
+Protocol *service_make_protocol(Service *service, Connection *conn){
 	if(service->factories.empty())
 		return nullptr;
 	return service->factories[0]->make_protocol(conn);
 }
 
-std::shared_ptr<Protocol>
-service_make_protocol(Service *service, const std::shared_ptr<Connection> &conn, Message *first){
+Protocol *service_make_protocol(Service *service, Connection *conn,
+		Message *first){
 	for(IProtocolFactory *factory : service->factories){
 		if(factory->identify(first))
 			return factory->make_protocol(conn);
