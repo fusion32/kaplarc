@@ -4,7 +4,15 @@
 #include "../server/protocol.h"
 class ProtocolLogin: public Protocol{
 private:
-	void disconnect(const char *message, uint32 *xtea, bool checksum);
+	// internal data
+	bool use_checksum;
+	bool use_xtea;
+	uint32 xtea[4];
+
+	// protocol helpers
+	void message_begin(Message *msg);
+	void message_end(Message *msg);
+	void disconnect(const char *message);
 
 public:
 	// protocol information

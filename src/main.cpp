@@ -7,7 +7,7 @@
 
 #include "db/db.h"
 #include "game/protocol_login.h"
-#include "game/rsa.h"
+#include "game/grsa.h"
 #include "server/protocol_test.h"
 #include "server/server.h"
 
@@ -37,11 +37,11 @@ int main(int argc, char **argv){
 		return -1;
 
 	// initialize core interfaces
-	//init_interface("dispatcher", dispatcher_init, dispatcher_shutdown);
+	init_interface("dispatcher", dispatcher_init, dispatcher_shutdown);
 	init_interface("scheduler", scheduler_init, scheduler_shutdown);
 	//init_interface("database", database_init, database_shutdown);
 
-	// initialize game interfaces
+	// initialize server interfaces
 	init_interface("RSA", grsa_init, grsa_shutdown);
 
 	// initialize server

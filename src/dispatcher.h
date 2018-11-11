@@ -7,9 +7,9 @@
 struct Dispatcher;
 using Task = std::function<void(void)>;
 
-Dispatcher *dispatcher_create(void);
-void dispatcher_destroy(Dispatcher *d);
-void dispatcher_add(Dispatcher *d, const Task &task);
-void dispatcher_add(Dispatcher *d, Task &&task);
+void dispatcher_init(void);
+void dispatcher_shutdown(void);
+void dispatcher_add(const Task &task);
+void dispatcher_add(Task &&task);
 
 #endif //DISPATCHER_H_

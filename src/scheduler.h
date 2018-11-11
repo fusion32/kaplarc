@@ -35,8 +35,8 @@ struct SchRef{
 
 void	scheduler_init(void);
 void	scheduler_shutdown(void);
-SchRef	scheduler_add(int64 delay, Dispatcher *disp, const Task &task);
-SchRef	scheduler_add(int64 delay, Dispatcher *disp, Task &&task);
+SchRef	scheduler_add(int64 delay, const Task &task);
+SchRef	scheduler_add(int64 delay, Task &&task);
 bool	scheduler_remove(const SchRef &ref);
 bool	scheduler_reschedule(int64 delay, SchRef &ref);
 

@@ -9,42 +9,42 @@
 #include "../server/message.h"
 #include "../server/outputmessage.h"
 #include "../sstring.h"
-#include "rsa.h"
+#include "grsa.h"
 
 // helpers for this protocol
-static uint32 checksum(Message *msg){
+static uint32 calc_checksum(Message *msg){
 	size_t offset = msg->readpos + 4;
 	return adler32(msg->buffer + offset, msg->length - offset);
 }
-static void message_begin(Message *msg, uint32 *xtea, bool checksum_enabled){
-	msg->readpos = checksum_enabled ? 6 : 2;
+void ProtocolLogin::message_begin(Message *msg){
+	msg->readpos = use_checksum ? 6 : 2;
 	msg->length = 0;
 }
-static void message_end(Message *msg, uint32 *xtea, bool checksum_enabled){
+void ProtocolLogin::message_end(Message *msg){
 	int padding;
-	size_t start = checksum_enabled ? 6 : 2;
-	if(xtea != nullptr){
+	size_t start = use_checksum ? 6 : 2;
+	if(use_xtea){
 		padding = msg->length % 8;
 		while(padding-- > 0)
 			msg->add_byte(0x33);
 		xtea_encode(xtea, msg->buffer + start, msg->length);
 	}
-	if(checksum_enabled){
+	if(use_checksum){
 		msg->readpos = 6;
-		msg->radd_u32(checksum(msg));
+		msg->radd_u32(calc_checksum(msg));
 	}else{
 		msg->readpos = 2;
 	}
 	msg->radd_u16((uint16)msg->length);
 }
 
-void ProtocolLogin::disconnect(const char *message, uint32 *xtea, bool checksum_enabled){
+void ProtocolLogin::disconnect(const char *message){
 	auto output = output_message(256);
 	if(output != nullptr){
-		message_begin(output.get(), xtea, checksum_enabled);
+		message_begin(output.get());
 		output->add_byte(0x0A);
 		output->add_str(message);
-		message_end(output.get(), xtea, checksum_enabled);
+		message_end(output.get());
 		connection_send(connection, std::move(output));
 	}
 	connection_close(connection);
@@ -54,13 +54,13 @@ void ProtocolLogin::disconnect(const char *message, uint32 *xtea, bool checksum_
 // protocol implementation
 bool ProtocolLogin::identify(Message *first){
 	size_t offset = first->readpos;
-	if(first->peek_u32() == checksum(first))
+	if(first->peek_u32() == calc_checksum(first))
 		offset += 4;
 	return first->buffer[offset] == 0x01;
 }
 
 ProtocolLogin::ProtocolLogin(Connection *conn)
-  : Protocol(conn) {
+  : Protocol(conn), use_checksum(false), use_xtea(false) {
 }
 
 ProtocolLogin::~ProtocolLogin(void){
@@ -69,60 +69,63 @@ ProtocolLogin::~ProtocolLogin(void){
 void ProtocolLogin::on_recv_first_message(Message *msg){
 	uint16 system;
 	uint16 version;
-	uint32 key[4];
 	char account[64];
 	char password[256];
 
-	bool checksum_enabled = (msg->peek_u32() == checksum(msg));
-	if(checksum_enabled) msg->readpos += 4;
+	// verify checksum
+	use_checksum = (msg->peek_u32() == calc_checksum(msg));
+	if(use_checksum)
+		msg->readpos += 4;
 
+	// verify protocol identifier
 	if(msg->get_byte() != 0x01){
-		disconnect("internal error", nullptr, checksum_enabled);
+		disconnect("internal error");
 		return;
 	}
 
 	system = msg->get_u16();
 	version = msg->get_u16();
-
 	if(version <= 760){
-		disconnect("This server requires client version 8.6", nullptr, checksum_enabled);
+		disconnect("This server requires client version 8.6");
 		return;
 	}
 
 	msg->readpos += 12;
 	if(!grsa_decode(msg->buffer + msg->readpos,
 			(msg->length - msg->readpos), nullptr)){
-		disconnect("internal error", nullptr, checksum_enabled);
+		disconnect("internal error");
 		return;
 	}
 
-	key[0] = msg->get_u32();
-	key[1] = msg->get_u32();
-	key[2] = msg->get_u32();
-	key[3] = msg->get_u32();
+	// enable encryption
+	xtea[0] = msg->get_u32();
+	xtea[1] = msg->get_u32();
+	xtea[2] = msg->get_u32();
+	xtea[3] = msg->get_u32();
+	use_xtea = true;
 
 	msg->get_str(account, 64);
 	msg->get_str(password, 64);
 
 	if(account[0] == 0){
-		disconnect("Invalid account name", key, checksum_enabled);
+		disconnect("Invalid account name");
 		return;
 	}
 
 	// authenticate user
 	if(true){
-		disconnect("Invalid account name and password combination", key, checksum_enabled);
+		disconnect("Invalid account name and password combination");
 		return;
 	}
 
 	auto output = output_message(256);
 	if(output){
-		message_begin(output.get(), key, checksum_enabled);
+		message_begin(output.get());
 
 		// send motd
 		SString<256> motd;
-		motd.format("%d\n", config_geti("motd_num"));
-		motd.append(config_get("motd_message"));
+		motd.format("%d\n%s", config_geti("motd_num"),
+				config_get("motd_message"));
 		output->add_byte(0x14);					// motd identifier
 		output->add_lstr(motd.ptr(), motd.size());		// motd string
 
@@ -137,7 +140,7 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 		// }
 		output->add_u16(1);					// premium days left
 
-		message_end(output.get(), key, checksum_enabled);
+		message_end(output.get());
 		connection_send(connection, std::move(output));
 	}
 

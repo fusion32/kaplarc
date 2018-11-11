@@ -9,14 +9,12 @@
 #include <thread>
 
 struct SchEntry : public SchRef{
-	Dispatcher	*disp;
 	Task		task;
-
 	SchEntry(void) : SchRef() {}
-	SchEntry(int64 id_, int64 time_, Dispatcher *disp_, const Task &task_)
-		: SchRef(id_, time_), disp(disp_), task(task_) {}
-	SchEntry(int64 id_, int64 time_, Dispatcher *disp_, Task &&task_)
-		: SchRef(id_, time_), disp(disp_), task(std::move(task_)) {}
+	SchEntry(int64 id_, int64 time_, const Task &task_)
+		: SchRef(id_, time_), task(task_) {}
+	SchEntry(int64 id_, int64 time_, Task &&task_)
+		: SchRef(id_, time_), task(std::move(task_)) {}
 };
 
 // comparisson needed by std::less
@@ -38,7 +36,6 @@ static bool running = false;
 
 static void scheduler(void){
 	int64		delta;
-	Dispatcher	*disp;
 	Task		task;
 	auto		entry = entries.end();
 
@@ -65,17 +62,12 @@ static void scheduler(void){
 		}
 
 		// get work and remove entry
-		disp = entry->disp;
 		task = std::move(entry->task);
 		entries.erase(entry);
 		ulock.unlock();
 
-		// dispatch/execute task
-		if(disp != nullptr){
-			dispatcher_add(disp, std::move(task));
-		}else{
-			task();
-		}
+		// dispatch task
+		dispatcher_add(std::move(task));
 	}
 }
 
@@ -100,14 +92,14 @@ void scheduler_shutdown(void){
 	entries.clear();
 }
 
-SchRef scheduler_add(int64 delay, Dispatcher *disp, const Task &task){
-	return scheduler_add(delay, disp, Task(task));
+SchRef scheduler_add(int64 delay, const Task &task){
+	return scheduler_add(delay, Task(task));
 }
 
-SchRef scheduler_add(int64 delay, Dispatcher *disp, Task &&task){
+SchRef scheduler_add(int64 delay, Task &&task){
 	int64 time = delay + sys_tick_count();
 	std::lock_guard<std::mutex> lock(mtx);
-	auto ret = entries.emplace(next_id++, time, disp, std::move(task));
+	auto ret = entries.emplace(next_id++, time, std::move(task));
 	if(!ret.second){
 		LOG("scheduler_add: failed to insert new entry");
 		return SCHREF_INVALID;
@@ -136,13 +128,17 @@ bool scheduler_reschedule(int64 delay, SchRef &ref){
 		LOG("scheduler_reschedule: trying to reschedule invalid entry");
 		return false;
 	}
-	auto ret = entries.emplace(next_id++, time, old->disp, std::move(old->task));
+	// whether or not this next emplace fails, the old entry
+	// must be removed because `old->task` is moved
+	auto ret = entries.emplace(next_id++, time, std::move(old->task));
+	entries.erase(old);
 	if(!ret.second){
 		LOG("scheduler_reschedule: failed to re-insert entry");
+		// update `ref` with an invalid state
+		ref = SCHREF_INVALID;
 		return false;
 	}
-	// remove old entry and update SchRef
-	entries.erase(old);
+	// update `ref` with the new id
 	ref.id = ret.first->id;
 	ref.time = ret.first->time;
 	if(ret.first == entries.begin())

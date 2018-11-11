@@ -1,12 +1,11 @@
 - improve output message pool
-- divide the map into sectors with each sector having it's own dispatcher and effectively
-	having better multithreaded performance without the need of locking
-	-- edge problem: essentialy try to keep a whole zone within a sector and if the zone is
-		too big and you need to split the zone in two, make so people from one sector are
-		phased from the people of the other sector or add two instances of the same zone
-		and splitting the players but that will require more computation for NPCs etc etc
-		which wouldn't be better in the end
-- always leave lambdas empty after a call:
+- divide the map into sectors
+- divide the server into shards
+	-- each shard will manage one or more map sectors and will have a single dispatcher
+	-- the shards together will form a cluster
+	-- there must be a shard communication/transfer protocol
+
+- always leave callback lambdas empty after a call:
 			[shared](...){ callback(std::move(shared), ...); }
 		or	[shared](...){ callback(shared, ...); shared.reset(); }
 	(shared == nullptr) would evaluate true after the first call

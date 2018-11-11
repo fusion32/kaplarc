@@ -6,73 +6,64 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
-#include <vector>
 
-struct Dispatcher{
-	RingBuffer<Task, 0x8000> rb;
-	std::thread thr;
-	std::mutex mtx;
-	std::condition_variable cond;
-	bool running;
+static RingBuffer<Task, 0x8000> rb;
+static std::thread thr;
+static std::mutex mtx;
+static std::condition_variable cond;
+static bool running;
 
-	Dispatcher(void){}
-	~Dispatcher(void){
-		// release std::function stuff
-		while(!rb.empty()){
-			rb.front() = nullptr;
-			rb.pop();
-		}
-	}
-};
-
-static void dispatcher_thread(Dispatcher *d){
+static void dispatcher_thread(void){
 	Task task;
-	std::unique_lock<std::mutex> lock(d->mtx, std::defer_lock);
-	while(d->running){
+	std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+	while(running){
 		lock.lock();
-		if(d->rb.empty()){
-			d->cond.wait(lock);
-			if(d->rb.empty()){
+		if(rb.empty()){
+			cond.wait(lock);
+			if(rb.empty()){
 				lock.unlock();
 				continue;
 			}
 		}
-
-		task = std::move(d->rb.front());
-		d->rb.pop();
+		task = std::move(rb.front());
+		rb.pop();
 		lock.unlock();
 
 		// execute task
 		task();
-		// release std::function stuff
+		// release task
 		task = nullptr;
 	}
 }
 
-Dispatcher *dispatcher_create(void){
-	Dispatcher *d = new Dispatcher;
-	d->running = true;
-	d->thr = std::thread(dispatcher_thread, d);
-	return d;
+void dispatcher_init(void){
+	running = true;
+	thr = std::thread(dispatcher_thread);
 }
 
-void dispatcher_destroy(Dispatcher *d){
-	d->mtx.lock();
-	d->running = false;
-	d->cond.notify_one();
-	d->mtx.unlock();
-	d->thr.join();
-	delete d;
+void dispatcher_shutdown(void){
+	// join dispatcher thread
+	mtx.lock();
+	running = false;
+	cond.notify_one();
+	mtx.unlock();
+	thr.join();
+
+	// release tasks
+	while(!rb.empty()){
+		rb.front() = nullptr;
+		rb.pop();
+	}
 }
 
-void dispatcher_add(Dispatcher *d, const Task &task){
-	dispatcher_add(d, Task(task));
+void dispatcher_add(const Task &task){
+	dispatcher_add(Task(task));
 }
 
-void dispatcher_add(Dispatcher *d, Task &&task){
-	std::lock_guard<std::mutex> lock(d->mtx);
-	if(!d->rb.push(std::move(task)))
-		LOG_ERROR("dispatcher_add: task ring buffer is at maximum capacity (%d)", d->rb.capacity());
+void dispatcher_add(Task &&task){
+	std::lock_guard<std::mutex> lock(mtx);
+	if(!rb.push(std::move(task)))
+		LOG_ERROR("dispatcher_add: task ring buffer is at maximum capacity (%d)", rb.capacity());
 	else
-		d->cond.notify_one();
+		cond.notify_one();
 }

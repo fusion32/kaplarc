@@ -204,11 +204,11 @@
     <ClInclude Include="..\src\buffer_util.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\game\rsa.h">
-      <Filter>Source Files\game</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\shared.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game\grsa.h">
+      <Filter>Source Files\game</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

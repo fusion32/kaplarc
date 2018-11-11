@@ -63,7 +63,7 @@
     <ClInclude Include="..\src\game\protocol_info.h" />
     <ClInclude Include="..\src\game\protocol_legacy.h" />
     <ClInclude Include="..\src\game\protocol_login.h" />
-    <ClInclude Include="..\src\game\rsa.h" />
+    <ClInclude Include="..\src\game\grsa.h" />
     <ClInclude Include="..\src\scope_guard.h" />
     <ClInclude Include="..\src\server\message.h" />
     <ClInclude Include="..\src\shared.h" />
@@ -168,6 +168,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <ObjectFileName>$(IntDir)/Debug/%(RelativeDir)/</ObjectFileName>
     </ClCompile>
     <Link>
       <AdditionalDependencies>cassandra.lib;lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
@@ -201,11 +202,13 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ObjectFileName>$(IntDir)/Release/%(RelativeDir)/</ObjectFileName>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>cassandra.lib;lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

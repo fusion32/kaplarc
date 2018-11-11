@@ -34,6 +34,8 @@ void Blob::check_capacity(size_t s){
 		// reallocate data
 		uint8 *ndata = (uint8*)sys_aligned_alloc(
 			alignment, capacity_);
+		if(ndata == nullptr)
+			UNREACHABLE();
 		memcpy(ndata, data_, size_);
 		sys_aligned_free(data_);
 		data_ = ndata;
