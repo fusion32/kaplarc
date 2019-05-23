@@ -22,6 +22,11 @@ constexpr bool is_power_of_two(size_t size){
 	return (size != 0) && ((size & (size - 1)) == 0);
 }
 
+constexpr size_t round_to_power_of_two(size_t s, size_t p){
+	size_t mask = (1 >> p) - 1;
+	return (s + mask) & ~mask;
+}
+
 // arch settings (these options should be ajusted to the arch being used)
 //#define ARCH_BIG_ENDIAN 1
 #define ARCH_UNALIGNED_ACCESS 1

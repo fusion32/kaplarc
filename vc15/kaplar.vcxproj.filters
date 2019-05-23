@@ -17,6 +17,9 @@
     <Filter Include="Source Files\db">
       <UniqueIdentifier>{2561bc72-d272-4110-8a79-61c43c558339}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\shard">
+      <UniqueIdentifier>{e04ad086-2644-466f-a082-48297cde4de0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\log.cpp">
@@ -97,6 +100,12 @@
     <ClCompile Include="..\src\game\grsa.cpp">
       <Filter>Source Files\game</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\shard\shard.cpp">
+      <Filter>Source Files\shard</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\heapstring.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\def.h">
@@ -132,9 +141,6 @@
     <ClInclude Include="..\src\stringbase.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\sstring.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\game\protocol_game.h">
       <Filter>Source Files\game</Filter>
     </ClInclude>
@@ -149,9 +155,6 @@
     </ClInclude>
     <ClInclude Include="..\src\crypto\rsa.h">
       <Filter>Source Files\crypto</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\scope_guard.h">
-      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\crypto\xtea.h">
       <Filter>Source Files\crypto</Filter>
@@ -209,6 +212,15 @@
     </ClInclude>
     <ClInclude Include="..\src\game\grsa.h">
       <Filter>Source Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\stackstring.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\heapstring.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\scopeguard.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

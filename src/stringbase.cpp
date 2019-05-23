@@ -6,42 +6,42 @@
 
 // string operations
 void StringBase::append(const StringBase &str){
-	int l = str.length;
-	if(length + l >= capacity)
-		l = capacity - length;
+	size_t l = str.length_;
+	if(length_ + l >= capacity_)
+		l = capacity_ - length_;
 	if(l > 0){
-		memcpy(buffer + length, str.buffer, l);
-		length += l;
+		memcpy(buffer_ + length_, str.buffer_, l);
+		length_ += l;
 	}
 }
 
 void StringBase::append(const char *str){
-	int l = (int)strlen(str);
-	if(length + l >= capacity)
-		l = capacity - length;
+	size_t l = strlen(str);
+	if(length_ + l >= capacity_)
+		l = capacity_ - length_;
 	if(l > 0){
-		memcpy(buffer + length, str, l);
-		length += l;
+		memcpy(buffer_ + length_, str, l);
+		length_ += l;
 	}
 }
 
 void StringBase::copy(const StringBase &str){
-	int l = str.length;
-	if(l > capacity)
-		l = capacity;
+	size_t l = str.length_;
+	if(l > capacity_)
+		l = capacity_;
 	if(l > 0){
-		memcpy(buffer, str.buffer, l);
-		length = l;
+		memcpy(buffer_, str.buffer_, l);
+		length_ = l;
 	}
 }
 
 void StringBase::copy(const char *str){
-	int l = (int)strlen(str);
-	if(l > capacity)
-		l = capacity;
+	size_t l = strlen(str);
+	if(l > capacity_)
+		l = capacity_;
 	if(l > 0){
-		memcpy(buffer, str, l);
-		length = l;
+		memcpy(buffer_, str, l);
+		length_ = l;
 	}
 }
 
@@ -61,17 +61,20 @@ void StringBase::format(const char *fmt, ...){
 }
 
 void StringBase::vappendf(const char *fmt, va_list ap){
-	int l;
-	if(length >= capacity)
+	int ret;
+	size_t cap;
+	if(length_ >= capacity_)
 		return;
-	l = vsnprintf(buffer + length,
-		capacity - length, fmt, ap);
-	if(l > 0)
-		length += l;
+	cap = capacity_ - length_;
+	ret = vsnprintf(buffer_ + length_, cap, fmt, ap);
+	if(ret > cap)		length_ = capacity_;
+	else if(ret > 0)	length_ += ret;
 }
 
 void StringBase::vformat(const char *fmt, va_list ap){
-	length = vsnprintf(buffer, capacity, fmt, ap);
-	if(length < 0) length = 0;
+	int ret = vsnprintf(buffer_, capacity_, fmt, ap);
+	if(ret > capacity_)	length_ = capacity_;
+	else if(ret < 0)	length_ = 0;
+	else			length_ = ret;
 }
 

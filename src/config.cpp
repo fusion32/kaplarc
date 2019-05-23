@@ -19,6 +19,11 @@ static struct {
 	// command line
 	{"config",		"config.lua"},
 
+	// cluster variables
+	{"sv_uid",		"kaplar"},
+	{"sv_cluster_contact",	"localhost"},
+
+
 	// server variables
 	{"sv_test_port",	"7777"},
 	{"sv_login_port",	"7171"},

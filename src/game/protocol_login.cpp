@@ -8,7 +8,7 @@
 #include "../server/connection.h"
 #include "../server/message.h"
 #include "../server/outputmessage.h"
-#include "../sstring.h"
+#include "../stackstring.h"
 #include "grsa.h"
 
 // helpers for this protocol
@@ -123,7 +123,7 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 		message_begin(output.get());
 
 		// send motd
-		SString<256> motd;
+		StackString<256> motd;
 		motd.format("%d\n%s", config_geti("motd_num"),
 				config_get("motd_message"));
 		output->add_byte(0x14);					// motd identifier

@@ -1,5 +1,5 @@
 #include "log.h"
-#include "sstring.h"
+#include "stackstring.h"
 
 #include <stdarg.h>
 #include <string.h>
@@ -45,7 +45,7 @@ void log_add1(const char *tag, const char *fmt, va_list ap){
 	time_t curtime;
 	struct tm *timeptr;
 	char timestr[64];
-	SString<1024> log_entry;
+	StackString<1024> log_entry;
 
 	// time str
 	curtime = time(nullptr);

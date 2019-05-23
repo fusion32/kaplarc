@@ -63,7 +63,8 @@ void dispatcher_add(const Task &task){
 void dispatcher_add(Task &&task){
 	std::lock_guard<std::mutex> lock(mtx);
 	if(!rb.push(std::move(task)))
-		LOG_ERROR("dispatcher_add: task ring buffer is at maximum capacity (%d)", rb.capacity());
+		LOG_ERROR("dispatcher_add: task ring buffer is"
+			" at maximum capacity (%d)", rb.capacity());
 	else
 		cond.notify_one();
 }

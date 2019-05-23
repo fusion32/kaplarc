@@ -44,6 +44,9 @@ int main(int argc, char **argv){
 	// initialize server interfaces
 	init_interface("RSA", grsa_init, grsa_shutdown);
 
+	// initialize cluster protocols
+	// TODO
+
 	// initialize server
 	server_add_protocol<ProtocolTest>(config_geti("sv_test_port"));
 	server_add_protocol<ProtocolLogin>(config_geti("sv_login_port"));
