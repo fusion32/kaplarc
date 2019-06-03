@@ -1,11 +1,6 @@
-#include "connection.h"
 #include "message.h"
-#include "outputmessage.h"
-#include "protocol.h"
 #include "server.h"
 #include "../log.h"
-#include "../shared.h"
-#include "asio.h"
 
 #include <mutex>
 #include <queue>
@@ -32,20 +27,20 @@ public:
 	Connection &operator=(const Connection&) = delete;
 
 	// connection control
-	asio::ip::tcp::socket	*socket;
-	Service			*service;
-	Protocol		*protocol;
-	uint32			flags;
-	uint32			rdwr_count;
-	asio::steady_timer	timeout;
-	std::recursive_mutex	mtx;
+	Service		*service;
+	Protocol	*protocol;
+	int		socket;
+	uint32		flags;
+	uint32		rdwr_count;
+	//asio::steady_timer	timeout;
+	std::mutex	mtx;
 
 	// connection messages
-	Message				input;
-	std::queue<OutputMessage>	output_queue;
+	Message				*input;
+	std::queue<Message*>		output_queue;
 
 	// constructor/destructor
-	Connection(asio::ip::tcp::socket *socket_, Service *service_)
+	Connection(int socket_, Service *service_)
 	  :	socket(socket_),
 		service(service_),
 		protocol(nullptr),

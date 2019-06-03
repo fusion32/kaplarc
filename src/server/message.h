@@ -3,20 +3,23 @@
 
 #include "../def.h"
 
-#define MESSAGE_DEFAULT_CAPACITY 4096
-
 class Message{
-// this is a low-level class so making all attributes public is fine
-// as adding getters and setters here would just increase code bloat
 public:
-	uint8 *buffer;
 	size_t capacity;
 	size_t length;
 	size_t readpos;
+	uint8 buffer[];
 
-	// constructor/destructor
-	Message(size_t capacity_ = MESSAGE_DEFAULT_CAPACITY);
-	~Message(void);
+	// messages should be created using these
+	static size_t total_size(size_t capacity);
+	static Message *create(size_t total_size);
+	static Message *create_with_capacity(size_t capacity);
+	static Message *takeon(void *mem, size_t mem_size);
+	static void destroy(Message *msg);
+
+	// delete constructor and destructor
+	Message(void) = delete;
+	~Message(void) = delete;
 
 	// peek data
 	uint8 peek_byte(void);

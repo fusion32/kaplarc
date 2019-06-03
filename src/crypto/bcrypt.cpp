@@ -1,7 +1,7 @@
 #include "bcrypt.h"
 #include "blowfish.h"
 #include "base64.h"
-#include "arc4random.h"
+#include "random.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -27,7 +27,7 @@ static bool generate_salt(int logr, char *salt, size_t saltlen){
 		logr = 4;
 	else if(logr > 31)
 		logr = 31;
-	arc4random_buf(csalt, BCRYPT_SALT_LEN);
+	crypto_random(csalt, BCRYPT_SALT_LEN);
 	snprintf(salt, saltlen, "$2b$%2.2u$", logr);
 	base64_encode(salt + 7, csalt, BCRYPT_SALT_LEN); 
 	return true;

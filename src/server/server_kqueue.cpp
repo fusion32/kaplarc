@@ -1,12 +1,67 @@
+//#ifdef PLATFORM_BSD
+#if 1
 
 #include "../log.h"
 #include "connection.h"
 #include "server.h"
 #include "protocol.h"
-#include "asio.h"
-
-#include <algorithm>
 #include <vector>
+
+#include "../ringbuffer.h"
+#include "message.h"
+
+#include <mutex>
+#include <vector>
+
+/*************************************
+
+	Connection Class
+
+*************************************/
+#define CONNECTION_MAX_OUTPUT 16
+
+class Connection
+  : public Shared<Connection> {
+public:
+	// connection control
+	Service		*service;
+	Protocol	*protocol;
+	int		socket;
+	uint32		flags;
+	uint32		rdwr_count;
+	//asio::steady_timer	timeout;
+	std::mutex	mtx;
+
+	// connection messages
+	Message		input;
+	Message		output_pool[CONNECTION_MAX_OUTPUT];
+	RingBuffer<Message*, CONNECTION_MAX_OUTPUT>
+			output_queue;
+
+	// constructor/destructor
+	Connection(int socket_, Service *service_)
+	  :	socket(socket_),
+		service(service_),
+		protocol(nullptr),
+		flags(0),
+		rdwr_count(0),
+		timeout(socket_->get_io_service()){
+	}
+	~Connection(void){
+		if(protocol != nullptr){
+			protocol->on_close();
+			protocol->decref();
+			protocol = nullptr;
+		}
+
+		if(socket != nullptr){
+			socket->close();
+			delete socket;
+			socket = nullptr;
+		}
+		LOG("connection released");
+	}
+};
 
 /*************************************
 
@@ -15,25 +70,17 @@
 *************************************/
 class Service{
 public:
-	// deleted operations
-	Service(void) = delete;
-	Service(const Service&) = delete;
-	Service &operator=(const Service&) = delete;
-
 	// service control
-	std::vector<IProtocolFactory*>	factories;
-	asio::ip::tcp::acceptor		acceptor;
-	int				port;
+	Protocol	*protocols;
+	int		socket;
+	int		port;
 
 	// constructor/destructor
-	Service(asio::io_service &ios_, int port_)
-	  : acceptor(ios_), port(port_) {}
+	Service(int socket_, int port_)
+	  : socket(socket_), port(port_) {}
 	~Service(void){
-		if(acceptor.is_open())
-			acceptor.close();
-		for(IProtocolFactory *factory : factories)
-			delete factory;
-		factories.clear();
+		if(socket != -1)
+			close(socket);
 	}
 };
 
@@ -44,24 +91,17 @@ public:
 *************************************/
 static bool service_open(Service *service);
 static void service_close(Service *service);
-static bool service_add_factory(Service *service, IProtocolFactory *factory);
+static bool service_add_protocol(Service *service, Protocol *protocol);
 static void service_start_accept(Service *service);
-static void service_on_accept(asio::ip::tcp::socket *socket,
-	Service *service, const asio::error_code &err);
+static void service_on_accept(Service *service, int socket, int err);
 
 static bool service_open(Service *service){
-	if(service->acceptor.is_open()){
-		LOG_ERROR("service_open: service already open");
+	if(service->socket != -1){
+		LOG_ERROR("service_open: service has already been initialized\n");
 		return false;
 	}
 
-	// initialize acceptor
-	asio::ip::tcp::endpoint endpoint(asio::ip::address(), service->port);
-	service->acceptor.open(endpoint.protocol());
-	service->acceptor.set_option(
-		asio::ip::tcp::acceptor::reuse_address(true));
-	service->acceptor.bind(endpoint);
-	service->acceptor.listen();
+	// initialize socket
 
 	// start accept chain
 	service_start_accept(service);
@@ -69,8 +109,10 @@ static bool service_open(Service *service){
 }
 
 static void service_close(Service *service){
-	if(service->acceptor.is_open())
-		service->acceptor.close();
+	if(service->socket != -1){
+		close(service->socket);
+		service->socket = -1;
+	}
 }
 
 static bool service_add_factory(Service *service, IProtocolFactory *f){
@@ -120,25 +162,10 @@ int service_port(Service *service){
 	return service->port;
 }
 
-bool service_has_single_protocol(Service *service){
-	if(service->factories.empty())
+bool service_sends_first(Service *service){
+	if(service->protocols == nullptr)
 		return false;
-	return service->factories[0]->single();
-}
-
-Protocol *service_make_protocol(Service *service, Connection *conn){
-	if(service->factories.empty())
-		return nullptr;
-	return service->factories[0]->make_protocol(conn);
-}
-
-Protocol *service_make_protocol(Service *service, Connection *conn,
-		Message *first){
-	for(IProtocolFactory *factory : service->factories){
-		if(factory->identify(first))
-			return factory->make_protocol(conn);
-	}
-	return nullptr;
+	return service->protocols->sends_first;
 }
 
 
@@ -148,7 +175,6 @@ Protocol *service_make_protocol(Service *service, Connection *conn,
 
 *************************************/
 static bool running = false;
-static asio::io_service io_service;
 static std::vector<Service*> services;
 
 void server_run(void){
@@ -156,31 +182,19 @@ void server_run(void){
 	for(Service *service : services)
 		service_open(service);
 	running = true;
-	io_service.run();
+
+	// run
+
 	running = false;
 	for(Service *service : services)
 		service_close(service);
-	io_service.reset();
 }
 
 void server_stop(void){
-	io_service.stop();
+	//
 }
 
-bool server_add_factory(int port, IProtocolFactory *factory){
-	if(running){
-		LOG_ERROR("server_add_factory: server already running");
-		return false;
-	}
-
-	Service *service;
-	auto it = std::find_if(services.begin(), services.end(),
-		[port](Service *service){ return service->port == port; });
-	if(it == services.end()){
-		service = new Service(io_service, port);
-		services.push_back(service);
-	}else{
-		service = *it;
-	}
-	return service_add_factory(service, factory);
+bool server_add_protocol(Protocol *protocol, int port){
 }
+
+#endif //PLATFORM_BSD

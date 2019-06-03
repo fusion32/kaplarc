@@ -1,18 +1,75 @@
 #include "../buffer_util.h"
 #include "../system.h"
 #include "message.h"
+#include <stdlib.h>
 #include <string.h>
-#include <vector>
-#include <mutex>
 
-Message::Message(size_t capacity_)
- : capacity(capacity_), readpos(0), length(0) {
-	buffer = (uint8*)sys_aligned_alloc(
-		sizeof(void*), capacity);
+/*
+ * NOTE: the usual structure alignment/padding
+ * should ensure the alignment of `buffer` without
+ * the need of wild sorcery
+ */
+static constexpr size_t buffer_offset = sizeof(Message);
+
+/*
+ * NOTE: although the message doesn't need any
+ * internal alignment (see above), when there is
+ * an array of them, each element must be aligned
+ * to alignof(Message) at least
+ */
+static constexpr size_t alignment = alignof(Message);
+static constexpr size_t alignment_mask = alignment - 1;
+static size_t align_up(size_t sz){
+	return (sz + alignment_mask) & ~alignment_mask;
 }
 
-Message::~Message(void){
-	sys_aligned_free(buffer);
+static size_t align_down(size_t sz){
+	return sz & ~alignment_mask;
+}
+
+size_t Message::total_size(size_t capacity){
+	return align_up(buffer_offset + capacity);
+}
+
+Message *Message::create(size_t total_size){
+	Message *msg;
+
+	total_size = align_up(total_size);
+	if(total_size < buffer_offset)
+		return nullptr;
+	msg = (Message*)sys_aligned_alloc(
+		alignment, total_size);
+	if(msg == nullptr)
+		return nullptr;
+	msg->capacity = total_size - buffer_offset;
+	msg->length = 0;
+	msg->readpos = 0;
+	return msg;
+}
+
+Message *Message::create_with_capacity(size_t capacity){
+	return create(buffer_offset + capacity);
+}
+
+Message *Message::takeon(void *mem, size_t mem_size){
+	Message *msg;
+	uintptr addr;
+	
+	addr = (uintptr)mem;
+	mem_size = align_down(mem_size);
+	if(addr == 0
+	  || addr & alignment
+	  || mem_size < buffer_offset)
+		return nullptr;
+	msg = (Message*)mem;
+	msg->capacity = mem_size - buffer_offset;
+	msg->length = 0;
+	msg->readpos = 0;
+	return msg;
+}
+
+void Message::destroy(Message *msg){
+	sys_aligned_free(msg);
 }
 
 uint8 Message::peek_byte(void){

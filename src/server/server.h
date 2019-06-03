@@ -3,30 +3,27 @@
 
 #include "../def.h"
 #include "protocol.h"
-#include <memory>
 
 class Service;
 class Connection;
 
+class Message;
+class OutputMessage;
+
+
 // Service interface
 int service_port(Service *service);
-bool service_has_single_protocol(Service *service);
-Protocol *service_make_protocol(Service *service, Connection *conn);
-Protocol *service_make_protocol(Service *service, Connection *conn,
-	Message *first);
+bool service_sends_first(Service *service);
 
 // Server interface
 void server_run(void);
 void server_stop(void);
-bool server_add_factory(int port, IProtocolFactory *factory);
+bool server_add_protocol(Protocol *protocol, int port);
 
-template<typename T>
-bool server_add_protocol(int port){
-	IProtocolFactory *factory = new ProtocolFactory<T>;
-	if(server_add_factory(port, factory))
-		return true;
-	delete factory;
-	return false;
-}
+// Connection interface
+void connection_close(Connection *conn);
+void connection_send(Connection *conn, OutputMessage *msg);
+void connection_incref(Connection *conn);
+void connection_decref(Connection *conn);
 
 #endif //SERVER_H_

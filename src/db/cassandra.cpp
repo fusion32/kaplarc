@@ -19,7 +19,7 @@ bool db_init(void){
 	// create cluster handle
 	cluster = cass_cluster_new();
 	if(cluster == nullptr){
-		LOG_ERROR("cass_init: failed to create cluster");
+		LOG_ERROR("cass_init: failed to create cluster handle");
 		return false;
 	}
 

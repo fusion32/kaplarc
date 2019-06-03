@@ -1,82 +1,121 @@
 #include "outputmessage.h"
-#include "message.h"
-#include <string.h>
+
+#include "../bitset.h"
+#include "../system.h"
+#include <mutex>
 #include <map>
 #include <vector>
-#include <mutex>
 
-class MessageStack{
+// NOTE: this may seem inefficient but when we
+// increase MESSAGE_ARRAY_LEN, it would scale well
+// (testing and measuring required)
+
+#define MESSAGE_ARRAY_LEN 1024
+class MessageArray{
 private:
-	const size_t MSG_CAPACITY;
-	std::vector<Message*> messages;
+	size_t stride;
+	void *mem;
+	BitSet<MESSAGE_ARRAY_LEN> busy;
 
 public:
-	MessageStack(size_t message_capacity,
-		size_t initial_capacity = 64)
-	 : MSG_CAPACITY(message_capacity) {
-		Message *msg;
-		messages.reserve(initial_capacity);
-		for(int i = 0; i < initial_capacity; ++i){
-			msg = new Message(MSG_CAPACITY);
-			messages.push_back(msg);
+	MessageArray(void) : mem(nullptr) {}
+	MessageArray(size_t capacity){ init(capacity); }
+	MessageArray(MessageArray &&other){
+		stride = other.stride;
+		mem = other.mem;
+		busy = other.busy;
+
+		// empty `other`
+		other.mem = nullptr;
+	}
+	~MessageArray(void){
+		cleanup();
+	}
+
+	void init(size_t capacity){
+		size_t total;
+		stride = Message::total_size(capacity);
+		total = stride * MESSAGE_ARRAY_LEN;
+		mem = sys_aligned_alloc(
+			alignof(Message), total);
+		if(mem == nullptr)
+			UNREACHABLE();
+		busy.clear_all();
+	}
+
+	void cleanup(void){
+		if(mem != nullptr){
+			sys_aligned_free(mem);
+			mem = nullptr;
 		}
 	}
 
-	~MessageStack(void){
-		for(Message *msg : messages)
-			delete msg;
-		messages.clear();
+	int acquire(void){
+		int slot = busy.first_clear();
+		if(slot != -1)
+			busy.set(slot);
+		return slot;
 	}
 
-	Message *acquire(void){
-		Message *msg;
-		if(messages.empty()){
-			msg = new Message(MSG_CAPACITY);
-		}else{
-			msg = messages.back();
-			messages.pop_back();
-		}
-		return msg;
+	void release(int slot){
+		busy.clear(slot);
 	}
 
-	void release(Message *msg){
-		// return message to the pool
-		messages.push_back(msg);
+	Message *take(int slot){
+		DEBUG_CHECK(mem != nullptr,
+			"MessageArray::take -> empty array");
+		void *ptr = (void*)((char*)(mem) + slot*stride);
+		return Message::takeon(ptr, stride);
 	}
 };
 
-#define ROUND_TO_64(x) (((x) + 63) & ~63)
 static std::mutex mtx;
-static std::map<size_t, MessageStack> pool;
-static Message *pool_acquire(size_t capacity){
-	capacity = ROUND_TO_64(capacity);
-	std::lock_guard<std::mutex> lock(mtx);
-	auto it = pool.find(capacity);
-	if(it == pool.end()){
-		// create new stack
-		auto ret = pool.emplace(
-			std::piecewise_construct,
-			std::forward_as_tuple(capacity),
-			std::forward_as_tuple(capacity));
-		if(ret.second == false)
-			return nullptr;
-		it = ret.first;
-	}
-	return it->second.acquire();
-}
-static void pool_release(Message *msg){
-	std::lock_guard<std::mutex> lock(mtx);
-	auto it = pool.find(msg->capacity);
-	if(it == pool.end()){
-		UNREACHABLE();
-		return;
-	}
-	it->second.release(msg);
+static std::vector<MessageArray> array_pool;
+static std::multimap<MessageCapacity, uint32> array_indices;
+
+static std::vector<>
+
+static MessageArray &add_array(MessageCapacity capacity, uint32 *arr_idx){
+	uint32 next_id = array_pool.size();
+	array_indices.insert({capacity, next_id});
+	array_pool.emplace_back(capacity);
+	if(arr_idx != nullptr) *arr_idx = next_id;
+	return array_pool.back();
 }
 
-OutputMessage output_message(size_t capacity){
-	return OutputMessage(
-		pool_acquire(capacity),
-		pool_release);
+void acquire_output_message(MessageCapacity capacity, OutputMessage *omsg){
+	MessageArray *arr;
+	uint32 idx, slot;
+
+	std::lock_guard<std::mutex> guard(mtx);
+	// try to find a free message with at least
+	// the requested capacity
+	auto start = array_indices.lower_bound(capacity);
+	auto end = array_indices.end();
+	for(auto it = start; it != end; ++it){
+		idx = it->second;
+		arr = &array_pool[idx];
+		slot = arr->acquire();
+		if(slot != -1){
+			omsg->arr_idx = idx;
+			omsg->arr_slot = slot;
+			omsg->msg = arr->take(slot);
+			return;
+		}
+	}
+
+	// there were no free messages: add new message
+	// array to the pool
+	arr = &add_array(capacity, &idx);
+	omsg->arr_idx = idx;
+	omsg->arr_slot = arr->acquire();
+	omsg->msg = arr->take(0);
+}
+
+void release_output_message(OutputMessage *msg){
+	MessageArray *arr;
+	std::lock_guard<std::mutex> guard(mtx);
+	arr = &array_pool[msg->arr_idx];
+	arr->release(msg->arr_slot);
 }
 

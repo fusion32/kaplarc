@@ -7,9 +7,9 @@
 
 #include "db/db.h"
 #include "game/protocol_login.h"
-#include "game/grsa.h"
 #include "server/protocol_test.h"
 #include "server/server.h"
+#include "server/server_rsa.h"
 
 #include <stdlib.h>
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv){
 	//init_interface("database", database_init, database_shutdown);
 
 	// initialize server interfaces
-	init_interface("RSA", grsa_init, grsa_shutdown);
+	init_interface("RSA", server_rsa_init, server_rsa_shutdown);
 
 	// initialize cluster protocols
 	// TODO

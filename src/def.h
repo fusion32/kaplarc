@@ -2,16 +2,16 @@
 #define DEF_H_
 
 #include <stdint.h>
-using uint	= unsigned int;
-using int8	= int8_t;
-using uint8	= uint8_t;
-using int16	= int16_t;
-using uint16	= uint16_t;
-using int32	= int32_t;
-using uint32	= uint32_t;
-using int64	= int64_t;
-using uint64	= uint64_t;
-using uintptr	= uintptr_t;
+typedef unsigned int	uint;
+typedef int8_t		int8;
+typedef uint8_t		uint8;
+typedef int16_t		int16;
+typedef uint16_t	uint16;
+typedef int32_t		int32;
+typedef uint32_t	uint32;
+typedef int64_t		int64;
+typedef uint64_t	uint64;
+typedef uintptr_t	uintptr;
 
 template<typename T, size_t N>
 constexpr size_t array_size(T (&arr)[N]){
@@ -22,11 +22,6 @@ constexpr bool is_power_of_two(size_t size){
 	return (size != 0) && ((size & (size - 1)) == 0);
 }
 
-constexpr size_t round_to_power_of_two(size_t s, size_t p){
-	size_t mask = (1 >> p) - 1;
-	return (s + mask) & ~mask;
-}
-
 // arch settings (these options should be ajusted to the arch being used)
 //#define ARCH_BIG_ENDIAN 1
 #define ARCH_UNALIGNED_ACCESS 1
@@ -34,8 +29,9 @@ constexpr size_t round_to_power_of_two(size_t s, size_t p){
 // platform settings
 #if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
 #	define PLATFORM_WINDOWS 1
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__)
 #	define PLATFORM_BSD 1
+#	define PLATFORM_FREEBSD 1
 #elif defined(__linux__)
 #	define PLATFORM_LINUX 1
 #else

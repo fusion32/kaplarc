@@ -1,106 +1,85 @@
 #include "rsa.h"
-#include <gmp.h>
-
-struct rsa_ctx{
-	mpz_t p, q, n, e;
-	mpz_t dp, dq, qi;
-	size_t limit;
-};
 
 //#define mpz_sizeinbytes(x) (mpz_size((x)) * sizeof(mp_limb_t))
 #define mpz_sizeinbytes(x) ((mpz_sizeinbase((x), 2) + 7) >> 3)
 
-struct rsa_ctx *rsa_create(void){
-	struct rsa_ctx *r = (struct rsa_ctx*)malloc(sizeof(struct rsa_ctx));
+void rsa_init(struct rsa_ctx *r){
 	mpz_inits(r->p, r->q, r->n, r->e,
-		r->dp, r->dq, r->qi, NULL);
-	r->limit = 0;
-	return r;
+		r->dp, r->dq, r->qi,
+		r->x0, r->x1, r->x2, r->x3, NULL);
+	r->encoding_limit = 0;
 }
 
-void rsa_destroy(struct rsa_ctx *r){
+void rsa_init_clone(struct rsa_ctx *r, struct rsa_ctx *from){
+	mpz_init_set(r->p, from->p);
+	mpz_init_set(r->q, from->q);
+	mpz_init_set(r->n, from->n);
+	mpz_init_set(r->e, from->e);
+	mpz_init_set(r->dp, from->dp);
+	mpz_init_set(r->dq, from->dq);
+	mpz_init_set(r->qi, from->qi);
+	mpz_inits(r->x0, r->x1, r->x2, r->x3, NULL); // these don't need to be copied
+	r->encoding_limit = from->encoding_limit;
+}
+
+void rsa_cleanup(struct rsa_ctx *r){
 	mpz_clears(r->p, r->q, r->n, r->e,
-		r->dp, r->dq, r->qi, NULL);
-	free(r);
+		r->dp, r->dq, r->qi,
+		r->x0, r->x1, r->x2, r->x3, NULL);
+	r->encoding_limit = 0;
 }
 
 bool rsa_setkey(struct rsa_ctx *r, const char *p, const char *q, const char *e){
-	bool ret = false;
-	mpz_t aux, lambda, p_1, q_1;
-
-	// set e, p, q, n
+	// set p, q, n, e
 	mpz_set_str(r->p, p, 10);
 	mpz_set_str(r->q, q, 10);
 	mpz_set_str(r->e, e, 10);
 	mpz_mul(r->n, r->p, r->q);
 
-	// init local variables
-	mpz_inits(aux, lambda, p_1, q_1, NULL);
+	// calculate the Carmichael's totient (lambda)
+	mpz_sub_ui(r->x0, r->p, 1);	// x0 = p - 1
+	mpz_sub_ui(r->x1, r->q, 1);	// x1 = q - 1
+	mpz_lcm(r->x2, r->x0, r->x1);	// x2 = lcm(x0, x1) <-- lambda
 
-	// calculate lambda(Carmichael's totient)
-	mpz_sub_ui(p_1, r->p, 1);
-	mpz_sub_ui(q_1, r->q, 1);
-	mpz_lcm(lambda, p_1, q_1);
-
-	// the coeficient `e` must be smaller than lambda
-	if(mpz_cmp(lambda, r->e) <= 0)
-		goto cleanup;
+	// `e` must be smaller than lambda
+	if(mpz_cmp(r->x2, r->e) <= 0)
+		return false;
 
 	// lambda and `e` must be coprimes
-	mpz_gcd(aux, lambda, r->e);
-	if(mpz_cmp_ui(aux, 1) != 0)
-		goto cleanup;
+	mpz_gcd(r->x3, r->x2, r->e);	// x3 = gcd(x2, e)
+	if(mpz_cmp_ui(r->x3, 1) != 0)
+		return false;
 
 	// calculate `d`
-	mpz_invert(aux, r->e, lambda);
+	mpz_invert(r->x3, r->e, r->x2);	// x3 = invert(e, x2)
 
 	// this next step is an optimization based on the
 	// Chinese remainder theorem used for decoding
-	mpz_mod(r->dp, aux, p_1);
-	mpz_mod(r->dq, aux, q_1);
-	mpz_invert(r->qi, r->q, r->p);
+	mpz_mod(r->dp, r->x3, r->x0);	// dp = x3 mod (p - 1)
+	mpz_mod(r->dq, r->x3, r->x1);	// dq = x3 mod (q - 1)
+	mpz_invert(r->qi, r->q, r->p);	// qi = invert(q, p)
 
 	// the maximum message length that can be encoded with this key
-	r->limit = mpz_sizeinbytes(r->n) - 1;
+	r->encoding_limit = mpz_sizeinbytes(r->n) - 1;
 
-	// return true
-	ret = true;
-
-cleanup:
-	// clear local variables
-	mpz_clears(aux, lambda, p_1, q_1, NULL);
-	return ret;
-}
-
-bool rsa_can_encode(struct rsa_ctx *r, size_t len){
-	return r->limit >= len;
-}
-
-size_t rsa_encoding_limit(struct rsa_ctx *r){
-	return r->limit;
+	return true;
 }
 
 void rsa_encode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *plen){
-	mpz_t m, c;
-	mpz_inits(m, c, NULL);
-	mpz_import(m, len, 1, 1, 0, 0, data);
-	mpz_powm(c, m, r->e, r->n);
-	mpz_export(data, plen, 1, 1, 0, 0, c);
-	mpz_clears(m, c, NULL);
+	mpz_import(r->x0, len, 1, 1, 0, 0, data);	// x0 = import(data)
+	mpz_powm(r->x1, r->x0, r->e, r->n);		// x1 = (x0 ^ e) mod n
+	mpz_export(data, plen, 1, 1, 0, 0, r->x1);	// data = export(x1);
 }
 
 void rsa_decode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *plen){
-	mpz_t c, m1, m2, h;
-	mpz_inits(c, m1, m2, h, NULL);
-	mpz_import(c, len, 1, 1, 0, 0, data);
-	mpz_powm(m1, c, r->dp, r->p);
-	mpz_powm(m2, c, r->dq, r->q);
-	mpz_sub(h, m1, m2);
-	if(mpz_cmp(m1, m2) < 0) // m1 < m2
-		mpz_add(h, h, r->p);
-	mpz_mul(h, h, r->qi);
-	mpz_mod(h, h, r->p);
-	mpz_addmul(m2, h, r->q);
-	mpz_export(data, plen, 1, 1, 0, 0, m2);
-	mpz_clears(c, m1, m2, h, NULL);
+	mpz_import(r->x0, len, 1, 1, 0, 0, data);	// x0 = import(data)
+	mpz_powm(r->x1, r->x0, r->dp, r->p);		// x1 = (x0 ^ dp) mod p
+	mpz_powm(r->x2, r->x0, r->dq, r->q);		// x2 = (x0 ^ dq) mod q
+	mpz_sub(r->x3, r->x1, r->x2);			// x3 = x1 - x2
+	if(mpz_cmp(r->x1, r->x2) < 0)			// if x1 < x2
+		mpz_add(r->x3, r->x3, r->p);		//	x3 = x3 + p
+	mpz_mul(r->x3, r->x3, r->qi);			//
+	mpz_mod(r->x3, r->x3, r->p);			// x3 = (x3 * qi) mod p
+	mpz_addmul(r->x2, r->x3, r->q);			// x2 = x2 + x3 * q
+	mpz_export(data, plen, 1, 1, 0, 0, r->x2);	// data = export(x2)
 }

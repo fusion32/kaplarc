@@ -21,7 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\config.cpp" />
     <ClCompile Include="..\src\crypto\adler32.cpp" />
-    <ClCompile Include="..\src\crypto\arc4random.cpp" />
+    <ClCompile Include="..\src\crypto\random.cpp" />
     <ClCompile Include="..\src\crypto\base64.cpp" />
     <ClCompile Include="..\src\crypto\bcrypt.cpp" />
     <ClCompile Include="..\src\crypto\blowfish.cpp" />
@@ -32,15 +32,16 @@
     <ClCompile Include="..\src\db\local.cpp" />
     <ClCompile Include="..\src\db\pgsql.cpp" />
     <ClCompile Include="..\src\game\protocol_login.cpp" />
-    <ClCompile Include="..\src\game\grsa.cpp" />
     <ClCompile Include="..\src\log.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
     <ClCompile Include="..\src\server\connection.cpp" />
+    <ClCompile Include="..\src\server\server_kqueue.cpp" />
     <ClCompile Include="..\src\server\message.cpp" />
     <ClCompile Include="..\src\server\outputmessage.cpp" />
     <ClCompile Include="..\src\server\protocol_test.cpp" />
-    <ClCompile Include="..\src\server\server.cpp" />
+    <ClCompile Include="..\src\server\server_rsa.cpp" />
+    <ClCompile Include="..\src\server\server_win.cpp" />
     <ClCompile Include="..\src\shard\shard.cpp" />
     <ClCompile Include="..\src\heapstring.cpp" />
     <ClCompile Include="..\src\stringbase.cpp" />
@@ -49,9 +50,10 @@
     <ClCompile Include="..\src\dispatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\bitset.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\crypto\adler32.h" />
-    <ClInclude Include="..\src\crypto\arc4random.h" />
+    <ClInclude Include="..\src\crypto\random.h" />
     <ClInclude Include="..\src\crypto\base64.h" />
     <ClInclude Include="..\src\crypto\bcrypt.h" />
     <ClInclude Include="..\src\crypto\blowfish.h" />
@@ -60,14 +62,12 @@
     <ClInclude Include="..\src\db\blob.h" />
     <ClInclude Include="..\src\db\db.h" />
     <ClInclude Include="..\src\endian.h" />
-    <ClInclude Include="..\src\game\account.h" />
-    <ClInclude Include="..\src\game\protocol_game.h" />
-    <ClInclude Include="..\src\game\protocol_info.h" />
-    <ClInclude Include="..\src\game\protocol_legacy.h" />
     <ClInclude Include="..\src\game\protocol_login.h" />
-    <ClInclude Include="..\src\game\grsa.h" />
     <ClInclude Include="..\src\scopeguard.h" />
+    <ClInclude Include="..\src\server\server.h" />
     <ClInclude Include="..\src\server\message.h" />
+    <ClInclude Include="..\src\server\protocol.h" />
+    <ClInclude Include="..\src\server\server_rsa.h" />
     <ClInclude Include="..\src\shared.h" />
     <ClInclude Include="..\src\stackstring.h" />
     <ClInclude Include="..\src\heapstring.h" />
@@ -76,12 +76,9 @@
     <ClInclude Include="..\src\log.h" />
     <ClInclude Include="..\src\ringbuffer.h" />
     <ClInclude Include="..\src\scheduler.h" />
-    <ClInclude Include="..\src\server\asio.h" />
     <ClInclude Include="..\src\server\connection.h" />
     <ClInclude Include="..\src\server\outputmessage.h" />
-    <ClInclude Include="..\src\server\protocol.h" />
     <ClInclude Include="..\src\server\protocol_test.h" />
-    <ClInclude Include="..\src\server\server.h" />
     <ClInclude Include="..\src\stringutil.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\dispatcher.h" />
