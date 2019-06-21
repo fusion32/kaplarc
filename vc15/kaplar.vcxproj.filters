@@ -109,6 +109,9 @@
     <ClCompile Include="..\src\server\server_rsa.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\server\server_epoll.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\def.h">

@@ -6,11 +6,7 @@
 #include <map>
 #include <vector>
 
-// NOTE: this may seem inefficient but when we
-// increase MESSAGE_ARRAY_LEN, it would scale well
-// (testing and measuring required)
-
-#define MESSAGE_ARRAY_LEN 1024
+#define MESSAGE_ARRAY_LEN 768
 class MessageArray{
 private:
 	size_t stride;
@@ -20,14 +16,6 @@ private:
 public:
 	MessageArray(void) : mem(nullptr) {}
 	MessageArray(size_t capacity){ init(capacity); }
-	MessageArray(MessageArray &&other){
-		stride = other.stride;
-		mem = other.mem;
-		busy = other.busy;
-
-		// empty `other`
-		other.mem = nullptr;
-	}
 	~MessageArray(void){
 		cleanup();
 	}
@@ -67,55 +55,108 @@ public:
 		void *ptr = (void*)((char*)(mem) + slot*stride);
 		return Message::takeon(ptr, stride);
 	}
+
+	// adding move operations will optimize
+	// std::vector's performance
+
+	// move assignment
+	MessageArray &operator=(MessageArray &&other){
+		stride = other.stride;
+		mem = other.mem;
+		busy = other.busy;
+		// empty `other`
+		other.mem = nullptr;
+	}
+
+	// move construction
+	MessageArray(MessageArray &&other){
+		//*this = std::move(other);
+		operator=(std::move(other));
+	}
+};
+
+struct Pool{
+	MessageCapacity capacity;
+	std::vector<MessageArray> arrays;
+
+	MessageArray &grow(uint32 *array_idx){
+		if(array_idx != nullptr)
+			*array_idx = arrays.size();
+		arrays.emplace_back(capacity);
+		return arrays.back();
+	}
+
+	bool acquire(OutputMessage *omsg){
+		uint32 slot;
+		uint32 idx = 0;
+		for(MessageArray &arr: arrays){
+			slot = arr.acquire();
+			if(slot != -1){
+				omsg->array_idx = idx;
+				omsg->array_slot = slot;
+				omsg->msg = arr.take(slot);
+				return true;
+			}
+			idx += 1;
+		}
+		return false;
+	}
+
+	// comparing operations will enable sorting
+	bool operator<(const Pool &other) const{
+		return capacity < other.capacity;
+	}
 };
 
 static std::mutex mtx;
-static std::vector<MessageArray> array_pool;
-static std::multimap<MessageCapacity, uint32> array_indices;
-
-static std::vector<>
-
-static MessageArray &add_array(MessageCapacity capacity, uint32 *arr_idx){
-	uint32 next_id = array_pool.size();
-	array_indices.insert({capacity, next_id});
-	array_pool.emplace_back(capacity);
-	if(arr_idx != nullptr) *arr_idx = next_id;
-	return array_pool.back();
-}
+static std::vector<Pool> pools;
+static std::map<MessageCapacity, uint32> indices;
 
 void acquire_output_message(MessageCapacity capacity, OutputMessage *omsg){
+	Pool *pool;
 	MessageArray *arr;
-	uint32 idx, slot;
+	uint32 pool_idx;
+	uint32 array_idx;
+	uint32 array_slot;
 
 	std::lock_guard<std::mutex> guard(mtx);
-	// try to find a free message with at least
-	// the requested capacity
-	auto start = array_indices.lower_bound(capacity);
-	auto end = array_indices.end();
-	for(auto it = start; it != end; ++it){
-		idx = it->second;
-		arr = &array_pool[idx];
-		slot = arr->acquire();
-		if(slot != -1){
-			omsg->arr_idx = idx;
-			omsg->arr_slot = slot;
-			omsg->msg = arr->take(slot);
-			return;
-		}
+
+	// try to find a pool with the
+	// requested capacity or create
+	// a new one
+	auto it = indices.find(capacity);
+	if(it == indices.end()){
+		pool_idx = pools.size();
+		pools.emplace_back();
+		indices.insert({capacity, pool_idx});
+	}else{
+		pool_idx = it->second;
 	}
 
-	// there were no free messages: add new message
-	// array to the pool
-	arr = &add_array(capacity, &idx);
-	omsg->arr_idx = idx;
-	omsg->arr_slot = arr->acquire();
+	// try to acquire a message from the
+	// arrays in the selected pool
+	pool = &pools[pool_idx];
+	if(pool->acquire(omsg)){
+		omsg->pool_idx = pool_idx;
+		return;
+	}
+
+	// if there were no available messages,
+	// increase the pool and take the first
+	// message
+	arr = &pool->grow(&array_idx);
+	omsg->pool_idx = pool_idx;
+	omsg->array_idx = array_idx;
+	omsg->array_slot = arr->acquire();
 	omsg->msg = arr->take(0);
 }
 
-void release_output_message(OutputMessage *msg){
+void release_output_message(OutputMessage *omsg){
+	Pool *pool;
 	MessageArray *arr;
 	std::lock_guard<std::mutex> guard(mtx);
-	arr = &array_pool[msg->arr_idx];
-	arr->release(msg->arr_slot);
+	pool = &pools[omsg->pool_idx];
+	arr = &pool->arrays[omsg->array_idx];
+	arr->release(omsg->array_slot);
 }
 

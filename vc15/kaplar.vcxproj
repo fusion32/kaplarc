@@ -36,6 +36,7 @@
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\scheduler.cpp" />
     <ClCompile Include="..\src\server\connection.cpp" />
+    <ClCompile Include="..\src\server\server_epoll.cpp" />
     <ClCompile Include="..\src\server\server_kqueue.cpp" />
     <ClCompile Include="..\src\server\message.cpp" />
     <ClCompile Include="..\src\server\outputmessage.cpp" />

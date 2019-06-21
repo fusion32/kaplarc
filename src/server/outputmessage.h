@@ -12,8 +12,9 @@ enum MessageCapacity: size_t {
 };
 
 struct OutputMessage{
-	uint32 arr_idx;
-	uint32 arr_slot;
+	uint16 pool_idx;
+	uint16 array_idx;
+	uint32 array_slot;
 	Message *msg;
 };
 
