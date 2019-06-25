@@ -6,7 +6,6 @@
 #include "system.h"
 
 #include "db/db.h"
-#include "game/protocol_login.h"
 #include "server/protocol_test.h"
 #include "server/server.h"
 #include "server/server_rsa.h"
@@ -48,10 +47,8 @@ int main(int argc, char **argv){
 	// TODO
 
 	// initialize server
-	server_add_protocol<ProtocolTest>(config_geti("sv_test_port"));
-	server_add_protocol<ProtocolLogin>(config_geti("sv_login_port"));
-	//server_add_protocol<ProtocolInfo>(config_geti("sv_info_port"));
-	//server_add_protocol<ProtocolGame>(config_geti("sv_game_port"));
+	//server_add_protocol(&protocol_test, config_geti("sv_test_port"));
+
 	server_run();
 	return 0;
 }

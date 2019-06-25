@@ -26,7 +26,9 @@ bool crypto_random(void *data, size_t len){
 #elif defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)
 
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <sys/random.h>
 
 static bool getrandom_wrapper(void *data, size_t len){
@@ -36,7 +38,7 @@ static bool getrandom_wrapper(void *data, size_t len){
 		if(ret == -1)
 			return false;
 		len -= ret;
-		data += ret;
+		data = advance_pointer(data, ret);
 	}
 	return true;
 }
@@ -61,7 +63,7 @@ static bool urandom_wrapper(void *data, size_t len){
 			return false;
 		}
 		len -= ret;
-		data += ret;
+		data = advance_pointer(data, ret);
 	}
 	pthread_mutex_unlock(&mtx);
 	return true;

@@ -1,5 +1,5 @@
 //#ifdef PLATFORM_BSD
-#if 1
+#if 0
 
 #include "../log.h"
 #include "connection.h"

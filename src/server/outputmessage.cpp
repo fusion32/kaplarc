@@ -66,6 +66,7 @@ public:
 		busy = other.busy;
 		// empty `other`
 		other.mem = nullptr;
+		return *this;
 	}
 
 	// move construction
@@ -117,7 +118,6 @@ void acquire_output_message(MessageCapacity capacity, OutputMessage *omsg){
 	MessageArray *arr;
 	uint32 pool_idx;
 	uint32 array_idx;
-	uint32 array_slot;
 
 	std::lock_guard<std::mutex> guard(mtx);
 

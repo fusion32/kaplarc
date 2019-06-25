@@ -1,3 +1,4 @@
+#if 0
 #ifndef PROTOCOL_LOGIN_H_
 #define PROTOCOL_LOGIN_H_
 
@@ -27,3 +28,5 @@ public:
 };
 
 #endif //PROTOCOL_LOGIN_H_
+#endif
+

@@ -11,7 +11,8 @@ enum MessageCapacity: size_t {
 	MESSAGE_CAPACITY_16K	= (1 << 14),
 };
 
-struct OutputMessage{
+class OutputMessage{
+public:
 	uint16 pool_idx;
 	uint16 array_idx;
 	uint32 array_slot;

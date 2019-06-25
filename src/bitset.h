@@ -3,6 +3,7 @@
 
 #include "def.h"
 #include <stdlib.h>
+#include <string.h>
 
 #define BITSET_SLOT(bit) ((bit) >> 3)
 #define BITSET_MASK(bit) (1 << ((bit) & 7))
@@ -18,6 +19,7 @@ private:
 public:
 	BitSet &operator=(const BitSet &other){
 		memcpy(data_, other.data_, bytes_);
+		return *this;
 	}
 
 	template<int M>
@@ -30,6 +32,7 @@ public:
 			for(int i = other.bytes_; i < bytes_; i += 1)
 				data_[i] = 0x00;
 		}
+		return *this;
 	}
 
 	bool is_set(int bit){
@@ -109,3 +112,4 @@ public:
 };
 
 #endif // BITFIELD_H_
+

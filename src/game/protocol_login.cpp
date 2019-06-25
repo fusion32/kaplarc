@@ -1,3 +1,4 @@
+#if 0
 #include "protocol_login.h"
 
 #include "../config.h"
@@ -147,3 +148,5 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 	// close connection
 	connection_close(connection);
 }
+#endif
+

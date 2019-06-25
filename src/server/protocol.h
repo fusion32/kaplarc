@@ -21,7 +21,7 @@ struct Protocol{
 	 * the use of these handles
 	 */
 	void *(*create_handle)(Connection *conn);
-	void (destroy_handle)(Connection *conn, void *handle);
+	void (*destroy_handle)(Connection *conn, void *handle);
 
 	/* events related to the protocol */
 	void (*on_connect)(Connection *conn, void *handle);

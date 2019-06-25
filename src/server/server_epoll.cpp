@@ -3,6 +3,7 @@
 #include "../log.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -30,7 +31,7 @@ static int fd_set_linger(int fd, int seconds){
 	l.l_onoff = (seconds > 0);
 	l.l_linger = seconds;
 	if(setsockopt(fd, SOL_SOCKET, SO_LINGER,
-			&linger, sizeof(struct linger)) == -1){
+			&l, sizeof(struct linger)) == -1){
 		LOG_ERROR("fd_set_linger: failed to"
 			" set linger option (errno = %d)", errno);
 		return -1;

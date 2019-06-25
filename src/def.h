@@ -1,6 +1,7 @@
 #ifndef DEF_H_
 #define DEF_H_
 
+#include <stddef.h>
 #include <stdint.h>
 typedef unsigned int	uint;
 typedef int8_t		int8;
@@ -22,20 +23,27 @@ constexpr bool is_power_of_two(size_t size){
 	return (size != 0) && ((size & (size - 1)) == 0);
 }
 
+constexpr void *advance_pointer(void *ptr, size_t bytes){
+	return (void*)((char*)ptr + bytes);
+}
+
 // arch settings (these options should be ajusted to the arch being used)
 //#define ARCH_BIG_ENDIAN 1
 #define ARCH_UNALIGNED_ACCESS 1
 
 // platform settings
-#if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
-#	define PLATFORM_WINDOWS 1
-#elif defined(__FreeBSD__)
-#	define PLATFORM_BSD 1
-#	define PLATFORM_FREEBSD 1
-#elif defined(__linux__)
-#	define PLATFORM_LINUX 1
-#else
-#	error platform not supported
+#if !defined(PLATFORM_LINUX) && !defined(PLATFORM_FREEBSD)	\
+		&& !defined(PLATFORM_WINDOWS)
+#	if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
+#		define PLATFORM_WINDOWS 1
+#	elif defined(__FreeBSD__)
+#		define PLATFORM_BSD 1
+#		define PLATFORM_FREEBSD 1
+#	elif defined(__linux__)
+#		define PLATFORM_LINUX 1
+#	else
+#		error platform not supported
+#	endif
 #endif
 
 // debug settings
@@ -61,7 +69,7 @@ constexpr bool is_power_of_two(size_t size){
 #		undef __DB_PGSQL__
 #	endif
 #elif defined(__DB_PGSQL__)
-#	error PGSQL DB Interface not yet implemented.
+#	warning PGSQL DB Interface not yet implemented.
 #else
 #	define __DB_CASSANDRA__ 1
 #endif

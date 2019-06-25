@@ -22,13 +22,17 @@ Options: (options in the same section are mutually exclusive)
         -debug              -
 
     [platform]:
-        -win32 (default)    -
-        -linux              -
-        -bsd                -
+        -linux (default)    -
+        -freebsd            -
+        -win32              -
 
     [byte order]: (defaults to platform's)
         -le                 - compile for little endian arch
         -be                 - compile for big endian arch
+
+    [database backend]:
+        -cassandra (default)-
+	-pgsql              -
 '''
 
 MakefileHeader = r'''
@@ -56,37 +60,100 @@ MakefileObject = r'''
 '''
 
 DEPS = [
-	"avltree.h", "cstring.h", "def.h", "dispatcher.h",
-	"env.h", "log.h", "memblock.h", "ringbuffer.h",
-	"scheduler.h", "system.h", "throw.h",
+	#core
+	"bitset.h",
+	"buffer_util.h",
+	"config.h",
+	"def.h",
+	"dispatcher.h",
+	"endian.h",
+	"heapstring.h",
+	"log.h",
+ 	"ringbuffer.h",
+	"scheduler.h",
+	"scopeguard.h",
+	"shared.h",
+	"stackstring.h",
+	"stringbase.h",
+	"stringutil.h",
+	"system.h",
+	"throw.h",
 
-	#server core
-	"server/asio.h",
-	"server/connection.h",
+	#crypto
+	"crypto/adler32.h",
+	"crypto/base64.h",
+	"crypto/bcrypt.h",
+	"crypto/blowfish.h",
+	"crypto/random.h",
+	"crypto/rsa.h",
+	"crypto/xtea.h",
+
+	#db
+	"db/blob.h",
+	"db/db.h",
+	"db/local.h",
+
+	#game
+	"game/account.h",
+	"game/protocol_game.h",
+	"game/protocol_info.h",
+	"game/protocol_legacy.h",
+	"game/protocol_login.h",
+
+	#server
 	"server/message.h",
+	"server/outputmessage.h",
 	"server/protocol.h",
-	"server/server.h",
-
-	#protocols
 	"server/protocol_test.h",
+	"server/server.h",
+	"server/server_rsa.h",
+
+
+	#shard
 ]
 
-COMMON = [
-	"adler32", "dispatcher", "env", "log",
-	"main", "scheduler", "system",
+OBJECTS = [
+	#core
+	"config",
+	"dispatcher",
+	"heapstring",
+	"log",
+	"main",
+	"scheduler",
+	"stringbase",
+	"stringutil",
+	"system",
 
-	#server core
-	"server/connection",
+	#crypto
+	"crypto/adler32",
+	"crypto/base64",
+	"crypto/bcrypt",
+	"crypto/blowfish",
+	"crypto/random",
+	"crypto/rsa",
+	"crypto/xtea",
+
+	#db
+	"db/blob",
+	"db/cassandra",
+	"db/local",
+	"db/pgsql",
+
+	#game
+	"game/protocol_login",
+
+	#server
 	"server/message",
-	"server/server",
-
-	# protocols
+	"server/outputmessage",
 	"server/protocol_test",
-]
+	"server/server_epoll",
+	"server/server_iocp",
+	"server/server_kqueue",
+	"server/server_rsa",
 
-WIN32 = []
-LINUX = []
-BSD = []
+	#shard
+	"shard/shard",
+]
 
 if __name__ == "__main__":
 	# parse parameters
@@ -96,7 +163,8 @@ if __name__ == "__main__":
 	test		= False
 	compiler	= "CLANG"
 	build		= "RELEASE"
-	platform	= "WIN32"
+	platform	= "LINUX"
+	database	= "CASSANDRA"
 
 	#default to this platform byteorder
 	byteorder	= "LITTLE"
@@ -136,14 +204,15 @@ if __name__ == "__main__":
 			build = "DEBUG"
 
 		#platforms
-		elif opt == "-win32":
-			platform = "WIN32"
-
 		elif opt == "-linux":
 			platform = "LINUX"
 
-		elif opt == "-bsd":
-			platform = "BSD"
+		elif opt == "-freebsd":
+			platform = "FREEBSD"
+
+		elif opt == "-windows":
+			platform = "WINDOWS"
+
 
 		#endianess
 		elif opt == "-le":
@@ -151,6 +220,13 @@ if __name__ == "__main__":
 
 		elif opt == "-be":
 			byteorder = "BIG"
+
+		#database
+		elif opt == "-cassandra":
+			database = "CASSANDRA"
+
+		elif opt == "-pgsql":
+			database = "PGSQL"
 
 		# invalid option
 		else:
@@ -164,9 +240,11 @@ if __name__ == "__main__":
 				"-Wno-pointer-sign",
 				"-Wno-writable-strings"]
 	LFLAGS		= [] 
-	DEFINES		= ["-D_XOPEN_SOURCE=700"]
-	LIBS		= ["-lstdc++", "-lpthread"]
-	OBJECTS		= COMMON[:]
+	INCLUDES	= ["-I/usr/include/lua5.1"]
+	DEFINES		= ["-D_XOPEN_SOURCE=700",
+				"-D__BSD_VISIBLE=1"]
+	LIBS		= ["-lstdc++", "-lpthread",
+				"-lgmp", "-llua5.1"]
 
 	#check compiler
 	if compiler == "GCC":
@@ -178,13 +256,12 @@ if __name__ == "__main__":
 		sys.exit()
 
 	#check platform
-	if platform == "WIN32":
-		OBJECTS.extend(WIN32)
-	elif platform == "LINUX":
-		OBJECTS.extend(LINUX)
-	elif platform == "BSD":
-		OBJECTS.extend(BSD)
-		DEFINES.append("-D__BSD_VISIBLE=1")
+	if platform == "LINUX":
+		DEFINES.append("-DPLATFORM_LINUX=1")
+	elif platform == "FREEBSD":
+		DEFINES.append("-DPLATFORM_FREEBSD=1")
+	elif platform == "WINDOWS":
+		DEFINES.append("-DPLATFORM_WINDOWS=1")
 	else:
 		print("[error] invalid platform")
 		sys.exit()
@@ -196,6 +273,7 @@ if __name__ == "__main__":
 	elif build == "DEBUG":
 		CXXFLAGS.append("-g")
 		LFLAGS.append("-g")
+		LFLAGS.append("-Og")
 	else:
 		print("[error] invalid build type")
 		sys.exit()
@@ -209,7 +287,18 @@ if __name__ == "__main__":
 		print("[error] invalid byteorder")
 		sys.exit()
 
-	#concat CXXFLAGS and DEFINES
+	#check database backend
+	if database == "CASSANDRA":
+		DEFINES.append("-D__DB_CASSANDRA__")
+	elif database == "PGSQL":
+		DEFINES.append("-D__DB_PGSQL__")
+		LIBS.append("-lpq")
+	else:
+		print("[error] invalid database backend")
+		sys.exit()
+
+	#concat CXXFLAGS, INCLUDES and DEFINES
+	CXXFLAGS.extend(INCLUDES)
 	CXXFLAGS.extend(DEFINES)
 
 	#add path to dependencies
