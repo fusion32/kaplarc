@@ -13,7 +13,8 @@
 x64/
 x86/
 
-# Makefile directories
+# Makefile and build directories
+Makefile
 [Bb]uild/
 [Oo]bj/
 *.o

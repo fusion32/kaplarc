@@ -1,8 +1,8 @@
 
 CXX		= clang++
-CXXFLAGS	= -std=c++14 -Wall -Wno-pointer-sign -Wno-writable-strings -I/usr/include/lua5.1 -D_XOPEN_SOURCE=700 -D__BSD_VISIBLE=1 -DPLATFORM_LINUX=1 -D__DB_PGSQL__
+CXXFLAGS	= -std=c++14 -Wall -Wno-pointer-sign -Wno-writable-strings -I/usr/include/lua5.1 -D_XOPEN_SOURCE=700 -D__BSD_VISIBLE=1 -DPLATFORM_LINUX=1 -D__DB_CASSANDRA__
 LFLAGS		= -s -O3
-LIBS		= -lstdc++ -lpthread -lgmp -llua5.1 -lpq
+LIBS		= -lstdc++ -lpthread -lgmp -llua5.1
 
 DEPS		=	\
 	src/bitset.h	\

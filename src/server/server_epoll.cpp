@@ -16,7 +16,7 @@
  * if it's in a non blocking mode or not.
  */
 
-class Connection{
+struct Connection{
 	int		fd;
 	uint32		flags;
 	uint32		rdwr_count;
@@ -25,6 +25,18 @@ class Connection{
 	Message		*input;
 	OutputMessage	*output;
 };
+
+#define SERVICE_MAX_PROTOCOLS 4
+struct Service{
+	int		fd;
+	int		port;
+	int		protocol_count;
+	Protocol	protocols[SERVICE_MAX_PROTOCOLS];
+};
+
+/*
+ * Socket Helpers
+ */
 
 static int fd_set_linger(int fd, int seconds){
 	struct linger l;
@@ -52,6 +64,67 @@ static int fd_set_non_blocking(int fd){
 		return -1;
 	}
 	return 0;
+}
+
+
+/*
+ * Connection Interface
+ */
+
+/*
+ * Service Interface
+ */
+
+
+
+/*
+ * Server Interface
+ */
+
+#define MAX_SERVICES 4
+static bool	running = false;
+static int	service_count = 0;
+static Service	services[MAX_SERVICES];
+
+bool server_add_protocol(Protocol *protocol, int port){
+	int i;
+	Service *s = nullptr;
+	if(running || protocol == nullptr)
+		return false;
+	for(i = 0; i < service_count; i += 1){
+		if(services[i].port == port){
+			s = &services[i];
+			break;
+		}
+	}
+
+	if(s == nullptr){
+		if(service_count >= MAX_SERVICES)
+			return false;
+		s = &services[service_count];
+		service_count += 1;
+
+		s->fd = -1;
+		s->port = port;
+		s->protocol_count = 1;
+		memcpy(&s->protocols[0], protocol, sizeof(Protocol));
+	}else{
+		if(protocol->sends_first ||
+		  s->protocol_count >= SERVICE_MAX_PROTOCOLS ||
+		  s->protocols[0].sends_first)
+			return false;
+		i = s->protocol_count;
+		s->protocol_count += 1;
+		memcpy(&s->protocols[i], protocol, sizeof(Protocol));
+	}
+	return true;
+}
+
+void server_stop(void){
+	running = false;
+}
+
+void server_run(void){
 }
 
 #endif
