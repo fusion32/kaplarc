@@ -27,11 +27,11 @@ static size_t align_down(size_t sz){
 	return sz & ~alignment_mask;
 }
 
-size_t Message::total_size(size_t capacity){
+size_t message_total_size(size_t capacity){
 	return align_up(buffer_offset + capacity);
 }
 
-Message *Message::create(size_t total_size){
+Message *message_create(size_t total_size){
 	Message *msg;
 
 	total_size = align_up(total_size);
@@ -47,11 +47,11 @@ Message *Message::create(size_t total_size){
 	return msg;
 }
 
-Message *Message::create_with_capacity(size_t capacity){
-	return create(buffer_offset + capacity);
+Message *message_create_with_capacity(size_t capacity){
+	return message_create(buffer_offset + capacity);
 }
 
-Message *Message::takeon(void *mem, size_t mem_size){
+Message *message_takeon(void *mem, size_t mem_size){
 	Message *msg;
 	uintptr addr;
 	
@@ -68,8 +68,12 @@ Message *Message::takeon(void *mem, size_t mem_size){
 	return msg;
 }
 
-void Message::destroy(Message *msg){
+void message_destroy(Message *msg){
 	sys_aligned_free(msg);
+}
+
+uint8 *Message::ptr(void){
+	return buffer + readpos;
 }
 
 uint8 Message::peek_byte(void){

@@ -31,9 +31,6 @@
     <ClCompile Include="..\src\system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server\connection.cpp">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\server\protocol_test.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>
@@ -125,9 +122,6 @@
     </ClInclude>
     <ClInclude Include="..\src\system.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\server\connection.h">
-      <Filter>Source Files\server</Filter>
     </ClInclude>
     <ClInclude Include="..\src\server\protocol_test.h">
       <Filter>Source Files\server</Filter>

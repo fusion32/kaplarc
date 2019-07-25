@@ -22,7 +22,7 @@ public:
 
 	void init(size_t capacity){
 		size_t total;
-		stride = Message::total_size(capacity);
+		stride = message_total_size(capacity);
 		total = stride * MESSAGE_ARRAY_LEN;
 		mem = sys_aligned_alloc(
 			alignof(Message), total);
@@ -53,7 +53,7 @@ public:
 		DEBUG_CHECK(mem != nullptr,
 			"MessageArray::take -> empty array");
 		void *ptr = (void*)((char*)(mem) + slot*stride);
-		return Message::takeon(ptr, stride);
+		return message_takeon(ptr, stride);
 	}
 
 	// adding move operations will optimize

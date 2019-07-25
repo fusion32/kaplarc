@@ -4,16 +4,9 @@
 #include "../def.h"
 #include "protocol.h"
 
-class Service;
-class Connection;
-
-class Message;
-class OutputMessage;
-
-
-// Service interface
-int service_port(Service *service);
-bool service_sends_first(Service *service);
+struct Connection;
+struct Message;
+struct OutputMessage;
 
 // Server interface
 void server_run(void);

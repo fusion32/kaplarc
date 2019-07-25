@@ -10,13 +10,6 @@ public:
 	size_t readpos;
 	uint8 buffer[];
 
-	// messages should be created using these
-	static size_t total_size(size_t capacity);
-	static Message *create(size_t total_size);
-	static Message *create_with_capacity(size_t capacity);
-	static Message *takeon(void *mem, size_t mem_size);
-	static void destroy(Message *msg);
-
 	// delete constructor and destructor
 	Message(void) = delete;
 	~Message(void) = delete;
@@ -46,5 +39,11 @@ public:
 	void	radd_str(const char *str);
 	void	radd_lstr(const char *buf, size_t buflen);
 };
+
+size_t message_total_size(size_t capacity);
+Message *message_create(size_t total_size);
+Message *message_create_with_capacity(size_t capacity);
+Message *message_takeon(void *mem, size_t mem_size);
+void message_destroy(Message *msg);
 
 #endif //SERVER_MESSAGE_H_
