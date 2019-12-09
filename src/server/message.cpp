@@ -72,10 +72,6 @@ void message_destroy(Message *msg){
 	sys_aligned_free(msg);
 }
 
-uint8 *Message::ptr(void){
-	return buffer + readpos;
-}
-
 uint8 Message::peek_byte(void){
 	return decode_u8(buffer + readpos);
 }

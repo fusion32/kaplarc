@@ -94,9 +94,6 @@
     <ClCompile Include="..\src\heapstring.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server\server_win.cpp">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\server\server_kqueue.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>

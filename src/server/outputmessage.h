@@ -11,15 +11,14 @@ enum MessageCapacity: size_t {
 	MESSAGE_CAPACITY_16K	= (1 << 14),
 };
 
-class OutputMessage{
-public:
+struct OutputMessage{
 	uint16 pool_idx;
 	uint16 array_idx;
 	uint32 array_slot;
 	Message *msg;
 };
 
-void acquire_output_message(MessageCapacity capacity, OutputMessage *msg);
-void release_output_message(OutputMessage *msg);
+void output_message_acquire(MessageCapacity capacity, OutputMessage *out);
+void output_message_release(OutputMessage *out);
 
 #endif //SERVER_OUTPUTMESSAGE_H_

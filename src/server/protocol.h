@@ -1,8 +1,8 @@
 #ifndef SERVER_PROTOCOL_H_
 #define SERVER_PROTOCOL_H_
 
-class Connection;
-class Message;
+struct Connection;
+struct Message;
 struct Protocol{
 	/* name of the protocol: used for debugging */
 	char *name;

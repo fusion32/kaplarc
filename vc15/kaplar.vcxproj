@@ -41,7 +41,6 @@
     <ClCompile Include="..\src\server\outputmessage.cpp" />
     <ClCompile Include="..\src\server\protocol_test.cpp" />
     <ClCompile Include="..\src\server\server_rsa.cpp" />
-    <ClCompile Include="..\src\server\server_win.cpp" />
     <ClCompile Include="..\src\shard\shard.cpp" />
     <ClCompile Include="..\src\heapstring.cpp" />
     <ClCompile Include="..\src\stringbase.cpp" />

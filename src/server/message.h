@@ -3,8 +3,7 @@
 
 #include "../def.h"
 
-class Message{
-public:
+struct Message{
 	size_t capacity;
 	size_t length;
 	size_t readpos;

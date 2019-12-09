@@ -87,15 +87,15 @@ struct Pool{
 		return arrays.back();
 	}
 
-	bool acquire(OutputMessage *omsg){
+	bool acquire(OutputMessage *out){
 		uint32 slot;
 		uint32 idx = 0;
 		for(MessageArray &arr: arrays){
 			slot = arr.acquire();
 			if(slot != -1){
-				omsg->array_idx = idx;
-				omsg->array_slot = slot;
-				omsg->msg = arr.take(slot);
+				out->array_idx = idx;
+				out->array_slot = slot;
+				out->msg = arr.take(slot);
 				return true;
 			}
 			idx += 1;
@@ -113,7 +113,7 @@ static std::mutex mtx;
 static std::vector<Pool> pools;
 static std::map<MessageCapacity, uint32> indices;
 
-void acquire_output_message(MessageCapacity capacity, OutputMessage *omsg){
+void output_message_acquire(MessageCapacity capacity, OutputMessage *out){
 	Pool *pool;
 	MessageArray *arr;
 	uint32 pool_idx;
@@ -136,8 +136,8 @@ void acquire_output_message(MessageCapacity capacity, OutputMessage *omsg){
 	// try to acquire a message from the
 	// arrays in the selected pool
 	pool = &pools[pool_idx];
-	if(pool->acquire(omsg)){
-		omsg->pool_idx = pool_idx;
+	if(pool->acquire(out)){
+		out->pool_idx = pool_idx;
 		return;
 	}
 
@@ -145,18 +145,18 @@ void acquire_output_message(MessageCapacity capacity, OutputMessage *omsg){
 	// increase the pool and take the first
 	// message
 	arr = &pool->grow(&array_idx);
-	omsg->pool_idx = pool_idx;
-	omsg->array_idx = array_idx;
-	omsg->array_slot = arr->acquire();
-	omsg->msg = arr->take(0);
+	out->pool_idx = pool_idx;
+	out->array_idx = array_idx;
+	out->array_slot = arr->acquire();
+	out->msg = arr->take(0);
 }
 
-void release_output_message(OutputMessage *omsg){
+void output_message_release(OutputMessage *out){
 	Pool *pool;
 	MessageArray *arr;
 	std::lock_guard<std::mutex> guard(mtx);
-	pool = &pools[omsg->pool_idx];
-	arr = &pool->arrays[omsg->array_idx];
-	arr->release(omsg->array_slot);
+	pool = &pools[out->pool_idx];
+	arr = &pool->arrays[out->array_idx];
+	arr->release(out->array_slot);
 }
 

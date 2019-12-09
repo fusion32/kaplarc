@@ -78,7 +78,7 @@ static void send_hello(Connection *conn){
 	OutputMessage outputmsg;
 	Message *msg;
 
-	acquire_output_message(MESSAGE_CAPACITY_256, &outputmsg);
+	output_message_acquire(MESSAGE_CAPACITY_256, &outputmsg);
 	msg = outputmsg.msg;
 
 	message_begin(msg);
