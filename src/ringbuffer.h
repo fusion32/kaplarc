@@ -1,42 +1,30 @@
-#ifndef RINGBUFFER_H_
-#define RINGBUFFER_H_
+#ifdef RINGBUFFER_H_
+#	error "ringbuffer.h" must be included only once
+#endif
+#define RINGBUFFER_H_ 1
 
 #include "def.h"
 
-template<typename T, size_t N>
-class RingBuffer{
-private:
-	uint32 readpos;
-	uint32 writepos;
-	T buf[N];
+// check if the ringbuffer parameters are set
+#if !defined(RB_CAPACITY) || !defined(RB_BUFFER)	\
+  || !defined(RB_WRPOS) || !defined(RB_RDPOS)
+#	error all ringbuffer parameters must be set
+#endif
 
-	static constexpr int bitmask = (N - 1);
-	static_assert(is_power_of_two(N),
-		"Ringbuffer requires N to be a power of two.");
-public:
-	// delete copy and move operations
-	RingBuffer(const RingBuffer&)			= delete;
-	RingBuffer(RingBuffer&&)			= delete;
-	RingBuffer &operator=(const RingBuffer&)	= delete;
-	RingBuffer &operator=(RingBuffer&&)		= delete;
+// check if RB_CAPACITY is a power of two
+#if !IS_POWER_OF_TWO(RB_CAPACITY)
+#	error RB_CAPACITY must be a power of two
+#endif
 
-	RingBuffer(void) : readpos(0), writepos(0) {}
-	~RingBuffer(void){}
+// auxiliary definitions
+#define RB__CAPACITY	(RB_CAPACITY)
+#define RB__BUFFER	(RB_BUFFER)
+#define RB__WRPOS	(RB_WRPOS)
+#define RB__RDPOS	(RB_RDPOS)
+#define RB__MASK	(RB__CAPACITY - 1)
 
-	constexpr size_t capacity(void) const { return N; }
-	uint32 size(void) const { return writepos - readpos; }
-	bool empty(void) const { return writepos == readpos; }
-	bool full(void) const { return size() >= N; }
-
-	T &front(void){ return buf[readpos & bitmask]; }
-	void pop(void){ if(!empty()) readpos++; }
-
-	template<typename G>
-	bool push(G &&item){
-		if(full()) return false;
-		buf[writepos++ & bitmask] = std::forward<G>(item);
-		return true;
-	}
-};
-
-#endif //RINGBUFFER_H_
+// ringbuffer helpers
+#define RB_EMPTY()	(RB__WRPOS == RB__RDPOS)
+#define RB_FULL()	((RB__WRPOS - RB__RDPOS) >= RB__CAPACITY)
+#define RB_PUSH()	(&RB__BUFFER[RB__WRPOS++ & RB__MASK])
+#define RB_POP()	(&RB__BUFFER[RB__RDPOS++ & RB__MASK])

@@ -6,7 +6,7 @@ static const uint8 base64[] =
 	"abcdefghijklmnopqrstuvwxyz"
 	"0123456789";
 
-static const uint8 index64[] = {
+static const uint8 decode64[] = {
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -79,8 +79,8 @@ bool base64_decode(uint8 *data, size_t len, const char *b64data){
 	size_t n = len / 3;
 
 	while(n > 0){
-		c1 = index64[p[0]]; c2 = index64[p[1]];
-		c3 = index64[p[2]]; c4 = index64[p[3]];
+		c1 = decode64[p[0]]; c2 = decode64[p[1]];
+		c3 = decode64[p[2]]; c4 = decode64[p[3]];
 		if(c1 == 0xFF || c2 == 0xFF || c3 == 0xFF || c4 == 0xFF)
 			return false;
 		out[0] = (c1 << 2) | ((c2 >> 4) & 0x03);
@@ -91,17 +91,17 @@ bool base64_decode(uint8 *data, size_t len, const char *b64data){
 
 	switch(len % 3){
 	case 1:
-		c1 = index64[p[0]];
-		c2 = index64[p[1]];
+		c1 = decode64[p[0]];
+		c2 = decode64[p[1]];
 		if(c1 == 0xFF || c2 == 0xFF)
 			return false;
 		*out++ = (c1 << 2) | ((c2 >> 4) & 0x03);
 		break;
 
 	case 2:
-		c1 = index64[p[0]];
-		c2 = index64[p[1]];
-		c3 = index64[p[2]];
+		c1 = decode64[p[0]];
+		c2 = decode64[p[1]];
+		c3 = decode64[p[2]];
 		if(c1 == 0xFF || c2 == 0xFF || c3 == 0xFF)
 			return false;
 		out[0] = (c1 << 2) | ((c2 >> 4) & 0x03);

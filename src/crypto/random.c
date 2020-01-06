@@ -2,25 +2,10 @@
 #include "random.h"
 
 #if defined(PLATFORM_WINDOWS)
-#define WIN32_LEAN_AND_MEAN 1
-#include <windows.h>
-#include <wincrypt.h>
-#include <mutex>
-#pragma comment(lib, "advapi32.lib")
-
-static std::mutex mtx;
-static HCRYPTPROV prov = 0;
+// TODO
 bool crypto_random(void *data, size_t len){
-	if(len == 0) return true;
-	std::unique_lock<std::mutex> lock(mtx);
-	if(prov == 0){
-		BOOL ok = CryptAcquireContextA(&prov, NULL, NULL,
-			PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT);
-		if(ok == FALSE)
-			return false;
-	}
-	lock.unlock();
-	return CryptGenRandom(prov, (DWORD)len, (BYTE*)data) != FALSE;
+	ASSERT(0 && "crypto_random: not implemented");
+	return len == 0;
 }
 
 #elif defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)

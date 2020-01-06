@@ -22,7 +22,7 @@
 #include "message.h"
 #include "outputmessage.h"
 
-#include <queue>
+//#include <queue>
 #include <stdlib.h>
 #include <string.h>
 
@@ -40,38 +40,38 @@
  */
 
 /* structs */
-struct Connection;
-struct Service;
+struct connection;
+struct service;
 
 /* socket helpers */
 static bool fd_set_linger(int fd, int seconds);
 static bool fd_set_non_blocking(int fd);
 
 /* connection functions */
-static void connection_lock(Connection *c);
-static void connection_unlock(Connection *c);
-static void __connection_close(Connection *c);
-static void __connection_dispatch_input_message(Connection *c);
-static int __connection_read_partial_length(Connection *c);
-static int __connection_read_length(Connection *c);
-static int __connection_read_data(Connection *c);
-static int __connection_read(Connection *c);
-static bool __connection_resume_read(Connection *c);
-static bool connection_resume_read(Connection *c);
-static int __connection_write(Connection *c);
-static bool __connection_resume_write(Connection *c);
-static bool connection_resume_write(Connection *c);
-static void connection_start(Connection *c);
-void connection_close(Connection *c);
-void connection_send(Connection *c, OutputMessage *out);
+static void connection_lock(struct connection *c);
+static void connection_unlock(struct connection *c);
+static void __connection_close(struct connection *c);
+static void __connection_dispatch_input_message(struct connection *c);
+static int __connection_read_partial_length(struct connection *c);
+static int __connection_read_length(struct connection *c);
+static int __connection_read_data(struct connection *c);
+static int __connection_read(struct connection *c);
+static bool __connection_resume_read(struct connection *c);
+static bool connection_resume_read(struct connection *c);
+static int __connection_write(struct connection *c);
+static bool __connection_resume_write(struct connection *c);
+static bool connection_resume_write(struct connection *c);
+static void connection_start(struct connection *c);
+void connection_close(struct connection *c);
+void connection_send(struct connection *c, OutputMessage *out);
 
 /* service functions */
-static bool service_open(Service *s);
-static void service_close(Service *s);
-static int service_accept(Service *s, Connection **c);
-static bool service_accept_all(Service *s);
-static Protocol *service_first_protocol(Service *s);
-static Protocol *service_identify_protocol(Service *s, Message *msg);
+static bool service_open(struct service *s);
+static void service_close(struct service *s);
+static int service_accept(struct service *s, struct connection **c);
+static bool service_accept_all(struct service *s);
+static Protocol *service_first_protocol(struct service *s);
+static Protocol *service_identify_protocol(struct service *s, Message *msg);
 
 /* server functions */
 static bool server_is_epoll_open(void);
@@ -91,15 +91,52 @@ bool server_add_protocol(Protocol *protocol, int port);
 /*
  * EPOLLDATA
  */
-enum EPOLLTAG: int{
+enum epoll_tag{
 	TAG_NONE = 0,
 	TAG_INTERRUPT,
 	TAG_CONNECTION,
 	TAG_SERVICE,
 };
 
-struct EPOLLDATA{
-	EPOLLTAG tag;
+struct epoll_data{
+	enum epoll_tag tag;
+};
+
+// connection settings
+#define CONNECTION_MAX_INPUT		(1<<14) // 16K
+
+// connection flags
+#define CONNECTION_NEW			0x00
+#define CONNECTION_READY		0x01
+#define CONNECTION_CLOSING		0x02
+#define CONNECTION_FIRST_MSG		0x04
+#define CONNECTION_READING_LENGTH	0x08
+#define CONNECTION_PARTIAL_LENGTH	0x10
+
+struct connection{
+	enum epoll_tag		tag;
+	int			fd;
+	uint32			flags;
+	uint32			ref_count;
+	uint32			rdwr_count;
+	struct sockaddr_in	addr;
+	pthread_mutex_t		mtx;
+	struct service		*service;
+	struct protocol		*protocol;
+	void			*protocol_handle;
+	//void			*input;
+	//void			*output;
+};
+
+// service settings
+#define SERVICE_MAX_PROTOCOLS 4
+
+struct service{
+	enum epoll_tag	tag;
+	int		fd;
+	int		port;
+	int		protocol_count;
+	Protocol	protocols[SERVICE_MAX_PROTOCOLS];
 };
 
 /*
@@ -138,88 +175,48 @@ static bool fd_set_non_blocking(int fd){
  * Connection Interface
  */
 
-#define CONNECTION_MAX_INPUT		(1<<14) // 16K
-
-#define CONNECTION_NEW			0x00
-#define CONNECTION_READY		0x01
-#define CONNECTION_CLOSING		0x02
-#define CONNECTION_FIRST_MSG		0x04
-#define CONNECTION_READING_LENGTH	0x08
-#define CONNECTION_PARTIAL_LENGTH	0x10
-
-struct Connection: public EPOLLDATA {
-	// connection control
-	int				fd;
-	uint32				flags;
-	uint32				ref_count;
-	uint32				rdwr_count;
-	struct sockaddr_in		addr;
-	pthread_mutex_t			mtx;
-
-	// protocol
-	Service *service;
-	Protocol *protocol;
-	void *protocol_handle;
-
-	// i/o messages
-	Message				*input;
-	std::queue<OutputMessage>	output;
-
-	// basic initialization/destruction
-	Connection(void) = delete;
-	Connection(int fd_, struct sockaddr_in *addr_, Service *service_);
-	~Connection(void);
-};
-
-Connection::Connection(int fd_, struct sockaddr_in *addr_,
-			Service *service_){
-	fd = fd_;
-	flags = CONNECTION_NEW;
-	ref_count = 1;
-	rdwr_count = 0;
-	if(addr_ != NULL)
-		memcpy(&addr, addr_, sizeof(struct sockaddr_in));
-	pthread_mutex_init(&mtx, NULL);
-	service = service_;
-	protocol = NULL;
-	protocol_handle = NULL;
-	input = NULL;
+static void connection_ctor(struct connection *c, int fd,
+		struct sockaddr_in *addr,
+		struct service *service){
+	c->tag = TAG_CONNECTION;
+	c->fd = fd;
+	c->flags = CONNECTION_NEW;
+	c->ref_count = 1;
+	c->rdwr_count = 0;
+	if(addr != NULL)
+		memcpy(&c->addr, addr, sizeof(struct sockaddr_in));
+	pthread_mutex_init(&c->mtx, NULL);
+	c->service = service;
+	c->protocol = NULL;
+	c->protocol_handle = NULL;
+	// init c->input;
+	// init c->output;
 }
 
-Connection::~Connection(void){
-	if(fd != -1){
-		close(fd);
-		fd = -1;
+static void connection_dtor(struct connection *c){
+	if(c->fd != -1){
+		close(c->fd);
+		c->fd = -1;
 	}
-	pthread_mutex_destroy(&mtx);
-	if(protocol != NULL){
-		protocol->destroy_handle(this, protocol_handle);
-		protocol = NULL;
-		protocol_handle = NULL;
+	pthread_mutex_destroy(&c->mtx);
+	if(c->protocol != NULL){
+		c->protocol->destroy_handle(c, c->protocol_handle);
+		c->protocol = NULL;
+		c->protocol_handle = NULL;
 	}
-	if(input != NULL){
-		message_destroy(input);
-		input = NULL;
-	}
-
-	// release all output messages
-	OutputMessage *out;
-	while(!output.empty()){
-		out = &output.front();
-		output_message_release(out);
-		output.pop();
-	}
+	// destroy c->input;
+	// destroy c->output;
 }
 
-static void connection_lock(Connection *c){
+static void connection_lock(struct connection *c){
 	pthread_mutex_lock(&c->mtx);
 }
 
-static void connection_unlock(Connection *c){
+static void connection_unlock(struct connection *c){
 	pthread_mutex_unlock(&c->mtx);
 }
 
-static void __connection_close(Connection *c){
+static void __connection_close(struct connection *c){
 	// TODO
 	// set the connection into a closing state
 	// shutdown reading but keep sending queued messages
@@ -228,9 +225,9 @@ static void __connection_close(Connection *c){
 	// delete connection
 }
 
-static void __connection_dispatch_input_message(Connection *c){
+static void __connection_dispatch_input_message(struct connection *c){
 	// TODO
-	Service *svc = c->service;
+	struct service *svc = c->service;
 	Protocol *proto = c->protocol;
 	Message *input = c->input;
 
@@ -243,7 +240,7 @@ static void __connection_dispatch_input_message(Connection *c){
 	if((c->flags & CONNECTION_FIRST_MSG) == 0){}
 }
 
-static int __connection_read_partial_length(Connection *c){
+static int __connection_read_partial_length(struct connection *c){
 /*
  * REM: this partial length may not be a problem at all
  * but if it is, this workaround should account for it
@@ -258,7 +255,7 @@ static int __connection_read_partial_length(Connection *c){
 	return 1;
 }
 
-static int __connection_read_length(Connection *c){
+static int __connection_read_length(struct connection *c){
 	Message *input = c->input;
 	int ret = read(c->fd, (void*)input->buffer, 2);
 	if(ret <= 0) return (errno == EAGAIN) ? 0 : -1;
@@ -275,7 +272,7 @@ static int __connection_read_length(Connection *c){
 	return 1;
 }
 
-static int __connection_read_data(Connection *c){
+static int __connection_read_data(struct connection *c){
 	Message *input = c->input;
 	size_t dataleft = input->length - input->readpos;
 	int ret;
@@ -290,7 +287,7 @@ static int __connection_read_data(Connection *c){
 	return 1;
 }
 
-static int __connection_read(Connection *c){
+static int __connection_read(struct connection *c){
 	if(c->flags & CONNECTION_READING_LENGTH){
 		if(c->flags & CONNECTION_PARTIAL_LENGTH)
 			return __connection_read_partial_length(c);
@@ -301,7 +298,7 @@ static int __connection_read(Connection *c){
 	}
 }
 
-static bool __connection_resume_read(Connection *c){
+static bool __connection_resume_read(struct connection *c){
 	int ret;
 	if((c->flags & CONNECTION_READY) == 0){
 		connection_unlock(c);
@@ -313,7 +310,7 @@ static bool __connection_resume_read(Connection *c){
 	return ret == 0;
 }
 
-static bool connection_resume_read(Connection *c){
+static bool connection_resume_read(struct connection *c){
 	bool ret;
 	connection_lock(c);
 	ret = __connection_resume_read(c);
@@ -321,7 +318,7 @@ static bool connection_resume_read(Connection *c){
 	return ret;
 }
 
-static int __connection_write(Connection *c){
+static int __connection_write(struct connection *c){
 	OutputMessage *out;
 	Message *msg;
 	size_t dataleft;
@@ -344,7 +341,7 @@ static int __connection_write(Connection *c){
 	return 1;
 }
 
-static bool __connection_resume_write(Connection *c){
+static bool __connection_resume_write(struct connection *c){
 	int ret;
 	if((c->flags & CONNECTION_READY) == 0){
 		connection_unlock(c);
@@ -356,7 +353,7 @@ static bool __connection_resume_write(Connection *c){
 	return ret == 0;
 }
 
-static bool connection_resume_write(Connection *c){
+static bool connection_resume_write(struct connection *c){
 	bool ret;
 	connection_lock(c);
 	ret = __connection_resume_write(c);
@@ -364,8 +361,8 @@ static bool connection_resume_write(Connection *c){
 	return ret == 0;
 }
 
-static void connection_start(Connection *c){
-	//Service *svc = c->service;
+static void connection_start(struct connection *c){
+	//struct service *svc = c->service;
 	connection_lock(c);
 	c->flags |= CONNECTION_READY;
 	c->flags |= CONNECTION_READING_LENGTH;
@@ -379,13 +376,13 @@ static void connection_start(Connection *c){
 	connection_unlock(c);
 }
 
-void connection_close(Connection *c){
+void connection_close(struct connection *c){
 	connection_lock(c);
 	__connection_close(c);
 	connection_unlock(c);
 }
 
-void connection_send(Connection *c, OutputMessage *out){
+void connection_send(struct connection *c, OutputMessage *out){
 	connection_lock(c);
 	out->msg->readpos = 0;
 	c->output.push(*out);
@@ -397,15 +394,7 @@ void connection_send(Connection *c, OutputMessage *out){
  * Service Interface
  */
 
-#define SERVICE_MAX_PROTOCOLS 4
-struct Service: public EPOLLDATA {
-	int		fd;
-	int		port;
-	int		protocol_count;
-	Protocol	protocols[SERVICE_MAX_PROTOCOLS];
-};
-
-static bool service_open(Service *s){
+static bool service_open(struct service *s){
 	if(!server_is_epoll_open()){
 		LOG_ERROR("service_open: server's epoll"
 			" instance hasn't been created yet");
@@ -467,14 +456,14 @@ static bool service_open(Service *s){
 	return true;
 }
 
-static void service_close(Service *s){
+static void service_close(struct service *s){
 	if(s->fd == -1) return;
 	server_epoll_del(s->fd);
 	close(s->fd);
 	s->fd = -1;
 }
 
-static int service_accept(Service *s, Connection **c){
+static int service_accept(struct service *s, struct connection **c){
 	struct epoll_event ev;
 	struct sockaddr_in addr;
 	socklen_t addrlen;
@@ -500,7 +489,8 @@ static int service_accept(Service *s, Connection **c){
 	}
 
 	// create connection handle
-	*c = new Connection(ret, &addr, s);
+	// TODO: allocate connection
+	// connection_ctor(*c, ret, &addr, s);
 
 	// add it to epoll in edge-triggered mode
 	ev.events = EPOLLET | EPOLLIN | EPOLLOUT;
@@ -508,15 +498,17 @@ static int service_accept(Service *s, Connection **c){
 	if(server_epoll_add(ret, &ev) != 0){
 		LOG_ERROR("service_accept: failed to"
 			" add socket to epoll (errno = %d)", errno);
-		delete *c;
+		// TODO: release connection
+		// connection_dtor(*c);
+		// connection_release(*c);
 		close(ret);
 		return -1;
 	}
 	return 1;
 }
 
-static bool service_accept_all(Service *s){
-	Connection *c;
+static bool service_accept_all(struct service *s){
+	struct connection *c;
 	int ret;
 	while(1){
 		ret = service_accept(s, &c);
@@ -525,11 +517,11 @@ static bool service_accept_all(Service *s){
 	}
 }
 
-static Protocol *service_first_protocol(Service *s){
+static Protocol *service_first_protocol(struct service *s){
 	return &s->protocols[0];
 }
 
-static Protocol *service_identify_protocol(Service *s, Message *msg){
+static Protocol *service_identify_protocol(struct service *s, Message *msg){
 	for(int i = 0; i < s->protocol_count; i += 1){
 		if(s->protocols[i].identify(msg))
 			return &s->protocols[i];
@@ -545,9 +537,9 @@ static Protocol *service_identify_protocol(Service *s, Message *msg){
 static bool running = false;
 static int epfd = -1;
 static int interrupt_fd = -1;
-static EPOLLDATA interrupt_data = { TAG_INTERRUPT };
+static struct epoll_data interrupt_data = { TAG_INTERRUPT };
 static int service_count = 0;
-static Service services[MAX_SERVICES];
+static struct service services[MAX_SERVICES];
 
 static bool server_is_epoll_open(void){
 	return epfd != -1;
@@ -648,9 +640,9 @@ static void server_do_work(void){
 	error_count = 0;
 	ev_count = epoll_wait(epfd, evs, max_work, -1);
 	for(i = 0; i < ev_count; i += 1){
-		data = (EPOLLDATA*)evs[i].data.ptr;
+		data = (struct epoll_data*)evs[i].data.ptr;
 		if(data->tag == TAG_CONNECTION){
-			Connection *conn = (Connection*)data;
+			struct connection *conn = (struct connection*)data;
 			int conn_error = 0;
 			if(evs[i].events & EPOLLIN)
 				conn_error += !connection_resume_read(conn);
@@ -659,7 +651,7 @@ static void server_do_work(void){
 			error_count += (conn_error != 0);
 
 		}else if(data->tag == TAG_SERVICE){
-			Service *svc = (Service*)data;
+			struct service *svc = (struct service*)data;
 			DEBUG_CHECK(evs[i].events & EPOLLIN,
 				"server_do_work: invalid service event");
 			error_count += !service_accept_all(svc);
@@ -668,7 +660,7 @@ static void server_do_work(void){
 			DEBUG_CHECK(evs[i].events & EPOLLIN,
 				"server_do_work: invalid interrupt event");
 			read(interrupt_fd, &x, sizeof(uint64));
-		}else if(data->tag != TAG_INTERRUPT){
+		}else{
 			LOG_ERROR("server_do_work: invalid epoll event data");
 			error_count += 1;
 		}
@@ -711,8 +703,8 @@ void server_stop(void){
 
 bool server_add_protocol(Protocol *protocol, int port){
 	int i;
-	Service *s = nullptr;
-	if(running || protocol == nullptr)
+	struct service *s = NULL;
+	if(running || protocol == NULL)
 		return false;
 	for(i = 0; i < service_count; i += 1){
 		if(services[i].port == port){
@@ -721,7 +713,7 @@ bool server_add_protocol(Protocol *protocol, int port){
 		}
 	}
 
-	if(s == nullptr){
+	if(s == NULL){
 		if(service_count >= MAX_SERVICES)
 			return false;
 		s = &services[service_count];

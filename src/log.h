@@ -1,7 +1,7 @@
 #ifndef LOG_H_
 #define LOG_H_
 
-#include <stdarg.h>
+#include "def.h"
 
 bool	log_start(void);
 void	log_stop(void);

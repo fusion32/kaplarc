@@ -271,12 +271,12 @@ static const uint32 S[] = {
 	0xb74e6132L, 0xce77e25bL, 0x578fdfe3L, 0x3ac372e6L,
 };
 
-static inline uint32 f(struct blowfish_ctx *b, uint32 x) {
+static INLINE uint32 f(struct blowfish_ctx *b, uint32 x) {
 	return ((b->S[(x >> 24) & 0xFF] + b->S[((x >> 16) & 0xFF) + 256])
 		^ b->S[((x >> 8) & 0xFF) + 512]) + b->S[(x & 0xFF) + 768];
 }
 
-static inline void encode_one(struct blowfish_ctx *b, uint32 *data){
+static INLINE void encode_one(struct blowfish_ctx *b, uint32 *data){
 	uint32 l, r, i;
 	l = data[0]; r = data[1];
 	for(i = 0; i < 16; i += 2){
@@ -291,7 +291,7 @@ static inline void encode_one(struct blowfish_ctx *b, uint32 *data){
 	data[0] = r; data[1] = l;
 }
 
-static inline void decode_one(struct blowfish_ctx *b, uint32 *data){
+static INLINE void decode_one(struct blowfish_ctx *b, uint32 *data){
 	uint32 l, r, i;
 	l = data[0]; r = data[1];
 	for(i = 16; i > 0; i -= 2){
@@ -307,7 +307,7 @@ static inline void decode_one(struct blowfish_ctx *b, uint32 *data){
 }
 
 // extract uint32 from a cyclic data stream
-static inline uint32 cyclic_buffer_get_u32(uint8 *data, size_t datalen, uint32 *current){
+static INLINE uint32 cyclic_buffer_get_u32(uint8 *data, size_t datalen, uint32 *current){
 	uint32 d, i, j;
 	d = 0; j = *current;
 	for(i = 0; i < 4; ++i){

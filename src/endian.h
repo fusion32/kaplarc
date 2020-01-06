@@ -3,17 +3,17 @@
 
 #include "def.h"
 
-static inline uint16 swap_u16(uint16 x){
+static INLINE uint16 swap_u16(uint16 x){
 	return (x & 0xFF00) >> 8
 		| (x & 0x00FF) << 8;
 }
-static inline uint32 swap_u32(uint32 x){
+static INLINE uint32 swap_u32(uint32 x){
 	return (x & 0xFF000000) >> 24
 		| (x & 0x00FF0000) >> 8
 		| (x & 0x0000FF00) << 8
 		| (x & 0x000000FF) << 24;
 }
-static inline uint64 swap_u64(uint64 x){
+static INLINE uint64 swap_u64(uint64 x){
 	return (x & 0xFF00000000000000) >> 56
 		| (x & 0x00FF000000000000) >> 40
 		| (x & 0x0000FF0000000000) >> 24

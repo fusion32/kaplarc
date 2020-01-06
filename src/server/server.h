@@ -4,19 +4,18 @@
 #include "../def.h"
 #include "protocol.h"
 
-struct Connection;
-struct Message;
-struct OutputMessage;
+struct connection;
+struct packed_data;
 
 // Server interface
 void server_run(void);
 void server_stop(void);
-bool server_add_protocol(Protocol *protocol, int port);
+bool server_add_protocol(struct protocol *protocol, int port);
 
 // Connection interface
-void connection_close(Connection *conn);
-void connection_send(Connection *conn, OutputMessage *msg);
-void connection_incref(Connection *conn);
-void connection_decref(Connection *conn);
+void connection_close(struct connection *conn);
+void connection_send(struct connection *conn, struct packed_data *msg);
+void connection_incref(struct connection *conn);
+void connection_decref(struct connection *conn);
 
 #endif //SERVER_H_

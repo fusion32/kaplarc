@@ -26,17 +26,17 @@ Connection Parameters:
 	{"sslcrl",		"~/.postgresql/root.crl"},
 */
 
-static PGconn *conn = nullptr;
+static PGconn *conn = NULL;
 
 bool db_init(void){
 	const char *k[] = {"host", "port", "dbname", "user", "password", "client_encoding"};
 	const char *v[] = {"localhost", "5432", "kaplar", "admin", "admin", "UTF8"};
 
-	if(conn != nullptr)
+	if(conn != NULL)
 		return true;
 
 	conn = PQconnectdbParams(k, v, 0);
-	if(conn == nullptr){
+	if(conn == NULL){
 		LOG_ERROR("pgsql_init: failed to create connection handle");
 		return false;
 	}
@@ -44,7 +44,7 @@ bool db_init(void){
 	if(PQstatus(conn) != CONNECTION_OK){
 		LOG_ERROR("pgsql_init: connection failed: %s",
 			PQerrorMessage(conn));
-		conn = nullptr;
+		conn = NULL;
 		return false;
 	}
 
@@ -52,10 +52,10 @@ bool db_init(void){
 }
 
 void db_shutdown(void){
-	if(conn == nullptr)
+	if(conn == NULL)
 		return;
 	PQfinish(conn);
-	conn = nullptr;
+	conn = NULL;
 }
 
 void db_test(void){

@@ -41,7 +41,7 @@ void ProtocolLogin::message_end(Message *msg){
 
 void ProtocolLogin::disconnect(const char *message){
 	auto output = output_message(256);
-	if(output != nullptr){
+	if(output != NULL){
 		message_begin(output.get());
 		output->add_byte(0x0A);
 		output->add_str(message);
@@ -93,7 +93,7 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 
 	msg->readpos += 12;
 	if(!grsa_decode(msg->buffer + msg->readpos,
-			(msg->length - msg->readpos), nullptr)){
+			(msg->length - msg->readpos), NULL)){
 		disconnect("internal error");
 		return;
 	}
@@ -124,11 +124,13 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 		message_begin(output.get());
 
 		// send motd
-		StackString<256> motd;
-		motd.format("%d\n%s", config_geti("motd_num"),
-				config_get("motd_message"));
+		char buf[256];
+		StringPtr motd = {256, 0, buf};
+		str_format(&motd, "%d\n%s",
+			config_geti("motd_num"),
+			config_get("motd_message"));
 		output->add_byte(0x14);					// motd identifier
-		output->add_lstr(motd.ptr(), motd.size());		// motd string
+		output->add_lstr(motd.data, motd.len);			// motd string
 
 		// send character list
 		output->add_byte(0x64);					// character list identifier

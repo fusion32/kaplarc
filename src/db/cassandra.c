@@ -4,28 +4,28 @@
 #include "../log.h"
 #include <cassandra.h>
 
-static CassCluster *cluster = nullptr;
-static CassSession *session = nullptr;
+static CassCluster *cluster = NULL;
+static CassSession *session = NULL;
 
 bool db_init(void){
 	CassFuture *future;
 	CassError res;
 
-	if(session != nullptr)
+	if(session != NULL)
 		return true;
-	if(cluster != nullptr)
+	if(cluster != NULL)
 		cass_cluster_free(cluster);
 
 	// create cluster handle
 	cluster = cass_cluster_new();
-	if(cluster == nullptr){
+	if(cluster == NULL){
 		LOG_ERROR("cass_init: failed to create cluster handle");
 		return false;
 	}
 
 	// create session handle
 	session = cass_session_new();
-	if(session == nullptr){
+	if(session == NULL){
 		LOG_ERROR("cass_init: failed to create session");
 		goto err0;
 	}
@@ -53,20 +53,20 @@ bool db_init(void){
 
 err2:	cass_future_free(future);
 err1:	cass_session_free(session);
-	session = nullptr;
+	session = NULL;
 err0:	cass_cluster_free(cluster);
-	cluster = nullptr;
+	cluster = NULL;
 	return false;
 }
 
 void db_shutdown(void){
-	if(session != nullptr){
+	if(session != NULL){
 		cass_session_free(session);
-		session = nullptr;
+		session = NULL;
 	}
-	if(cluster != nullptr){
+	if(cluster != NULL){
 		cass_cluster_free(cluster);
-		cluster = nullptr;
+		cluster = NULL;
 	}
 }
 
@@ -79,12 +79,12 @@ void db_test(void){
 	const char *version;
 	size_t version_len;
 
-	if(session == nullptr)
+	if(session == NULL)
 		return;
 
 	// prepare query
 	stmt = cass_statement_new("SELECT release_version FROM system.local", 0);
-	if(stmt == nullptr){
+	if(stmt == NULL){
 		LOG_ERROR("cass_test: failed to create statement");
 		return;
 	}
@@ -94,14 +94,14 @@ void db_test(void){
 	result = cass_future_get_result(future);
 	cass_statement_free(stmt);
 	cass_future_free(future);
-	if(result == nullptr){
+	if(result == NULL){
 		LOG_ERROR("cass_test: failed to execute statement");
 		return;
 	}
 
 	// retrieve result
 	row = cass_result_first_row(result);
-	if(row == nullptr){
+	if(row == NULL){
 		LOG_ERROR("cass_test: 0 results");
 		cass_result_free(result);
 		return;
@@ -110,7 +110,7 @@ void db_test(void){
 	// get value
 	//value = cass_row_get_column_by_name(row, "release_version");
 	value = cass_row_get_column(row, 0);
-	if(value != nullptr){
+	if(value != NULL){
 		if(cass_value_get_string(value, &version, &version_len) == CASS_OK)
 			LOG("cass_test: release_version = %.*s", version_len, version);
 		else

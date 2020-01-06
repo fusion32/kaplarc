@@ -6,11 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern "C" {
-	#include <lua.h>
-	#include <lauxlib.h>
-	#include <lualib.h>
-};
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 static struct {
 	char name[64];
@@ -53,7 +51,7 @@ void config_cmdline(int argc, char **argv){
 	for(j = 1; j < argc; j++){
 		valid = false;
 		arg = argv[j];
-		for(i = 0; i < array_size(table); i++){
+		for(i = 0; i < ARRAY_SIZE(table); i++){
 			len = strlen(table[i].name);
 			if(len <= strlen(arg) && strncmp(table[i].name, arg, len) == 0){
 				valid = true;
@@ -74,15 +72,15 @@ bool config_load(void){
 	const char *config = config_get("config");
 	if(*config == 0)
 		return false;
-	return config_load(config);
+	return config_load_from_path(config);
 }
 
-bool config_load(const char *path){
+bool config_load_from_path(const char *path){
 	lua_State *L;
 	int i;
 
 	L = luaL_newstate();
-	if(L == nullptr)
+	if(L == NULL)
 		return false;
 
 	// load file
@@ -100,7 +98,7 @@ bool config_load(const char *path){
 	}
 
 	// parse variables
-	for(i = 0; i < array_size(table); i++){
+	for(i = 0; i < ARRAY_SIZE(table); i++){
 		lua_getglobal(L, table[i].name);
 		if(lua_isstring(L, -1) != 0)
 			snprintf(table[i].value, 64, "%s", lua_tostring(L, -1));
@@ -116,9 +114,9 @@ bool config_save(const char *path, bool overwrite){
 
 	// open file
 	f = fopen(path, "r+");
-	if(f == nullptr){
+	if(f == NULL){
 		f = fopen(path, "w+");
-		if(f == nullptr)
+		if(f == NULL)
 			return false;
 	}else if(!overwrite) {
 		fclose(f);
@@ -126,7 +124,7 @@ bool config_save(const char *path, bool overwrite){
 	}
 
 	// write variables
-	for(i = 0; i < array_size(table); i++)
+	for(i = 0; i < ARRAY_SIZE(table); i++)
 		fprintf(f, "%s = \"%s\"\n", table[i].name, table[i].value);
 	fclose(f);
 	return true;
@@ -134,7 +132,7 @@ bool config_save(const char *path, bool overwrite){
 
 const char *config_get(const char *name){
 	int i;
-	for(i = 0; i < array_size(table); i++){
+	for(i = 0; i < ARRAY_SIZE(table); i++){
 		if(strcmp(table[i].name, name) == 0)
 			return table[i].value;
 	}
@@ -154,7 +152,7 @@ int config_geti(const char *name){
 
 float config_getf(const char *name){
 	const char *value = config_get(name);
-	return strtof(value, nullptr);
+	return strtof(value, NULL);
 }
 
 static void config_vset(const char *name, const char *fmt, ...){
@@ -164,7 +162,7 @@ static void config_vset(const char *name, const char *fmt, ...){
 
 	valid = false;
 	va_start(ap, fmt);
-	for(i = 0; i < array_size(table); i++){
+	for(i = 0; i < ARRAY_SIZE(table); i++){
 		if(strcmp(table[i].name, name) == 0){
 			valid = true;
 			vsnprintf(table[i].value, 64, fmt, ap);
@@ -177,7 +175,7 @@ static void config_vset(const char *name, const char *fmt, ...){
 }
 
 void config_set(const char *name, const char *val){
-	if(val == nullptr)
+	if(val == NULL)
 		val = "";
 	config_vset(name, "%s", val);
 }

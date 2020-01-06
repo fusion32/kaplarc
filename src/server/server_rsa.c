@@ -1,8 +1,8 @@
 #include "../crypto/rsa.h"
 #include "../def.h"
 #include "../log.h"
+#include "../thread.h"
 #include "server_rsa.h"
-#include <mutex>
 
 static const char p[] =
 	"142996239624163995200701773828988955507954033454661532174705160829"
@@ -14,44 +14,47 @@ static const char q[] =
 	"7096809910315212884101";
 static const char e[] = "65537";
 
-static std::mutex mtx;
 static struct rsa_ctx ctx;
-static bool initialized = false;
+static mutex_t mtx;
 
 bool server_rsa_init(void){
-	std::lock_guard<std::mutex> guard(mtx);
-	if(initialized)
-		return true;
 	rsa_init(&ctx);
 	if(!rsa_setkey(&ctx, p, q, e)){
 		LOG_ERROR("grsa_init: failed to set key");
 		rsa_cleanup(&ctx);
 		return false;
 	}
-	initialized = true;
+	if(mutex_init(&mtx) != 0){
+		LOG_ERROR("server_rsa_init: failed to init mutex");
+		rsa_cleanup(&ctx);
+		return false;
+	}
 	return true;
 }
 
 void server_rsa_shutdown(void){
-	std::lock_guard<std::mutex> guard(mtx);
-	if(initialized){
-		rsa_cleanup(&ctx);
-		initialized = false;
-	}
+	mutex_destroy(&mtx);
+	rsa_cleanup(&ctx);
 }
 
 bool server_rsa_encode(uint8 *data, size_t len, size_t *plen){
-	std::lock_guard<std::mutex> guard(mtx);
-	if(ctx.encoding_limit < len)
+	mutex_lock(&mtx);
+	if(ctx.encoding_limit < len){
+		mutex_unlock(&mtx);
 		return false;
+	}
 	rsa_encode(&ctx, data, len, plen);
+	mutex_unlock(&mtx);
 	return true;
 }
 
 bool server_rsa_decode(uint8 *data, size_t len, size_t *plen){
-	std::lock_guard<std::mutex> guard(mtx);
-	if(ctx.encoding_limit < len)
+	mutex_lock(&mtx);
+	if(ctx.encoding_limit < len){
+		mutex_unlock(&mtx);
 		return false;
+	}
 	rsa_decode(&ctx, data, len, plen);
+	mutex_unlock(&mtx);
 	return true;
 }

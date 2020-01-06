@@ -44,7 +44,9 @@ static bool generate_hash(const char *key, const char *salt,
 	uint32 rounds, i;
 	size_t keylen;
 
-	if(strlen(salt)+1 < BCRYPT_SALT_STRLEN)
+	if((strlen(salt)+1) < BCRYPT_SALT_STRLEN)
+		return false;
+	if(hashlen < BCRYPT_HASH_STRLEN)
 		return false;
 
 	if(salt[0] != '$' || salt[1] != '2')
@@ -86,7 +88,7 @@ static bool generate_hash(const char *key, const char *salt,
 	blowfish_ecb_encode_n(&b, 64, ctext, BCRYPT_HASH_LEN);
 
 	// assemble the hash string
-	snprintf(hash, hashlen, "$2%c$%2.2u$", minor, logr);
+	sprintf(hash, "$2%c$%2.2u$", minor, logr);
 	base64_encode(hash + 7, csalt, BCRYPT_SALT_LEN);
 	base64_encode(hash + 7 + 22, ctext, BCRYPT_HASH_LEN);
 	// base64_encode already adds the null terminator

@@ -20,91 +20,94 @@
     <Filter Include="Source Files\shard">
       <UniqueIdentifier>{e04ad086-2644-466f-a082-48297cde4de0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test">
+      <UniqueIdentifier>{066b9e28-a364-4181-b039-d38afc89633b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\log.cpp">
+    <ClCompile Include="..\src\system.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\main.cpp">
+    <ClCompile Include="..\src\bitset.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\system.cpp">
+    <ClCompile Include="..\src\config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server\protocol_test.cpp">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\stringbase.cpp">
+    <ClCompile Include="..\src\dispatcher.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\crypto\xtea.cpp">
-      <Filter>Source Files\crypto</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\crypto\rsa.cpp">
-      <Filter>Source Files\crypto</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\crypto\bcrypt.cpp">
-      <Filter>Source Files\crypto</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\crypto\blowfish.cpp">
-      <Filter>Source Files\crypto</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\crypto\base64.cpp">
-      <Filter>Source Files\crypto</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\crypto\adler32.cpp">
-      <Filter>Source Files\crypto</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\stringutil.cpp">
+    <ClCompile Include="..\src\log.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\scheduler.cpp">
+    <ClCompile Include="..\src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\dispatcher.cpp">
+    <ClCompile Include="..\src\scheduler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\config.cpp">
+    <ClCompile Include="..\src\string.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game\protocol_login.cpp">
-      <Filter>Source Files\game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\db\cassandra.cpp">
-      <Filter>Source Files\db</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\db\local.cpp">
-      <Filter>Source Files\db</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\outputmessage.cpp">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\db\pgsql.cpp">
-      <Filter>Source Files\db</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\message.cpp">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\db\blob.cpp">
-      <Filter>Source Files\db</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\shard\shard.cpp">
+    <ClCompile Include="..\src\shard\shard.c">
       <Filter>Source Files\shard</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\heapstring.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\server_kqueue.cpp">
+    <ClCompile Include="..\src\server\protocol_test.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\crypto\random.cpp">
+    <ClCompile Include="..\src\server\server_epoll.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\server_rsa.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\protocol_login.c">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\cassandra.c">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\local.c">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\pgsql.c">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crypto\adler32.c">
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server\server_rsa.cpp">
-      <Filter>Source Files\server</Filter>
+    <ClCompile Include="..\src\crypto\base64.c">
+      <Filter>Source Files\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server\server_epoll.cpp">
-      <Filter>Source Files\server</Filter>
+    <ClCompile Include="..\src\crypto\bcrypt.c">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crypto\blowfish.c">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crypto\random.c">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crypto\rsa.c">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crypto\xtea.c">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mmblock.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\packed_data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\thread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rbtree.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\test\rbtree_test.c">
+      <Filter>Source Files\test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -122,12 +125,6 @@
     </ClInclude>
     <ClInclude Include="..\src\server\protocol_test.h">
       <Filter>Source Files\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\throw.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\stringbase.h">
-      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\game\protocol_login.h">
       <Filter>Source Files\game</Filter>
@@ -153,9 +150,6 @@
     <ClInclude Include="..\src\crypto\adler32.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\stringutil.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\scheduler.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -165,31 +159,10 @@
     <ClInclude Include="..\src\config.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\server\outputmessage.h">
-      <Filter>Source Files\server</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\db\db.h">
       <Filter>Source Files\db</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\server\message.h">
-      <Filter>Source Files\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\db\blob.h">
-      <Filter>Source Files\db</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\buffer_util.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\shared.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\stackstring.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\heapstring.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\scopeguard.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\server\protocol.h">
@@ -206,6 +179,24 @@
     </ClInclude>
     <ClInclude Include="..\src\server\server_rsa.h">
       <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\string.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\thread.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mmblock.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\packed_data.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rbtree.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\db\local.h">
+      <Filter>Source Files\db</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,3 +1,5 @@
+#if 0
+
 #include "protocol_test.h"
 
 #include "message.h"
@@ -55,8 +57,8 @@ static void message_end(Message *msg){
 
 // protocol callbacks
 static bool identify(Message *first){
-	protocol_test.on_connect = nullptr;
-	protocol_test.on_close = nullptr;
+	protocol_test.on_connect = NULL;
+	protocol_test.on_close = NULL;
 
 	size_t offset = first->readpos;
 	// skip checksum
@@ -68,7 +70,7 @@ static bool identify(Message *first){
 
 
 static void *create_handle(Connection *conn){
-	return nullptr;
+	return NULL;
 }
 
 static void destroy_handle(Connection *conn, void *handle){
@@ -117,3 +119,4 @@ static void on_recv_first_message(Connection *conn, void *handle, Message *msg){
 	send_hello(conn);
 }
 
+#endif

@@ -10,6 +10,7 @@
 #include "server/server.h"
 #include "server/server_rsa.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 static
@@ -19,7 +20,7 @@ void init_interface(const char *name, void(*init)(void), void(*shutdown)(void)){
 }
 
 static
-void init_interface(const char *name, bool(*init)(void), void(*shutdown)(void)){
+void init_interface_may_fail(const char *name, bool(*init)(void), void(*shutdown)(void)){
 	LOG("initializing `%s` interface", name);
 	if(!init()){
 		// error messages should be
@@ -29,7 +30,7 @@ void init_interface(const char *name, bool(*init)(void), void(*shutdown)(void)){
 	atexit(shutdown);
 }
 
-int main(int argc, char **argv){
+int main1(int argc, char **argv){
 	// parse command line and load config
 	config_cmdline(argc, argv);
 	if(!config_load())
@@ -41,14 +42,16 @@ int main(int argc, char **argv){
 	//init_interface("database", database_init, database_shutdown);
 
 	// initialize server interfaces
-	init_interface("RSA", server_rsa_init, server_rsa_shutdown);
+	init_interface_may_fail("RSA", server_rsa_init, server_rsa_shutdown);
 
 	// initialize cluster protocols
 	// TODO
 
-	// initialize server
-	//server_add_protocol(&protocol_test, config_geti("sv_test_port"));
+	// load server data
+	// init game state
 
-	server_run();
+	// init server
+	//server_add_protocol(&protocol_test, config_geti("sv_test_port"));
+	//server_run();
 	return 0;
 }
