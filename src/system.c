@@ -1,5 +1,7 @@
 #include "system.h"
 
+#include <stdarg.h>
+#include <stdlib.h>
 #ifdef PLATFORM_WINDOWS
 #	include <windows.h>
 #else
@@ -30,16 +32,42 @@ int sys_cpu_count(void){
 #endif
 }
 
-void *sys_aligned_alloc(size_t alignment, size_t size){
+void sys_abort(const char *fmt, ...){
+	va_list ap;
+	va_start(ap, fmt);
+	log_add1("SYS_ABORT", fmt, ap);
+	va_end(ap);
+	abort();
+}
+
+void *sys_malloc(size_t size){
+	void *ptr = malloc(size);
+	if(ptr == NULL)
+		sys_abort("sys_malloc: out of memory");
+	return ptr;
+}
+
+void *sys_realloc(void *ptr, size_t size){
+	return realloc(ptr, size);
+}
+
+void sys_free(void *ptr){
+	free(ptr);
+}
+
+void *sys_aligned_malloc(size_t size, size_t alignment){
 	ASSERT(IS_POWER_OF_TWO(alignment) &&
 		"sys_aligned_alloc: `alignment` must be a power of two");
 
-#ifdef PLATFORM_WINDOWS
-	return _aligned_malloc(size, alignment);
-#else
 	void *ptr;
+#ifdef PLATFORM_WINDOWS
+	ptr = _aligned_malloc(size, alignment);
+	if(ptr == NULL)
+		sys_abort("sys_aligned_malloc: out of memory");
+	return ptr;
+#else
 	if(posix_memalign(&ptr, alignment, size) != 0)
-		return NULL;
+		sys_abort("sys_aligned_malloc: out of memory");
 	return ptr;
 #endif
 }

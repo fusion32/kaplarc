@@ -1,3 +1,5 @@
+// REMAKE
+#if 0
 #include "../../src/log.h"
 #include "../../src/crypto/xtea.h"
 static char plain_msg[] = "MESSAGE";
@@ -15,3 +17,4 @@ int main(int argc, char **argv){
 	getchar();
 	return 0;
 }
+#endif

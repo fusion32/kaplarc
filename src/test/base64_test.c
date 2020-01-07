@@ -1,8 +1,11 @@
-#include "../../src/log.h"
-#include "../../src/crypto/base64.h"
+// REMAKE
+#if 0
+
+#include "../log.h"
+#include "../crypto/base64.h"
 
 static const char plain_msg[] = "a very long message just to be sure!";
-int main(int argc, char **argv){
+bool base64_test(void){
 	char msg[256];
 	char encoded[256];
 	size_t len;
@@ -15,5 +18,7 @@ int main(int argc, char **argv){
 	base64_decode((uint8*)msg, len, encoded);
 	LOG("decoded: %s", msg);
 	getchar();
-	return 0;
+	return false;
 }
+
+#endif

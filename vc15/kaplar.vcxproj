@@ -35,17 +35,26 @@
     <ClCompile Include="..\src\game\protocol_login.c" />
     <ClCompile Include="..\src\log.c" />
     <ClCompile Include="..\src\main.c" />
-    <ClCompile Include="..\src\mmblock.c" />
+    <ClCompile Include="..\src\slab.c" />
     <ClCompile Include="..\src\packed_data.c" />
     <ClCompile Include="..\src\scheduler.c" />
     <ClCompile Include="..\src\server\server_epoll.c" />
     <ClCompile Include="..\src\server\protocol_test.c" />
     <ClCompile Include="..\src\server\server_rsa.c" />
     <ClCompile Include="..\src\shard\shard.c" />
+    <ClCompile Include="..\src\slab_cache.c" />
     <ClCompile Include="..\src\string.c" />
     <ClCompile Include="..\src\system.c" />
     <ClCompile Include="..\src\dispatcher.c" />
+    <ClCompile Include="..\src\test\base64_test.c" />
+    <ClCompile Include="..\src\test\bcrypt_test.c" />
+    <ClCompile Include="..\src\test\blowfish_test.c" />
+    <ClCompile Include="..\src\test\main_test.c" />
     <ClCompile Include="..\src\test\rbtree_test.c" />
+    <ClCompile Include="..\src\test\rsa_test.c" />
+    <ClCompile Include="..\src\test\slab_cache_test.c" />
+    <ClCompile Include="..\src\test\slab_test.c" />
+    <ClCompile Include="..\src\test\xtea_test.c" />
     <ClCompile Include="..\src\thread.c" />
   </ItemGroup>
   <ItemGroup>
@@ -63,7 +72,7 @@
     <ClInclude Include="..\src\db\db.h" />
     <ClInclude Include="..\src\endian.h" />
     <ClInclude Include="..\src\game\protocol_login.h" />
-    <ClInclude Include="..\src\mmblock.h" />
+    <ClInclude Include="..\src\slab.h" />
     <ClInclude Include="..\src\packed_data.h" />
     <ClInclude Include="..\src\server\server.h" />
     <ClInclude Include="..\src\server\protocol.h" />
@@ -73,6 +82,7 @@
     <ClInclude Include="..\src\ringbuffer.h" />
     <ClInclude Include="..\src\scheduler.h" />
     <ClInclude Include="..\src\server\protocol_test.h" />
+    <ClInclude Include="..\src\slab_cache.h" />
     <ClInclude Include="..\src\string.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\dispatcher.h" />
@@ -159,7 +169,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;BUILD_TEST=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ObjectFileName>$(IntDir)/Debug/%(RelativeDir)/</ObjectFileName>
@@ -193,7 +203,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;BUILD_TEST=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ObjectFileName>$(IntDir)/Release/%(RelativeDir)/</ObjectFileName>

@@ -5,13 +5,20 @@
 
 #define RBTREE_CACHED_MIN 1
 
+// some helpers
+#define RBNODE(n)			((struct rbnode*)(n))
+#define RBT_INSERT(t, n)		rbt_insert((t), RBNODE(n))
+#define RBT_REMOVE(t, n)		rbt_remove((t), RBNODE(n))
+#define RBT_MIN(node_type, t)		((node_type*)rbt_min((t)))
+#define RBT_FIND(node_type, t, n)	((node_type*)rbt_find((t), RBNODE(n)))
+#define RBT_INITIALIZER(cmp)		(struct rbtree){NULL, NULL, cmp}
+
 struct rbnode{
 	int color;
 	struct rbnode *parent;
 	struct rbnode *left;
 	struct rbnode *right;
 };
-#define RBNODE(n) ((struct rbnode*)(n))
 
 typedef int (*rbt_compare_func)(struct rbnode*, struct rbnode*);
 struct rbtree{
@@ -21,7 +28,6 @@ struct rbtree{
 #endif
 	rbt_compare_func compare;
 };
-#define RBT_INITIALIZER(cmp) (struct rbtree){.root = NULL, .cached_min = NULL, .compare = cmp}
 
 // init
 void rbt_init(struct rbtree *t, rbt_compare_func compare);

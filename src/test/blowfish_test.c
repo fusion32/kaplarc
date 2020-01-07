@@ -1,12 +1,15 @@
-#include "../../src/log.h"
-#include "../../src/crypto/blowfish.h"
+// REMAKE
+#if 0
+
+#include "../log.h"
+#include "../crypto/blowfish.h"
 
 static const char key[] = "KEYTEST";
 static const char iv[] = "12345678"; // this must be at least 8 bytes long
 static const char plain_msg[] = "MESSAGE THAT IS MORE THAN 8 BYTES LONG";
 static const char salt[] = "abcdefghijklmno";
 
-static bool test_ecb_blowfish(blowfish_ctx *b){
+static bool test_ecb_blowfish(struct blowfish_ctx *b){
 	char msg[64]; strcpy(msg, plain_msg);
 	uint32 len = array_size(plain_msg); // this includes the null terminator
 	blowfish_ecb_encode(b, (uint8*)msg, len);
@@ -14,7 +17,7 @@ static bool test_ecb_blowfish(blowfish_ctx *b){
 	return strcmp(msg, plain_msg) == 0;
 }
 
-static bool test_cbc_blowfish(blowfish_ctx *b){
+static bool test_cbc_blowfish(struct blowfish_ctx *b){
 	char msg[64]; strcpy(msg, plain_msg);
 	uint32 len = array_size(plain_msg); // this includes the null terminator
 	blowfish_cbc_encode(b, (uint8*)iv, (uint8*)msg, len);
@@ -22,8 +25,9 @@ static bool test_cbc_blowfish(blowfish_ctx *b){
 	return strcmp(msg, plain_msg) == 0;
 }
 
-int main(int argc, char **argv){
-	blowfish_ctx b;
+bool blowfish_test(void){
+	struct blowfish_ctx b;
+
 	blowfish_init(&b);
 	for(int i = 0; i < 256; ++i)
 		blowfish_expandkey(&b, (uint8*)key, array_size(key));
@@ -39,5 +43,7 @@ int main(int argc, char **argv){
 	else
 		LOG("blowfish cbc encryption test FAILED");
 	getchar();
-	return 0;
+	return false;
 }
+
+#endif

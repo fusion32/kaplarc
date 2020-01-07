@@ -1,7 +1,7 @@
 #include "scheduler.h"
 #include "dispatcher.h"
 #include "log.h"
-#include "mmblock.h"
+#include "slab.h"
 #include "rbtree.h"
 #include "system.h"
 #include "thread.h"
@@ -24,17 +24,15 @@ int schnode_cmp(struct rbnode *lhs, struct rbnode *rhs){
 
 // it's possible to use the functions directly but there's
 // a compatibility warning
-#define SCH_MIN(t)		((struct schnode*)rbt_min((t)))
-#define SCH_FIND(t, n)		((struct schnode*)rbt_find((t), (struct rbnode*)(n)))
-#define SCH_INSERT(t, n)	rbt_insert((t), (struct rbnode*)(n))
-#define SCH_REMOVE(t, n)	rbt_remove((t), (struct rbnode*)(n))
+#define SCH_MIN(t)		RBT_MIN(struct schnode, (t))
+#define SCH_FIND(t, n)		RBT_FIND(struct schnode, (t), (n))
+#define SCH_INSERT		RBT_INSERT
+#define SCH_REMOVE		RBT_REMOVE
 
 // scheduler tree
 #define MAX_NODES 128
 static struct rbtree tree;
-//static struct schnode node_array[MAX_NODES];
-//static struct array_tracker tracker;
-static struct mmblock *mem;
+static struct slab *slab;
 
 // scheduler control
 static thread_t thr;
@@ -71,7 +69,7 @@ static void *scheduler(void *unused){
 		func = next->func;
 		arg = next->arg;
 		SCH_REMOVE(&tree, next);
-		mmblock_free(mem, next);
+		slab_free(slab, next);
 		mutex_unlock(&mtx);
 
 		// dispatch task
@@ -85,19 +83,29 @@ bool scheduler_init(void){
 	rbt_init(&tree, schnode_cmp);
 
 	// initialize node pool
-	mem = mmblock_create(MAX_NODES,
-		sizeof(struct schnode));
-	if(mem == NULL){
-		LOG_ERROR("scheduler_init:"
-			" failed to create node pool");
+	slab = slab_create(MAX_NODES, sizeof(struct schnode));
+	if(slab == NULL){
+		LOG_ERROR("scheduler_init: failed to create node pool");
 		return false;
 	}
 
 	// spawn scheduler thread
-	ASSERT(mutex_init(&mtx) == 0);
-	ASSERT(condvar_init(&cv) == 0);
+	if(mutex_init(&mtx) != 0){
+		LOG_ERROR("scheduler_init:"
+			"failed to init mutex");
+		return false;
+	}
+	if(condvar_init(&cv) != 0){
+		LOG_ERROR("scheduler_init:"
+			"failed to init condvar");
+		return false;
+	}
 	running = true;
-	ASSERT(thread_create(&thr, scheduler, NULL) == 0);
+	if(thread_create(&thr, scheduler, NULL) != 0){
+		LOG_ERROR("scheduler_init:"
+			"failed to spawn scheduler thread");
+		return false;
+	}
 	return true;
 }
 
@@ -112,14 +120,14 @@ void scheduler_shutdown(void){
 	// destroy all
 	condvar_destroy(&cv);
 	mutex_destroy(&mtx);
-	mmblock_destroy(mem);
+	slab_destroy(slab);
 }
 
 struct schnode *scheduler_add(int64 delay, void (*func)(void*), void *arg){
 	struct schnode *node;
 	int64 time = delay + sys_tick_count();
 	mutex_lock(&mtx);
-	node = mmblock_alloc(mem);
+	node = slab_alloc(slab);
 	if(node == NULL){
 		LOG_ERROR("scheduler_add: reached maximum"
 			" capacity (%d)", MAX_NODES);
@@ -145,7 +153,7 @@ bool scheduler_remove(struct schnode *node){
 		return false;
 	}
 	SCH_REMOVE(&tree, node);
-	mmblock_free(mem, node);
+	slab_free(slab, node);
 	mutex_unlock(&mtx);
 	return true;
 }

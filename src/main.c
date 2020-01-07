@@ -30,7 +30,12 @@ void init_interface_may_fail(const char *name, bool(*init)(void), void(*shutdown
 	atexit(shutdown);
 }
 
-int main1(int argc, char **argv){
+#ifdef BUILD_TEST
+int kaplar_main(int argc, char **argv){
+#else
+int main(int argc, char **argv){
+#endif // BUILD_TEST
+
 	// parse command line and load config
 	config_cmdline(argc, argv);
 	if(!config_load())
