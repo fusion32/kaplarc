@@ -136,6 +136,9 @@
     <ClCompile Include="..\src\test\slab_test.c">
       <Filter>Source Files\test</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\slab_static.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\def.h">
@@ -226,6 +229,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\slab.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\slab_static.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

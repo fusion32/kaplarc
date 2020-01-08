@@ -43,6 +43,7 @@
     <ClCompile Include="..\src\server\server_rsa.c" />
     <ClCompile Include="..\src\shard\shard.c" />
     <ClCompile Include="..\src\slab_cache.c" />
+    <ClCompile Include="..\src\slab_static.c" />
     <ClCompile Include="..\src\string.c" />
     <ClCompile Include="..\src\system.c" />
     <ClCompile Include="..\src\dispatcher.c" />
@@ -83,6 +84,7 @@
     <ClInclude Include="..\src\scheduler.h" />
     <ClInclude Include="..\src\server\protocol_test.h" />
     <ClInclude Include="..\src\slab_cache.h" />
+    <ClInclude Include="..\src\slab_static.h" />
     <ClInclude Include="..\src\string.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\dispatcher.h" />

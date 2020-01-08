@@ -47,7 +47,7 @@ bool slab_cache_test(void){
 	}
 
 	if(ret){
-		ret = slab_cache_try_to_shrink(cache);
+		ret = slab_cache_shrink(cache);
 		if(!ret) LOG_ERROR("slab_cache_test: failed to shrink");
 	}
 
