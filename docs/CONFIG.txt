@@ -1,3 +1,15 @@
 - ARCH:
 	ARCH_BIG_ENDIAN: The server is compiled using the little endian memory model by default. This option can be overriden defining `ARCH_BIG_ENDIAN`.
 	ARCH_UNALIGNED_ACCESS: Modern processors support unaligned data access. This option enable a few optimizations where this unaligned data access apply.
+
+- BUILD:
+	BUILD_DEBUG or _DEBUG: Build in debug mode. 
+	BUILD_TEST: Build and run tests in ./src/test/ instead of running the server's main function.
+
+- PLATFORM: explicitly set the target platform
+	PLATFORM_WINDOWS
+	PLATFORM_FREEBSD
+	PLATFORM_LINUX
+
+- DB:
+	DB_PGSQL

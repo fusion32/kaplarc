@@ -1,19 +1,28 @@
-- improve output message pool
-- divide the map into sectors
-- divide the server into shards
-	-- each shard will manage one or more map sectors and will have a single dispatcher
-	-- the shards together will form a cluster
-	-- there must be a shard communication/transfer protocol
+#next
+- network output:
+	-- no output message pool
+	-- each connection have a double buffered output
+	-- the output buffers are swapped at a given rate (network output rate) but not before all writes have been processed (network output flush)
+	-- if the output buffer gets full before the swap, then:
+		--- the acquisition of a slice should block until the network output flush (this should be a parameter in the dispatcher to avoid server freeze)
+		--- if this gets often, the connection buffer should be increased or the output rate should be increased
+	-- the server should always operate with the maximum output rate to avoid the previous problem
+- network input:
+	-- analogous to the output, the input will be double buffered as well, but the buffers will be swapped at an independent rate (network input rate) but not before all input has been processed (network input flush)
+- networking:
+	-- the previous points could be easier to implement in a UDP server but we'll see how it turns out
+	-- IMPORTANT: as there is essentially two threads of execution (networking and dispatcher) the double buffering will fit just perfectly as there will be a single writer and a single reader in both output and input
+	-- when i implement zone sharding, this will essentially be the same as the connections will be tied to a single dispatcher
+- scripting:
+	-- i have researched a bit on this topic and considered the following options: lua, luajit, python, ruby, julia, and javascript
+	-- julia seemed like a good option but i still have to research more on this
+	-- NOTE: we must be careful with lua/luajit not to accept lua bytecode as input as there are some security flaws
+- database:
+	-- as bad as i wanted to use cassandra as the primary backend, the use of pgsql will be an easier approach for now
 
-- always leave callback lambdas empty after a call:
-			[shared](...){ callback(std::move(shared), ...); }
-		or	[shared](...){ callback(shared, ...); shared.reset(); }
-	(shared == nullptr) would evaluate true after the first call
-- connections have one read and one write operation at a time so having a way to reuse the memory
-	for the operations would improve the performance:
-		async_accept(socket, newsocket, callback, opdata);
-		async_read(socket, buffer, callback, opdata);
-		async_write(socket, buffer, callback, opdata);
-- configure .clang-format to actually start using it (even if it doesn't correctly support pointer
-	alignment to the right yet)
+#future
+- support for sharding:
+	-- divide the map into zones
+	-- each shard will manage one or more zone and will have a single dispatcher
+	--* later on, we can extend this into a node cluster with each node having one or multiple shards (there will be a need for a cluster protocol and stuff)
 

@@ -1,7 +1,7 @@
 #include "db.h"
 
 #if 0
-//#ifdef __DB_PGSQL__
+//#ifdef DB_PGSQL
 
 #include "../log.h"
 #include <libpq-fe.h>
@@ -62,4 +62,4 @@ void db_test(void){
 	//
 }
 
-#endif //__DB_PGSQL__
+#endif //DB_PGSQL

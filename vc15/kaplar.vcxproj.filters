@@ -64,9 +64,6 @@
     <ClCompile Include="..\src\game\protocol_login.c">
       <Filter>Source Files\game</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\db\cassandra.c">
-      <Filter>Source Files\db</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\db\local.c">
       <Filter>Source Files\db</Filter>
     </ClCompile>
@@ -135,9 +132,6 @@
     </ClCompile>
     <ClCompile Include="..\src\test\slab_test.c">
       <Filter>Source Files\test</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\slab_static.c">
-      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -229,9 +223,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\slab.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\slab_static.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

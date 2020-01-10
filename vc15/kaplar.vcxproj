@@ -29,7 +29,6 @@
     <ClCompile Include="..\src\crypto\blowfish.c" />
     <ClCompile Include="..\src\crypto\rsa.c" />
     <ClCompile Include="..\src\crypto\xtea.c" />
-    <ClCompile Include="..\src\db\cassandra.c" />
     <ClCompile Include="..\src\db\local.c" />
     <ClCompile Include="..\src\db\pgsql.c" />
     <ClCompile Include="..\src\game\protocol_login.c" />
@@ -43,7 +42,6 @@
     <ClCompile Include="..\src\server\server_rsa.c" />
     <ClCompile Include="..\src\shard\shard.c" />
     <ClCompile Include="..\src\slab_cache.c" />
-    <ClCompile Include="..\src\slab_static.c" />
     <ClCompile Include="..\src\string.c" />
     <ClCompile Include="..\src\system.c" />
     <ClCompile Include="..\src\dispatcher.c" />
@@ -84,7 +82,6 @@
     <ClInclude Include="..\src\scheduler.h" />
     <ClInclude Include="..\src\server\protocol_test.h" />
     <ClInclude Include="..\src\slab_cache.h" />
-    <ClInclude Include="..\src\slab_static.h" />
     <ClInclude Include="..\src\string.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\dispatcher.h" />
@@ -177,7 +174,7 @@
       <ObjectFileName>$(IntDir)/Debug/%(RelativeDir)/</ObjectFileName>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>cassandra.lib;lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -213,7 +210,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>cassandra.lib;lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>lualib.lib;mpir.lib;mswsock.lib;ws2_32.lib</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>

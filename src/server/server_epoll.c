@@ -17,7 +17,8 @@
 
 
 #include "server.h"
-#ifdef PLATFORM_LINUX
+#if 0
+//#ifdef PLATFORM_LINUX
 #include "../log.h"
 #include "message.h"
 #include "outputmessage.h"
@@ -103,7 +104,8 @@ struct epoll_data{
 };
 
 // connection settings
-#define CONNECTION_MAX_INPUT		(1<<14) // 16K
+#define CONNECTION_MAX_INPUT		(1<<15) // 32K
+#define CONNECTION_MAX_OUTPUT		(1<<15) // 32K
 
 // connection flags
 #define CONNECTION_NEW			0x00
@@ -185,12 +187,15 @@ static void connection_ctor(struct connection *c, int fd,
 	c->rdwr_count = 0;
 	if(addr != NULL)
 		memcpy(&c->addr, addr, sizeof(struct sockaddr_in));
+	else
+		memset(&c->addr, 0, sizeof(struct sockaddr_in));
 	pthread_mutex_init(&c->mtx, NULL);
 	c->service = service;
 	c->protocol = NULL;
 	c->protocol_handle = NULL;
 	// init c->input;
 	// init c->output;
+	//
 }
 
 static void connection_dtor(struct connection *c){

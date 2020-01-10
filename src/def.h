@@ -55,7 +55,10 @@ typedef uintptr_t	uintptr;
 #endif
 
 // debug settings
-#ifndef _DEBUG
+#ifdef _DEBUG
+#	define BUILD_DEBUG 1
+#endif
+#ifndef BUILD_DEBUG
 #	define DEBUG_LOG(...)		((void)0)
 #	define DEBUG_CHECK(...)		((void)0)
 #	define ASSERT(...)		((void)0)
@@ -74,14 +77,8 @@ typedef uintptr_t	uintptr;
 #endif
 
 // database settings
-#if defined(__DB_CASSANDRA__)
-#	if defined(__DB_PGSQL__)
-#		undef __DB_PGSQL__
-#	endif
-#elif defined(__DB_PGSQL__)
-#	warning PGSQL DB Interface not yet implemented.
-#else
-#	define __DB_CASSANDRA__ 1
+#ifndef DB_PGSQL
+#	define DB_PGSQL 1
 #endif
 
 #endif //DEF_H_

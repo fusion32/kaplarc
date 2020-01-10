@@ -1,6 +1,6 @@
+#include "../def.h"
 #ifdef BUILD_TEST
 
-#include "../def.h"
 #include "../log.h"
 #include <stdio.h>
 
