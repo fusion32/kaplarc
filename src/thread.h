@@ -12,6 +12,7 @@ static INLINE void return_void(int ret){
 }
 
 #ifdef PLATFORM_WINDOWS
+#define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 #include <process.h>
 typedef struct thread{
@@ -29,6 +30,7 @@ void __thread_detach(thread_t *thr);
 #define thread_create		__thread_create
 #define thread_join		__thread_join
 #define thread_detach		__thread_detach
+#define thread_yield()		return_void(SwitchToThread())
 
 #define mutex_init(m)		return_0((InitializeCriticalSection(m), 0))
 #define mutex_destroy		DeleteCriticalSection
@@ -55,13 +57,14 @@ int __condvar_timedwait(convar_t *c, mutex_t *m, long msec);
 #define thread_create(a,b,c)	pthread_create((a), NULL, (b), (c))
 #define thread_join		pthread_join
 #define thread_detach(a)	return_void(pthread_detach(a))
+#define thread_yield()		return_void(sched_yield())
 
 #define mutex_init(a)		pthread_mutex_init((a), NULL)
 #define mutex_destroy(a)	return_void(pthread_mutex_destroy(a))
 #define mutex_lock(a)		return_void(pthread_mutex_lock(a))
 #define mutex_unlock(a)		return_void(pthread_mutex_unlock(a))
 
-#define condvar_init(a)		return_bool(pthread_cond_init((a), NULL))
+#define condvar_init(a)		pthread_cond_init((a), NULL)
 #define condvar_destroy(a)	return_void(pthread_cond_destroy(a))
 #define condvar_wait		pthread_cond_wait
 #define condvar_timedwait	__condvar_timedwait

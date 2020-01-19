@@ -222,7 +222,7 @@ static void connection_unlock(struct connection *c){
 }
 
 static void __connection_close(struct connection *c){
-	// TODO
+	// @TODO
 	// set the connection into a closing state
 	// shutdown reading but keep sending queued messages
 	// call protocol->on_close
@@ -231,7 +231,7 @@ static void __connection_close(struct connection *c){
 }
 
 static void __connection_dispatch_input_message(struct connection *c){
-	// TODO
+	// @TODO
 	struct service *svc = c->service;
 	Protocol *proto = c->protocol;
 	Message *input = c->input;
@@ -305,10 +305,8 @@ static int __connection_read(struct connection *c){
 
 static bool __connection_resume_read(struct connection *c){
 	int ret;
-	if((c->flags & CONNECTION_READY) == 0){
-		connection_unlock(c);
+	if((c->flags & CONNECTION_READY) == 0)
 		return false;
-	}
 	do {
 		ret = __connection_read(c);
 	} while(ret == 1);
@@ -348,10 +346,8 @@ static int __connection_write(struct connection *c){
 
 static bool __connection_resume_write(struct connection *c){
 	int ret;
-	if((c->flags & CONNECTION_READY) == 0){
-		connection_unlock(c);
+	if((c->flags & CONNECTION_READY) == 0)
 		return false;
-	}
 	do {
 		ret = __connection_write(c);
 	} while(ret == 1);
@@ -494,7 +490,8 @@ static int service_accept(struct service *s, struct connection **c){
 	}
 
 	// create connection handle
-	// TODO: allocate connection
+	// @TODO
+	// allocate connection
 	// connection_ctor(*c, ret, &addr, s);
 
 	// add it to epoll in edge-triggered mode
@@ -503,7 +500,8 @@ static int service_accept(struct service *s, struct connection **c){
 	if(server_epoll_add(ret, &ev) != 0){
 		LOG_ERROR("service_accept: failed to"
 			" add socket to epoll (errno = %d)", errno);
-		// TODO: release connection
+		// @TODO
+		// release connection
 		// connection_dtor(*c);
 		// connection_release(*c);
 		close(ret);

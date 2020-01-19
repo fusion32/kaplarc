@@ -8,6 +8,9 @@ struct task{
 	void *arg;
 };
 
+// @TODO: there's a way to implement this ringbuffer as
+// lockfree using atomics
+
 // dispatcher ringbuffer
 #define MAX_TASKS 0x8000
 static struct task tasks[MAX_TASKS];

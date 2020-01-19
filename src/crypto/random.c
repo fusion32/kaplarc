@@ -2,7 +2,7 @@
 #include "random.h"
 
 #if defined(PLATFORM_WINDOWS)
-// TODO
+// @TODO
 bool crypto_random(void *data, size_t len){
 	ASSERT(0 && "crypto_random: not implemented");
 	return len == 0;

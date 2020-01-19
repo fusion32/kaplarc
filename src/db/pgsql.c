@@ -18,7 +18,7 @@ Connection Parameters:
 	{"application_name",	"kaplar_server"},
 	{"sslmode",		"disable"}
 
-	// TODO: investigate how these SSL certificates and files works
+	// @TODO investigate how these SSL certificates and files works
 	{"sslmode",		"prefer"},
 	{"sslcert",		"~/.postgresql/postgresql.crt"},
 	{"sslkey",		"~/.postgresql/postgresql.key"},

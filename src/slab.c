@@ -17,29 +17,31 @@ struct slab{
 	struct slab *next;
 };
 
+// @REVIEW
+// increasing the alignment past the cache line size wouldn't
+// yield any improvements
+#define MAX_ALIGNMENT		ARCH_CACHE_LINE_SIZE
 #define PTR_ALIGNMENT		(sizeof(void*))
 #define PTR_ALIGNMENT_MASK	(sizeof(void*) - 1)
+
 struct slab *slab_create(uint slots, uint stride){
 	uint capacity, mem_offset;
 	uint alignment, alignment_mask;
 	struct slab *s;
 
-	// check if stride has the minimum alignment requirement
-	if((stride & PTR_ALIGNMENT_MASK) != 0){
-		LOG_WARNING("slab_create: ajusting stride to have"
-			" the minimum alignment of %u", PTR_ALIGNMENT);
-		stride = (stride + PTR_ALIGNMENT_MASK) & ~PTR_ALIGNMENT_MASK;
-	}
-
-	// if stride is a power of two, it can be used as
-	// a better alignment
+	// define object alignment
 	if(IS_POWER_OF_TWO(stride))
-		alignment = stride;
+		alignment = MIN(stride, MAX_ALIGNMENT);
 	else
 		alignment = PTR_ALIGNMENT;
+	ASSERT(IS_POWER_OF_TWO(alignment));
+	alignment_mask = alignment - 1;
+
+	// stride must be a multiple of alignment
+	if((stride & alignment_mask) != 0)
+		stride = (stride + alignment_mask) & ~alignment_mask;
 
 	// properly align the offset to memory
-	alignment_mask = alignment - 1;
 	mem_offset = sizeof(struct slab);
 	if((mem_offset & alignment_mask) != 0)
 		mem_offset = (mem_offset + alignment_mask) & ~alignment_mask;

@@ -10,31 +10,30 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
+#define MAX_NAME_LENGTH 128
+#define MAX_VALUE_LENGTH 128
+
 static struct {
-	char name[64];
-	char value[64];
+	char name[MAX_NAME_LENGTH];
+	char value[MAX_VALUE_LENGTH];
 } table[] = {
 	// command line
 	{"config",		"config.lua"},
 
-	// cluster variables
-	{"sv_uid",		"kaplar"},
-	{"sv_cluster_contact",	"localhost"},
-
-
-	// server variables
+	// server
 	{"sv_test_port",	"7777"},
 	{"sv_login_port",	"7171"},
 	{"sv_info_port",	"7171"},
 	{"sv_game_port",	"7172"},
 
-	// cassandra variables
-	{"cass_contact_points", "localhost"},
-	{"cass_keyspace",	"kaplar"},
-	{"cass_auth_role",	"cassandra"},
-	{"cass_auth_pwd",	"cassandra"},
+	// connection
+	{"conn_slots_per_slab", "50"},
+	{"conn_input_rate",	"30"},
+	{"conn_output_rate",	"30"},
+	{"conn_input_size",	"32768"},
+	{"conn_output_size",	"32768"},
 
-	// postgres variables
+	// pgsql
 	{"pgsql_host",		"localhost"},
 	{"pgsql_port",		"5432"},
 	{"pgsql_dbname",	"kaplar"},
@@ -56,7 +55,7 @@ void config_cmdline(int argc, char **argv){
 			if(len <= strlen(arg) && strncmp(table[i].name, arg, len) == 0){
 				valid = true;
 				arg += len;
-				snprintf(table[i].value, 64, "%s",
+				snprintf(table[i].value, MAX_VALUE_LENGTH, "%s",
 					((arg[0] != '=' || arg[1] == 0)
 						? "true" : arg+1));
 				break;
@@ -82,26 +81,21 @@ bool config_load_from_path(const char *path){
 	L = luaL_newstate();
 	if(L == NULL)
 		return false;
-
-	// load file
 	if(luaL_loadfile(L, path) != 0){
 		LOG_ERROR("config_load: failed to load config `%s`", path);
 		lua_close(L);
 		return false;
 	}
-
-	// run file
 	if(lua_pcall(L, 0, 0, 0) != 0){
 		LOG_ERROR("config_load: %s", lua_tostring(L, -1));
 		lua_close(L);
 		return false;
 	}
-
-	// parse variables
 	for(i = 0; i < ARRAY_SIZE(table); i++){
 		lua_getglobal(L, table[i].name);
 		if(lua_isstring(L, -1) != 0)
-			snprintf(table[i].value, 64, "%s", lua_tostring(L, -1));
+			snprintf(table[i].value, MAX_VALUE_LENGTH,
+				"%s", lua_tostring(L, -1));
 		lua_pop(L, 1);
 	}
 	lua_close(L);
@@ -112,7 +106,6 @@ bool config_save(const char *path, bool overwrite){
 	FILE *f;
 	int i;
 
-	// open file
 	f = fopen(path, "r+");
 	if(f == NULL){
 		f = fopen(path, "w+");
@@ -123,7 +116,6 @@ bool config_save(const char *path, bool overwrite){
 		return false;
 	}
 
-	// write variables
 	for(i = 0; i < ARRAY_SIZE(table); i++)
 		fprintf(f, "%s = \"%s\"\n", table[i].name, table[i].value);
 	fclose(f);
@@ -165,13 +157,15 @@ static void config_vset(const char *name, const char *fmt, ...){
 	for(i = 0; i < ARRAY_SIZE(table); i++){
 		if(strcmp(table[i].name, name) == 0){
 			valid = true;
-			vsnprintf(table[i].value, 64, fmt, ap);
+			vsnprintf(table[i].value,
+				MAX_VALUE_LENGTH, fmt, ap);
 			break;
 		}
 	}
 	va_end(ap);
 
-	if(!valid) LOG_WARNING("config_vset: trying to set invalid variable `%s`", name);
+	if(!valid)
+		LOG_WARNING("config_vset: trying to set invalid variable `%s`", name);
 }
 
 void config_set(const char *name, const char *val){

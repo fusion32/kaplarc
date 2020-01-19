@@ -1,0 +1,6 @@
+#ifndef GAME_PROTOCOL_LOGIN_H_
+#define GAME_PROTOCOL_LOGIN_H_
+
+
+
+#endif //GAME_PROTOCOL_LOGIN_H_

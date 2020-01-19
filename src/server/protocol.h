@@ -26,8 +26,10 @@ struct protocol{
 	/* events related to the protocol */
 	void (*on_connect)(struct connection *conn, void *handle);
 	void (*on_close)(struct connection *conn, void *handle);
-	void (*on_recv_message)(struct connection *conn, void *handle, struct packed_data *msg);
-	void (*on_recv_first_message)(struct connection *conn, void *handle, struct packed_data *msg);
+	void (*on_recv_message)(struct connection *conn,
+		void *handle, struct packed_data *msg);
+	void (*on_recv_first_message)(struct connection *conn,
+		void *handle, struct packed_data *msg);
 };
 
 #endif //PROTOCOL_H_

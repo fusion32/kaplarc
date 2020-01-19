@@ -24,7 +24,7 @@ static INLINE uint64 swap_u64(uint64 x){
 		| (x & 0x00000000000000FF) << 56;
 }
 
-#ifdef ARCH_BIG_ENDIAN
+#if ARCH_BIG_ENDIAN
 #define u16_be_to_cpu(x)	(x)
 #define u16_le_to_cpu(x)	swap_u16(x)
 #define u32_be_to_cpu(x)	(x)

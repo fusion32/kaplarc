@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\bitset.c" />
     <ClCompile Include="..\src\rbtree.c" />
     <ClCompile Include="..\src\config.c" />
     <ClCompile Include="..\src\crypto\adler32.c" />
@@ -34,6 +33,9 @@
     <ClCompile Include="..\src\game\protocol_login.c" />
     <ClCompile Include="..\src\log.c" />
     <ClCompile Include="..\src\main.c" />
+    <ClCompile Include="..\src\server\iocp_connmgr.c" />
+    <ClCompile Include="..\src\server\iocp_server.c" />
+    <ClCompile Include="..\src\server\iocp_svcmgr.c" />
     <ClCompile Include="..\src\slab.c" />
     <ClCompile Include="..\src\packed_data.c" />
     <ClCompile Include="..\src\scheduler.c" />
@@ -57,8 +59,8 @@
     <ClCompile Include="..\src\thread.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\bitset.h" />
     <ClInclude Include="..\src\db\local.h" />
+    <ClInclude Include="..\src\game\game.h" />
     <ClInclude Include="..\src\rbtree.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\crypto\adler32.h" />
@@ -70,7 +72,7 @@
     <ClInclude Include="..\src\crypto\xtea.h" />
     <ClInclude Include="..\src\db\db.h" />
     <ClInclude Include="..\src\endian.h" />
-    <ClInclude Include="..\src\game\protocol_login.h" />
+    <ClInclude Include="..\src\server\iocp.h" />
     <ClInclude Include="..\src\slab.h" />
     <ClInclude Include="..\src\packed_data.h" />
     <ClInclude Include="..\src\server\server.h" />
@@ -168,7 +170,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;BUILD_TEST=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ObjectFileName>$(IntDir)/Debug/%(RelativeDir)/</ObjectFileName>
@@ -202,7 +204,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;BUILD_TEST=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ObjectFileName>$(IntDir)/Release/%(RelativeDir)/</ObjectFileName>

@@ -14,14 +14,8 @@
 #include <stdlib.h>
 
 static
-void init_interface(const char *name, void(*init)(void), void(*shutdown)(void)){
-	LOG("initializing `%s` interface", name);
-	init(); atexit(shutdown);
-}
-
-static
-void init_interface_may_fail(const char *name, bool(*init)(void), void(*shutdown)(void)){
-	LOG("initializing `%s` interface", name);
+void init_subsystem(const char *name, bool(*init)(void), void(*shutdown)(void)){
+	LOG("initializing `%s` subsystem", name);
 	if(!init()){
 		// error messages should be
 		// provided by the interface
@@ -42,21 +36,20 @@ int main(int argc, char **argv){
 		return -1;
 
 	// initialize core interfaces
-	init_interface("dispatcher", dispatcher_init, dispatcher_shutdown);
-	init_interface("scheduler", scheduler_init, scheduler_shutdown);
-	//init_interface("database", database_init, database_shutdown);
+	//init_subsystem("dispatcher", dispatcher_init, dispatcher_shutdown);
+	//init_subsystem("scheduler", scheduler_init, scheduler_shutdown);
+	//init_subsystem("database", database_init, database_shutdown);
 
 	// initialize server interfaces
-	init_interface_may_fail("RSA", server_rsa_init, server_rsa_shutdown);
-
-	// initialize cluster protocols
-	// TODO
+	//init_subsystem("rsa", server_rsa_init, server_rsa_shutdown);
+	
 
 	// load server data
 	// init game state
 
 	// init server
 	//server_add_protocol(&protocol_test, config_geti("sv_test_port"));
-	//server_run();
+	init_subsystem("server", server_init, server_shutdown);
+	getchar();
 	return 0;
 }

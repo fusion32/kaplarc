@@ -27,9 +27,22 @@ typedef uintptr_t	uintptr;
 #define MIN(x, y)		((x < y) ? (x) : (y))
 #define MAX(x, y)		((x > y) ? (x) : (y))
 
-// arch settings (these options should be ajusted to the arch being used)
-//#define ARCH_BIG_ENDIAN 1
+// @REMOVE
+#define ARCH_BIG_ENDIAN 0
 #define ARCH_UNALIGNED_ACCESS 1
+#define ARCH_CACHE_LINE_SIZE 64
+
+// arch settings (these options should be ajusted to the arch being used)
+#ifndef ARCH_BIG_ENDIAN
+#	define ARCH_BIG_ENDIAN 0
+#endif
+#ifndef ARCH_UNALIGNED_ACCESS
+#	define ARCH_UNALIGNED_ACCESS 0
+#endif
+#ifndef ARCH_CACHE_LINE_SIZE
+#	define ARCH_CACHE_LINE_SIZE 64
+#endif
+
 
 // platform settings
 #if !defined(PLATFORM_LINUX) && !defined(PLATFORM_FREEBSD)	\
