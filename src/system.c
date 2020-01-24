@@ -56,7 +56,7 @@ void sys_free(void *ptr){
 }
 
 void *sys_aligned_malloc(size_t size, size_t alignment){
-	ASSERT(IS_POWER_OF_TWO(alignment) &&
+	DEBUG_ASSERT(IS_POWER_OF_TWO(alignment) &&
 		"sys_aligned_alloc: `alignment` must be a power of two");
 
 	void *ptr;

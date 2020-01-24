@@ -153,9 +153,6 @@
     <ClInclude Include="..\src\system.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\server\protocol_test.h">
-      <Filter>Source Files\server</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\crypto\rsa.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>

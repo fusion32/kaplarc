@@ -1,13 +1,21 @@
 #ifndef DEF_H_
 #define DEF_H_
 
-
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <time.h>
 
+// always enable assert
+#ifdef NDEBUG
+#	undef NDEBUG
+#endif
+#include <assert.h>
+#define ASSERT(expr) assert(expr)
+#define UNREACHABLE() ASSERT(0 && "unreachable")
+
+// int types
 typedef unsigned int	uint;
 typedef int8_t		int8;
 typedef uint8_t		uint8;
@@ -19,11 +27,10 @@ typedef int64_t		int64;
 typedef uint64_t	uint64;
 typedef uintptr_t	uintptr;
 
+// helper macros
 #define ARRAY_SIZE(a)		(sizeof(a)/sizeof((a)[0]))
 #define OFFSET_POINTER(ptr, x)	((void*)(((char*)(ptr)) + (x)))
-
 #define IS_POWER_OF_TWO(x)	((x != 0) && ((x & (x - 1)) == 0))
-
 #define MIN(x, y)		((x < y) ? (x) : (y))
 #define MAX(x, y)		((x > y) ? (x) : (y))
 
@@ -42,7 +49,6 @@ typedef uintptr_t	uintptr;
 #ifndef ARCH_CACHE_LINE_SIZE
 #	define ARCH_CACHE_LINE_SIZE 64
 #endif
-
 
 // platform settings
 #if !defined(PLATFORM_LINUX) && !defined(PLATFORM_FREEBSD)	\
@@ -74,19 +80,12 @@ typedef uintptr_t	uintptr;
 #ifndef BUILD_DEBUG
 #	define DEBUG_LOG(...)		((void)0)
 #	define DEBUG_CHECK(...)		((void)0)
-#	define ASSERT(...)		((void)0)
-#	define UNREACHABLE()		((void)0)
+#	define DEBUG_ASSERT(...)	((void)0)
 #else
 #	include "log.h"
 #	define DEBUG_LOG(...)		log_add("DEBUG", __VA_ARGS__)
 #	define DEBUG_CHECK(cond, ...)	if(!(cond)){ DEBUG_LOG(__VA_ARGS__); }
-
-#	ifdef NDEBUG
-#		undef NDEBUG
-#	endif
-#	include <assert.h>
-#	define ASSERT(expr)		assert(expr)
-#	define UNREACHABLE()		ASSERT(0 && "unreachable")
+#	define DEBUG_ASSERT(expr)	ASSERT(expr)
 #endif
 
 // database settings

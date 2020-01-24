@@ -82,7 +82,6 @@
     <ClInclude Include="..\src\log.h" />
     <ClInclude Include="..\src\ringbuffer.h" />
     <ClInclude Include="..\src\scheduler.h" />
-    <ClInclude Include="..\src\server\protocol_test.h" />
     <ClInclude Include="..\src\slab_cache.h" />
     <ClInclude Include="..\src\string.h" />
     <ClInclude Include="..\src\system.h" />

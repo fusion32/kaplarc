@@ -1,5 +1,6 @@
 #include "iocp.h"
-#include "../def.h"
+
+#ifdef PLATFORM_WINDOWS
 
 struct iocp_ctx server_ctx = {
 	.iocp = NULL,
@@ -88,11 +89,6 @@ static void server_cleanup_winsock(void){
 	WSACleanup();
 }
 
-static void server_consume_work_left(void){
-	while(server_work() != 0)
-		continue;
-}
-
 bool server_init(void){
 	if(ctx->initialized)
 		return true;
@@ -113,6 +109,8 @@ fail3:	connmgr_start_shutdown();
 	// will properly release resources
 	while(server_work() != 0)
 		continue;
+	svcmgr_shutdown();
+	connmgr_shutdown();
 
 fail2:	server_close_iocp();
 fail1:	server_cleanup_winsock();
@@ -128,6 +126,8 @@ void server_shutdown(void){
 	// will properly release resources
 	while(server_work() != 0)
 		continue;
+	svcmgr_shutdown();
+	connmgr_shutdown();
 
 	server_close_iocp();
 	server_cleanup_winsock();
@@ -163,3 +163,5 @@ int server_work(void){
 	}
 	return work_done;
 }
+
+#endif //PLATFORM_WINDOWS

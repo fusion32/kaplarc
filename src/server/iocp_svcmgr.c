@@ -1,5 +1,6 @@
 #include "iocp.h"
-#include "../def.h"
+
+#ifdef PLATFORM_WINDOWS
 
 /* Service Structure */
 #define MAX_SERVICE_PROTOCOLS 4
@@ -32,7 +33,7 @@ static void service_start_closing(struct service *svc);
 
 /* IMPL START */
 static SOCKET __create_iocp_socket(void){
-	ASSERT(ctx->iocp != NULL);
+	DEBUG_ASSERT(ctx->iocp != NULL);
 	SOCKET s = WSASocket(AF_INET, SOCK_STREAM, 0,
 		NULL, 0, WSA_FLAG_OVERLAPPED);
 	if(s == INVALID_SOCKET)
@@ -76,8 +77,8 @@ static void service_on_accept(void *data, DWORD err, DWORD transferred){
 		sizeof(struct sockaddr_in) + 16,
 		(struct sockaddr**)&local_addr, &local_addr_len,
 		(struct sockaddr**)&remote_addr, &remote_addr_len);
-	ASSERT(local_addr_len == sizeof(struct sockaddr_in));
-	ASSERT(remote_addr_len == sizeof(struct sockaddr_in));
+	DEBUG_ASSERT(local_addr_len == sizeof(struct sockaddr_in));
+	DEBUG_ASSERT(remote_addr_len == sizeof(struct sockaddr_in));
 
 	// start new connection
 	connmgr_start_connection(s, remote_addr, svc);
@@ -121,7 +122,7 @@ static bool service_start_async_accept(struct service *svc){
 
 #define MAX_TRIES_BEFORE_REOPEN 5
 static void service_async_accept(struct service *svc){
-	ASSERT(svc->s != INVALID_SOCKET);
+	DEBUG_ASSERT(svc->s != INVALID_SOCKET);
 	for(int i = 0; i < MAX_TRIES_BEFORE_REOPEN; i += 1){
 		if(service_start_async_accept(svc))
 			return;
@@ -177,15 +178,15 @@ static bool service_open(struct service *svc){
 }
 
 static void __service_close(struct service *svc){
-	ASSERT(svc->s != INVALID_SOCKET);
-	ASSERT(svc->pending_work == 0);
+	DEBUG_ASSERT(svc->s != INVALID_SOCKET);
+	DEBUG_ASSERT(svc->pending_work == 0);
 	closesocket(svc->s);
 	svc->s = INVALID_SOCKET;
 	svc->closing = false;
 }
 
 static void service_start_closing(struct service *svc){
-	ASSERT(svc->s != INVALID_SOCKET);
+	DEBUG_ASSERT(svc->s != INVALID_SOCKET);
 	// if the service has no pending work, it's socket will be
 	// closed here, else it'll be closed when all pending work
 	// has been processed
@@ -217,10 +218,15 @@ void svcmgr_start_shutdown(void){
 		service_start_closing(&services[i]);
 }
 
+void svcmgr_shutdown(void){
+	// all memory is static
+	return;
+}
+
 bool svcmgr_add_protocol(struct protocol *protocol, int port){
 	int i;
 	struct service *svc = NULL;
-	ASSERT(ctx->initialized && protocol != NULL);
+	DEBUG_ASSERT(ctx->initialized && protocol != NULL);
 	for(i = 0; i < num_services; i += 1){
 		if(services[i].port == port){
 			svc = &services[i];
@@ -247,3 +253,5 @@ bool svcmgr_add_protocol(struct protocol *protocol, int port){
 	}
 	return true;
 }
+
+#endif //PLATFORM_WINDOWS

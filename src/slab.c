@@ -34,7 +34,7 @@ struct slab *slab_create(uint slots, uint stride){
 		alignment = MIN(stride, MAX_ALIGNMENT);
 	else
 		alignment = PTR_ALIGNMENT;
-	ASSERT(IS_POWER_OF_TWO(alignment));
+	DEBUG_ASSERT(IS_POWER_OF_TWO(alignment));
 	alignment_mask = alignment - 1;
 
 	// stride must be a multiple of alignment
@@ -65,7 +65,7 @@ void slab_destroy(struct slab *s){
 void *slab_alloc(struct slab *s){
 	void *ptr = NULL;
 	if(s->freelist != NULL){
-		ASSERT(s->freecount > 0);
+		DEBUG_ASSERT(s->freecount > 0);
 		ptr = s->freelist;
 		s->freelist = FREENODE_NEXT(s->freelist);
 		s->freecount -= 1;

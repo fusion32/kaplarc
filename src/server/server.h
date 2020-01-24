@@ -7,11 +7,13 @@
 struct connection;
 struct packed_data;
 
+extern struct protocol *protocol_test;
+
 // Server interface
 bool server_init(void);
 void server_shutdown(void);
 int server_work(void);
-bool server_add_protocol(struct protocol *protocol, int port);
+bool svcmgr_add_protocol(struct protocol *protocol, int port);
 
 // Connection interface
 void connection_close(struct connection *conn);

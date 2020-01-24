@@ -20,7 +20,7 @@ void str_format(struct string_ptr *dst, const char *fmt, ...){
 }
 
 void str_vformat(struct string_ptr *dst, const char *fmt, va_list ap){
-	ASSERT(dst->cap > 0 &&
+	DEBUG_ASSERT(dst->cap > 0 &&
 		"str_vappend: invalid string_ptr");
 	int ret = vsnprintf(dst->data, dst->cap, fmt, ap);
 	if(ret >= dst->cap)	dst->len = dst->cap - 1;
@@ -36,7 +36,7 @@ void str_append(struct string_ptr *dst, const char *fmt, ...){
 }
 
 void str_vappend(struct string_ptr *dst, const char *fmt, va_list ap){
-	ASSERT(dst->cap > 0 && dst->cap > dst->len &&
+	DEBUG_ASSERT(dst->cap > 0 && dst->cap > dst->len &&
 		"str_vappend: invalid string_ptr");
 	int ret;
 	size_t cap;

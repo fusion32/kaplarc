@@ -8,8 +8,8 @@
 
 // init
 void rbt_init(struct rbtree *t, rbt_compare_func compare){
-	ASSERT(t != NULL && "rbt_init: NULL tree pointer");
-	ASSERT(compare != NULL &&
+	DEBUG_ASSERT(t != NULL && "rbt_init: NULL tree pointer");
+	DEBUG_ASSERT(compare != NULL &&
 		"rbt_init: invalid compare function");
 	t->root = NULL;
 #ifdef RBTREE_CACHED_MIN

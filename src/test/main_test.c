@@ -4,13 +4,10 @@
 #include "../log.h"
 #include <stdio.h>
 
-
-#define EXTERN_TEST(name) extern bool name##_test(void);
 #define RUN_TEST(name)						\
 	do{	extern bool name##_test(void);			\
 		if(name##_test()) LOG(#name "_test: passed");	\
 		else LOG(#name "_test: failed"); }while(0)
-
 
 int main(int argc, char **argv){
 	//RUN_TEST(base64);

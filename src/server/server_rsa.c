@@ -24,11 +24,7 @@ bool server_rsa_init(void){
 		rsa_cleanup(&ctx);
 		return false;
 	}
-	if(mutex_init(&mtx) != 0){
-		LOG_ERROR("server_rsa_init: failed to init mutex");
-		rsa_cleanup(&ctx);
-		return false;
-	}
+	mutex_init(&mtx);
 	return true;
 }
 

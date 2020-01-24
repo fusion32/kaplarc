@@ -1,12 +1,11 @@
 #ifndef THREAD_H_
 #define THREAD_H_
 
+//@TODO: make so mutex_*, and condvar_* functions cannot fail
+
 #include "def.h"
 
 // macro wrappers
-static INLINE int return_0(int ret){
-	return 0;
-}
 static INLINE void return_void(int ret){
 	return;
 }
@@ -27,22 +26,22 @@ int __thread_create(thread_t *thr, void *(*fp)(void*), void *arg);
 int __thread_join(thread_t *thr, void **ret);
 void __thread_detach(thread_t *thr);
 
-#define thread_create		__thread_create
-#define thread_join		__thread_join
-#define thread_detach		__thread_detach
+#define thread_create(thr,fp,arg) __thread_create((thr), (fp), (arg))
+#define thread_join(thr,ret)	__thread_join((thr), (ret))
+#define thread_detach(thr)	__thread_detach(thr)
 #define thread_yield()		return_void(SwitchToThread())
 
-#define mutex_init(m)		return_0((InitializeCriticalSection(m), 0))
-#define mutex_destroy		DeleteCriticalSection
-#define mutex_lock		EnterCriticalSection
-#define mutex_unlock		LeaveCriticalSection
+#define mutex_init(m)		InitializeCriticalSection(m)
+#define mutex_destroy(m)	DeleteCriticalSection(m)
+#define mutex_lock(m)		EnterCriticalSection(m)
+#define mutex_unlock(m)		LeaveCriticalSection(m)
 
-#define condvar_init(c)		return_0((InitializeConditionVariable(c), 0))
-#define condvar_destroy(...)	return_void(0)
-#define condvar_wait(c,m)	return_0((SleepConditionVariableCS((c), (m), INFINITE), 0))
-#define condvar_timedwait(c,m,t) return_0((SleepConditionVariableCS((c), (m), (DWORD)(t)), 0))
-#define condvar_signal		WakeConditionVariable
-#define condvar_broadcast	WakeAllConditionVariable
+#define condvar_init(c)		InitializeConditionVariable(c)
+#define condvar_destroy(c)	((void)0)
+#define condvar_wait(c,m)	ASSERT(SleepConditionVariableCS((c), (m), INFINITE) == TRUE)
+#define condvar_timedwait(c,m,t) ASSERT(SleepConditionVariableCS((c), (m), (DWORD)(t)) == TRUE)
+#define condvar_signal(c)	WakeConditionVariable(c)
+#define condvar_broadcast(c)	WakeAllConditionVariable(c)
 
 #else
 
@@ -54,22 +53,22 @@ typedef pthread_cond_t condvar_t;
 
 int __condvar_timedwait(convar_t *c, mutex_t *m, long msec);
 
-#define thread_create(a,b,c)	pthread_create((a), NULL, (b), (c))
-#define thread_join		pthread_join
-#define thread_detach(a)	return_void(pthread_detach(a))
+#define thread_create(thr,fp,arg) pthread_create((thr), NULL, (fp), (arg))
+#define thread_join(thr,ret)	pthread_join((thr),(ret))
+#define thread_detach(thr)	pthread_detach(thr)
 #define thread_yield()		return_void(sched_yield())
 
-#define mutex_init(a)		pthread_mutex_init((a), NULL)
-#define mutex_destroy(a)	return_void(pthread_mutex_destroy(a))
-#define mutex_lock(a)		return_void(pthread_mutex_lock(a))
-#define mutex_unlock(a)		return_void(pthread_mutex_unlock(a))
+#define mutex_init(a)		ASSERT(pthread_mutex_init((a), NULL) == 0)
+#define mutex_destroy(a)	ASSERT(pthread_mutex_destroy(a) == 0)
+#define mutex_lock(a)		ASSERT(pthread_mutex_lock(a) == 0)
+#define mutex_unlock(a)		ASSERT(pthread_mutex_unlock(a) == 0)
 
-#define condvar_init(a)		pthread_cond_init((a), NULL)
-#define condvar_destroy(a)	return_void(pthread_cond_destroy(a))
-#define condvar_wait		pthread_cond_wait
-#define condvar_timedwait	__condvar_timedwait
-#define condvar_signal(a)	return_void(pthread_cond_signal(a))
-#define condvar_broadcast(a)	return_void(pthread_cond_broadcast(a))
+#define condvar_init(a)		ASSERT(pthread_cond_init((a), NULL) == 0)
+#define condvar_destroy(a)	ASSERT(pthread_cond_destroy(a) == 0)
+#define condvar_wait(c,m)	ASSERT(pthread_cond_wait((c), (m)) == 0)
+#define condvar_timedwait(c,m,t) ASSERT(__condvar_timedwait((c), (m), (t)) == 0)
+#define condvar_signal(a)	ASSERT(pthread_cond_signal(a) == 0)
+#define condvar_broadcast(a)	ASSERT(pthread_cond_broadcast(a) == 0)
 
 #endif
 

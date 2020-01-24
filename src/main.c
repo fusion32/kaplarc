@@ -6,7 +6,6 @@
 #include "system.h"
 
 #include "db/db.h"
-#include "server/protocol_test.h"
 #include "server/server.h"
 #include "server/server_rsa.h"
 
@@ -48,7 +47,7 @@ int main(int argc, char **argv){
 	// init game state
 
 	// init server
-	//server_add_protocol(&protocol_test, config_geti("sv_test_port"));
+	//svcmgr_add_protocol(&protocol_test, config_geti("sv_test_port"));
 	init_subsystem("server", server_init, server_shutdown);
 	getchar();
 	return 0;

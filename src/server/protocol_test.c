@@ -1,122 +1,118 @@
 #if 0
-
-#include "protocol_test.h"
-
-#include "message.h"
-#include "outputmessage.h"
 #include "server.h"
 
 #include "../crypto/adler32.h"
+#include "../packed_data.h"
+#include "../dispatcher.h"
 #include "../log.h"
 
 // message helpers
-static bool message_checksum(Message *msg);
-static void message_begin(Message *msg);
-static void message_end(Message *msg);
+static bool message_checksum(struct packed_data *msg);
+static void message_begin(struct packed_data *msg);
+static void message_end(struct packed_data *msg);
 
 // protocol callbacks
-static bool identify(Message *first);
-static void *create_handle(Connection *conn);
-static void destroy_handle(Connection *conn, void *handle);
-static void on_connect(Connection *conn, void *handle);
-static void on_close(Connection *conn, void *handle);
-static void on_recv_message(Connection *conn, void *handle, Message *msg);
-static void on_recv_first_message(Connection *conn, void *handle, Message *msg);
+static bool identify(struct packed_data *first);
+static void *create_handle(struct connection *c);
+static void destroy_handle(struct connection *c, void *handle);
+static void on_connect(struct connection *c, void *handle);
+static void on_close(struct connection *c, void *handle);
+static void on_recv_message(struct connection *c,
+		void *handle, struct packed_data *msg);
+static void on_recv_first_message(struct connection *c,
+		void *handle, struct packed_data *msg);
 
 // protocol definition
-Protocol protocol_test = {
-	/* .name = */			"TEST",
-	/* .sends_first = */		true,
-	/* .identify = */		identify,
+struct protocol protocol_test = {
+	.name =				"TEST",
+	.sends_first =			true,
+	.identify =			identify,
 
-	/* .create_handle = */		create_handle,
-	/* .destroy_handle = */		destroy_handle,
+	.create_handle =		create_handle,
+	.destroy_handle =		destroy_handle,
 
-	/* .on_connect = */		on_connect,
-	/* .on_close = */		on_close,
-	/* .on_recv_message = */	on_recv_message,
-	/* .on_recv_first_message = */	on_recv_first_message,
+	.on_connect =			on_connect,
+	.on_close =			on_close,
+	.on_recv_message =		on_recv_message,
+	.on_recv_first_message =	on_recv_first_message,
 };
 
 
 // message helpers
-static bool message_checksum(Message *msg){
-	size_t offset = msg->readpos + 4;
-	uint32 sum = adler32(msg->buffer + offset, msg->length - offset);
-	return sum == msg->peek_u32();
+static bool message_checksum(struct packed_data *msg){
+	size_t offset = msg->pos + 4;
+	uint32 sum = adler32(msg->base + offset, msg->length - offset);
+	return sum == pd_peek_u32(msg);
 }
-static void message_begin(Message *msg){
-	msg->readpos = 2;
+static void message_begin(struct packed_data *msg){
+	msg->pos = 2;
 	msg->length = 0;
 }
-static void message_end(Message *msg){
-	msg->readpos = 2;
-	msg->radd_u16((uint16)msg->length);
+static void message_end(struct packed_data *msg){
+	msg->pos = 2;
+	pd_radd_u16(msg, (uint16)msg->length);
 }
 
 
 // protocol callbacks
-static bool identify(Message *first){
-	protocol_test.on_connect = NULL;
-	protocol_test.on_close = NULL;
-
-	size_t offset = first->readpos;
+static bool identify(struct packed_data *first){
+	size_t offset = first->pos;
 	// skip checksum
 	if(message_checksum(first))
 		offset += 4;
 	// check protocol identifier
-	return first->buffer[offset] == 0xA3;
+	return first->base[offset] == 0xA3;
 }
 
 
-static void *create_handle(Connection *conn){
+static void *create_handle(struct connection *c){
 	return NULL;
 }
 
-static void destroy_handle(Connection *conn, void *handle){
+static void destroy_handle(struct connection *c, void *handle){
 }
 
-static void send_hello(Connection *conn){
-	OutputMessage outputmsg;
-	Message *msg;
-
-	output_message_acquire(MESSAGE_CAPACITY_256, &outputmsg);
-	msg = outputmsg.msg;
-
-	message_begin(msg);
-	msg->add_lstr("Hello World", 11);
-	message_end(msg);
-	connection_send(conn, &outputmsg);
-
+static void __send_hello(void *data){
+	struct connection *c = data;
+	struct packed_data msg;
+	//connection_get_output_buffer(c, &msg, &len);
+	message_begin(&msg);
+	pd_add_lstr(&msg, "Hello World", 11);
+	message_end(&msg);
 }
 
-static void on_connect(Connection *conn, void *handle){
+static void send_hello(struct connection *c){
+	dispatcher_add(__send_hello, c);
+}
+
+static void on_connect(struct connection *c, void *handle){
 	LOG("on_connect");
-	send_hello(conn);
+	send_hello(c);
 }
 
-static void on_close(Connection *conn, void *handle){
+static void on_close(struct connection *c, void *handle){
 	LOG("on_close");
 }
 
-static void on_recv_message(Connection *conn, void *handle, Message *msg){
+static void on_recv_message(struct connection *c,
+		void *handle, struct packed_data *msg){
 	char buf[64];
 	if(message_checksum(msg))
-		msg->readpos += 4;
-	msg->get_str(buf, 64);
+		msg->pos += 4;
+	pd_get_str(msg, buf, 64);
 	LOG("on_recv_message: %s", buf);
-	send_hello(conn);
+	send_hello(c);
 }
 
-static void on_recv_first_message(Connection *conn, void *handle, Message *msg){
+static void on_recv_first_message(struct connection *c,
+		void *handle, struct packed_data *msg){
 	char buf[64];
 	if(message_checksum(msg))
-		msg->readpos += 4;
-	if(msg->get_byte() != 0xA3)
+		msg->pos += 4;
+	if(pd_get_byte(msg) != 0xA3)
 		UNREACHABLE();
-	msg->get_str(buf, 64);
+	pd_get_str(msg, buf, 64);
 	LOG("on_recv_first_message: %s", buf);
-	send_hello(conn);
+	send_hello(c);
 }
-
-#endif
+#endif //0

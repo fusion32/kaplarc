@@ -28,10 +28,10 @@ static struct {
 
 	// connection
 	{"conn_slots_per_slab", "50"},
-	{"conn_input_rate",	"30"},
-	{"conn_output_rate",	"30"},
-	{"conn_input_size",	"32768"},
-	{"conn_output_size",	"32768"},
+
+	// protocol game
+	{"game_input_swap_rate", "30"},
+	{"game_output_swap_rate", "30"},
 
 	// pgsql
 	{"pgsql_host",		"localhost"},

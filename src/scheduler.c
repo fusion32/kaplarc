@@ -90,16 +90,8 @@ bool scheduler_init(void){
 	}
 
 	// spawn scheduler thread
-	if(mutex_init(&mtx) != 0){
-		LOG_ERROR("scheduler_init:"
-			"failed to init mutex");
-		return false;
-	}
-	if(condvar_init(&cv) != 0){
-		LOG_ERROR("scheduler_init:"
-			"failed to init condvar");
-		return false;
-	}
+	mutex_init(&mtx);
+	condvar_init(&cv);
 	running = true;
 	if(thread_create(&thr, scheduler, NULL) != 0){
 		LOG_ERROR("scheduler_init:"

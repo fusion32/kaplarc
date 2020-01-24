@@ -1,156 +1,398 @@
+/* NOTE1: the usage of double buffering is reasonable in here
+ * because the Tibia protocol is fairly simple and there is
+ * no message size greater than a couple KBs and no file transfers
+ */
 
-#if 0
-/*
-case WSAENETRESET:
-case WSAECONNABORTED:
-case WSAECONNRESET:
-case WSAETIMEDOUT:
-case WSAEDISCON: // graceful shutdown
-*/
+/* NOTE2: output double buffering is quite simple to implement
+ * but input double buffering should be done on a protocol level
+ * by copying the recently received message to another buffer while
+ * leaving the connection input buffer free
+ */
 
 #include "iocp.h"
+
+#ifdef PLATFORM_WINDOWS
+
+#include "../buffer_util.h"
 #include "../config.h"
-#include "../def.h"
 #include "../slab_cache.h"
 #include "../thread.h"
 
-
-struct double_buffer{
-	uint32 length[2];
-	uint8 *buffers[2];
-};
-
-#define CONNECTION_NEW		0x00
-#define CONNECTION_READY	0x01
-#define CONNECTION_CLOSING	0x02
-#define CONNECTION_FIRST_MSG	0x04
-#define CONNECTION_RD_DONE	0x08
-#define CONNECTION_WR_DONE	0x10
+/* Connection Structure */
+// connection settings
+#define CONN_INPUT_SIZE 32768
+#define CONN_OUTPUT_SIZE 32768
+#define CONN_TRIES_BEFORE_CLOSING 5
+// connection command flags
+#define CONN_CLOSING 0x01
+#define CONN_SWAP_OUTPUT 0x02
+// connection status flags
+#define CONN_FIRST_MSG 0x100
+#define CONN_WAITING_OUTPUT_SWAP 0x200
 struct connection{
 	SOCKET s;
 	uint32 flags;
-	uint32 ref_count;
-	uint32 rdwr_count;
-	//mutex_t mtx;
+	int pending_work;
+	//uint32 rdwr_count;
 	struct sockaddr_in addr;
-	struct async_ov read_ov;
-	struct async_ov write_ov;
-	struct double_buffer input;
-	struct double_buffer output;
 	struct service *svc;
 	struct protocol *proto;
 	void *proto_handle;
+	// overlapped structs
+	struct async_ov read_ov;
+	struct async_ov write_ov;
+	// input buffer
+	ULONG input_body_length;
+	uint8 *input_ptr;
+	uint8 input_buffer[CONN_INPUT_SIZE];
+	// output double buffer
+	int output_idx;
+	uint32 output_length[2];
+	uint8 output_buffer[2][CONN_OUTPUT_SIZE];
+	// connection list
+	struct connection *next;
+	struct connection *prev;
 };
 
-static struct slab_cache *l_connections = NULL;
-static struct slab_cache *l_input_buffers = NULL;
-static struct slab_cache *l_output_buffers = NULL;
-static uint32 l_input_size;
-static uint32 l_output_size;
+/* Connection Manager Data */
+static struct connection *conn_head = NULL;
+static struct slab_cache *connections = NULL;
 
-static void connection_create_buffers(struct connection *c){
-	// input buffers
-	c->input.length[0] = 0;
-	c->input.length[1] = 0;
-	c->input.buffers[0] = slab_cache_alloc(l_input_buffers);
-	c->input.buffers[1] = slab_cache_alloc(l_input_buffers);
+/* STATIC FWD DECL */
+static void connection_on_connect(struct connection *c);
+static void connection_on_recv_message(struct connection *c);
+static void connection_on_read_length(void *data, DWORD err, DWORD transferred);
+static void connection_on_read_body(void *data, DWORD err, DWORD transferred);
+static void connection_on_write(void *data, DWORD err, DWORD transferred);
+static bool connection_start_async_read(struct connection *c, ULONG len,
+		void (*callback)(void*, DWORD, DWORD));
+static bool connection_start_async_write(struct connection *c);
+static void connection_async_read(struct connection *c, ULONG len,
+		void (*callback)(void*, DWORD, DWORD));
+static void connection_async_write(struct connection *c);
+static void __connection_close(struct connection *c);
+static void connection_start_closing(struct connection *c);
 
-	// output buffers
-	c->output.length[0] = 0;
-	c->output.length[1] = 0;
-	c->output.buffers[0] = slab_cache_alloc(l_output_buffers);
-	c->output.buffers[1] = slab_cache_alloc(l_output_buffers);
+/* IMPL START */
+//@TODO
+static void connection_on_connect(struct connection *c){}
+static void connection_on_recv_message(struct connection *c){}
+
+static void connection_on_read_length(void *data, DWORD err, DWORD transferred){
+	struct connection *c = data;
+
+	// decrease pending work
+	c->pending_work -= 1;
+
+	// handle connection closing
+	if(c->flags & CONN_CLOSING){
+		if(c->pending_work == 0)
+			__connection_close(c);
+		return;
+	}
+
+	// handle connection errors
+	if(err != NOERROR){
+		// retry operation
+		connection_async_read(c, 2,
+			connection_on_read_length);
+		return;
+	}
+
+	// this should not happen
+	if(transferred != 2){
+		DEBUG_ASSERT(0 &&
+			"WS ERROR: read operation completed with"
+			" a transferred amount diferent from the"
+			" requested amount");
+		connection_start_closing(c);
+		return;
+	}
+
+	// decode body length and advance input pointer
+	c->input_body_length = decode_u16_be(c->input_ptr);
+	c->input_ptr += 2;
+
+	// chain body read
+	connection_async_read(c, c->input_body_length,
+		connection_on_read_body);
 }
 
-static void connection_destroy_buffers(struct connection *c){
-	slab_cache_free(l_input_buffers, c->input.buffers[0]);
-	slab_cache_free(l_input_buffers, c->input.buffers[1]);
-	slab_cache_free(l_output_buffers, c->output.buffers[0]);
-	slab_cache_free(l_output_buffers, c->output.buffers[1]);
+static void connection_on_read_body(void *data, DWORD err, DWORD transferred){
+	struct connection *c = data;
+
+	// decrease pending work
+	c->pending_work -= 1;
+
+	// handle connection closing
+	if(c->flags & CONN_CLOSING){
+		if(c->pending_work == 0)
+			__connection_close(c);
+		return;
+	}
+
+	// handle connection errors
+	if(err != NOERROR){
+		// retry operation
+		connection_async_read(c, c->input_body_length,
+			connection_on_read_body);
+		return;
+	}
+
+	// this should not happen
+	if(c->input_body_length != transferred){
+		DEBUG_ASSERT(0 &&
+			"WS ERROR: read operation completed with"
+			" a transferred amount diferent from the"
+			" requested amount");
+		connection_start_closing(c);
+		return;
+	}
+
+	// dispatch message to protocol
+	connection_on_recv_message(c);
+
+	// reset input pointer
+	c->input_ptr = c->input_buffer;
+	// chain next message read
+	connection_async_read(c, 2, connection_on_read_length);
 }
 
-static struct connection *connection_create(SOCKET s,
-		struct sockaddr_in *addr,
-		struct service *svc){
-	struct connection *c = slab_cache_alloc(l_connections);
-	c->s = s;
-	c->flags = CONNECTION_NEW;
-	c->ref_count = 1;
-	c->rdwr_count = 0;
-	mutex_init(&c->mtx);
-	if(addr != NULL)
-		memcpy(&c->addr, addr, sizeof(struct sockaddr_in));
-	else
-		memset(&c->addr, 0, sizeof(struct sockaddr_in));
+static void connection_on_write(void *data, DWORD err, DWORD transferred){
+	struct connection *c = data;
 
-	// create i/o buffers
-	connection_create_buffers(c);
+	// decrease pending work
+	c->pending_work -= 1;
 
-	// service & protocol
-	c->svc = svc;
-	c->proto = NULL;
-	c->proto_handle = NULL;
+	// handle connection closing
+	if(c->flags & CONN_CLOSING){
+		if(c->pending_work == 0)
+			__connection_close(c);
+		return;
+	}
+
+	// handle connection errors
+	if(err != NOERROR){
+		// retry operation
+		connection_async_write(c);
+		return;
+	}
+
+	// this should not happen
+	if(c->output_length[c->output_idx] != transferred){
+		DEBUG_ASSERT(0 &&
+			"WS ERROR: write operation completed with"
+			" a transferred amount diferent from the"
+			" requested amount");
+		connection_start_closing(c);
+		return;
+	}
+
+	// chain next write if there is a swap output command,
+	// else signal that we are done writting
+	if(c->flags & CONN_SWAP_OUTPUT){
+		c->output_idx = 1 - c->output_idx;
+		c->flags &= ~CONN_SWAP_OUTPUT;
+		connection_async_write(c);
+	}else{
+		c->flags |= CONN_WAITING_OUTPUT_SWAP;
+	}
 }
 
-static void connection_destroy(struct connection *c){
-	if(c->s != INVALID_SOCKET)
-		closesocket(c->s);
-	mutex_destroy(&c->mtx);
-	connection_destroy_buffers(c);
-	slab_cache_free(l_connections, c);
-}
-
-bool connmgr_init(void){
-	uint32 slab_slots = config_geti("conn_slots_per_slab");
-	l_input_size = config_geti("conn_input_size");
-	l_output_size = config_geti("conn_output_size");
-
-	// a slab_cache_create would result in an abort so we don't
-	// need to check for the results here
-	l_connections = slab_cache_create(slab_slots, sizeof(struct connection));
-	l_input_buffers = slab_cache_create(2*slab_slots, l_input_size);
-	l_output_buffers = slab_cache_create(2*slab_slots, l_output_size);
-
-	// still lets return a boolean just in case
+static bool connection_start_async_read(struct connection *c, ULONG len,
+		void (*callback)(void*, DWORD, DWORD)){
+	WSABUF wsabuf;
+	DWORD error, flags;
+	int ret;
+	// prepare buffer
+	wsabuf.len = len;
+	wsabuf.buf = c->input_ptr;
+	// prepare overlapped
+	memset(&c->read_ov.ov, 0, sizeof(OVERLAPPED));
+	c->read_ov.s = c->s;
+	c->read_ov.complete = callback;
+	c->read_ov.data = c;
+	// dispatch to OS
+	flags = 0;
+	ret = WSARecv(c->s, &wsabuf, 1, NULL,
+		&flags, &c->read_ov.ov, NULL);
+	if(ret == SOCKET_ERROR){
+		error = WSAGetLastError();
+		if(error != WSA_IO_PENDING){
+			LOG_ERROR("connection_start_async_read:"
+				" WSARecv failed (error = %d)", error);
+			return false;
+		}
+	}
+	c->pending_work += 1;
 	return true;
 }
 
-void connmgr_shutdown(void){
-	slab_cache_destroy(l_output_buffers);
-	slab_cache_destroy(l_input_buffers);
-	slab_cache_destroy(l_connections);
+static bool connection_start_async_write(struct connection *c){
+	WSABUF wsabuf;
+	DWORD error;
+	int output_idx;
+	int ret;
+	// prepare buffer
+	output_idx = c->output_idx;
+	wsabuf.len = c->output_length[output_idx];
+	wsabuf.buf = c->output_buffer[output_idx];
+	// prepare overlapped
+	memset(&c->write_ov.ov, 0, sizeof(OVERLAPPED));
+	c->write_ov.s = c->s;
+	c->write_ov.complete = connection_on_write;
+	c->write_ov.data = c;
+	// dispatch to OS
+	ret = WSASend(c->s, &wsabuf, 1, NULL,
+		0, &c->write_ov.ov, NULL);
+	if(ret == SOCKET_ERROR){
+		error = WSAGetLastError();
+		if(error != WSA_IO_PENDING){
+			LOG_ERROR("connection_start_async_write:"
+				" WSASend failed (error = %d)", error);
+			return false;
+		}
+	}
+	c->pending_work += 1;
+	return true;
 }
 
+static void connection_async_read(struct connection *c, ULONG len,
+		void (*callback)(void*, DWORD, DWORD)){
+	DEBUG_ASSERT(c != NULL);
+	DEBUG_ASSERT(len > 0);
+	DEBUG_ASSERT(callback != NULL);
+	for(int i = 0; i < CONN_TRIES_BEFORE_CLOSING; i += 1){
+		if(connection_start_async_read(c, len, callback))
+			return;
+		DEBUG_LOG("connection_async_read: failed to"
+			" start read operation (try %d)", i);
+	}
+	DEBUG_LOG("connection_async_read: failed to start"
+		" read operation after %d tries...",
+		CONN_TRIES_BEFORE_CLOSING);
+	DEBUG_LOG("connection_async_read: closing connection...");
+	connection_start_closing(c);
+}
+
+static void connection_async_write(struct connection *c){
+	DEBUG_ASSERT(c != NULL);
+	for(int i = 0; i < CONN_TRIES_BEFORE_CLOSING; i += 1){
+		if(connection_start_async_write(c))
+			return;
+		DEBUG_LOG("connection_async_write: failed to"
+			" start write operation (try %d)", i);
+	}
+	DEBUG_LOG("connection_async_write: failed to start"
+		" write operation after %d tries...",
+		CONN_TRIES_BEFORE_CLOSING);
+	DEBUG_LOG("connection_async_write: closing connection...");
+	connection_start_closing(c);
+}
+
+static void __connection_close(struct connection *c){
+	// remove from connection list
+	if(c->prev) c->prev->next = c->next;
+	if(c->next) c->next->prev = c->prev;
+	// release connection
+	closesocket(c->s);
+	slab_cache_free(connections, c);
+}
+
+static void connection_start_closing(struct connection *c){
+	DEBUG_ASSERT(c != NULL);
+	if(c->pending_work == 0){
+		__connection_close(c);
+	}else{
+		c->flags |= CONN_CLOSING;
+		CancelIoEx((HANDLE)c->s, NULL);
+	}
+}
+
+static void connection_swap_output(struct connection *c){
+	if(c->flags & CONN_WAITING_OUTPUT_SWAP){
+		c->output_idx = 1 - c->output_idx;
+		c->flags &= ~CONN_WAITING_OUTPUT_SWAP;
+		connection_async_write(c);
+	}else{
+		c->flags |= CONN_SWAP_OUTPUT;
+	}
+}
+
+/*
+uint8 *connection_get_output_buffer(struct connection *c, size_t *capacity){
+	return NULL;
+}
+*/
+
+bool connmgr_init(void){
+	connections = slab_cache_create(
+		config_geti("conn_slots_per_slab"),
+		sizeof(struct connection));
+	if(!connections){
+		LOG_ERROR("connmgr_init: failed to create"
+			" connection slab cache");
+		return false;
+	}
+	return true;
+}
+
+void connmgr_start_shutdown(void){
+	struct connection *c;
+	for(c = conn_head; c != NULL; c = c->next)
+		connection_start_closing(c);
+}
+
+void connmgr_shutdown(void){
+	slab_cache_destroy(connections);
+}
 
 void connmgr_start_connection(SOCKET s,
 		struct sockaddr_in *addr,
 		struct service *svc){
-	struct connection *conn;
-	conn = connection_create(s, addr, svc);
-	ASSERT(svc->num_protocols > 0);
-	if(svc->protocols[0].sends_first){
-		conn->proto = &svc->protocols[0];
-		conn->proto_handle = conn->proto->create_handle(conn);
-		conn->proto->on_connect(conn, conn->proto_handle);
-	}
+	DEBUG_ASSERT(s != INVALID_SOCKET);
+	DEBUG_ASSERT(svc != NULL);
+	struct connection *c = slab_cache_alloc(connections);
+	DEBUG_ASSERT(c != NULL);
 
-	//@TODO: start reading
+	// init connection
+	c->s = s;
+	c->flags = 0;
+	c->pending_work = 0;
+	//c->rdwr_count = 0;
+	if(addr != NULL)
+		memcpy(&c->addr, addr, sizeof(struct sockaddr_in));
+	else
+		memset(&c->addr, 0, sizeof(struct sockaddr_in));
+	c->svc = svc;
+	c->proto = NULL;
+	c->proto_handle = NULL;
+	// init buffers
+	c->input_body_length = 0;
+	c->input_ptr = c->input_buffer;
+	c->output_idx = 0;
+	c->output_length[0] = 0;
+	c->output_length[1] = 0;
+	// insert into connection list
+	c->prev = NULL;
+	c->next = conn_head;
+	conn_head->prev = c;
+	conn_head = c;
+
+	// this only works for sends_first protocols, and will
+	// create the protocol and notify it of the connection
+	connection_on_connect(c);
+
+	// if the first reading atempt fails, abort connection
+	if(!connection_start_async_read(c, 2,
+			connection_on_read_length)){
+		// remove from connection list
+		conn_head = conn_head->next;
+		conn_head->prev = NULL;
+		// free connection
+		closesocket(s);
+		slab_cache_free(connections, c);
+	}
 }
 
-
-/*
-static void connection_close(struct connection *c){
-	ASSERT(c->s != INVALID_SOCKET);
-	// if the connection has no pending work, it's socket will be
-	// closed here, else it'll be closed when all pending work
-	// has been processed
-	if(c->pending_work == 0){
-		closesocket(c->s);
-		c->s = INVALID_SOCKET;
-	}else{
-		c->flags |= CONNECTION_CLOSING;
-		CancelIoEx((HANDLE)c->s, NULL);
-	}
-}
-*/
-#endif //0
+#endif //PLATFORM_WINDOWS
