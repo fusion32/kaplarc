@@ -49,9 +49,6 @@
     <ClCompile Include="..\src\shard\shard.c">
       <Filter>Source Files\shard</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server\protocol_test.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\server\server_epoll.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
@@ -137,6 +134,9 @@
       <Filter>Source Files\server</Filter>
     </ClCompile>
     <ClCompile Include="..\src\server\iocp_svcmgr.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\protocol_echo.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
   </ItemGroup>

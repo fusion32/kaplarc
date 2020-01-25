@@ -40,7 +40,7 @@
     <ClCompile Include="..\src\packed_data.c" />
     <ClCompile Include="..\src\scheduler.c" />
     <ClCompile Include="..\src\server\server_epoll.c" />
-    <ClCompile Include="..\src\server\protocol_test.c" />
+    <ClCompile Include="..\src\server\protocol_echo.c" />
     <ClCompile Include="..\src\server\server_rsa.c" />
     <ClCompile Include="..\src\shard\shard.c" />
     <ClCompile Include="..\src\slab_cache.c" />

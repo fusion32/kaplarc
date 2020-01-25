@@ -15,7 +15,7 @@ struct protocol{
 	 * needs to identify the first message to know if
 	 * it owns the connection or not
 	 */
-	bool (*identify)(struct packed_data *first);
+	bool (*identify)(uint8 *data, uint32 datalen);
 
 	/* protocols will interact with the server through
 	 * the use of these handles
@@ -27,9 +27,10 @@ struct protocol{
 	void (*on_connect)(struct connection *conn, void *handle);
 	void (*on_close)(struct connection *conn, void *handle);
 	void (*on_recv_message)(struct connection *conn,
-		void *handle, struct packed_data *msg);
+		void *handle, uint8 *data, uint32 datalen);
 	void (*on_recv_first_message)(struct connection *conn,
-		void *handle, struct packed_data *msg);
+		void *handle, uint8 *data, uint32 datalen);
+	void (*on_write)(struct connection *conn, void *handle);
 };
 
 #endif //PROTOCOL_H_

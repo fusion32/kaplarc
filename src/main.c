@@ -47,8 +47,9 @@ int main(int argc, char **argv){
 	// init game state
 
 	// init server
-	//svcmgr_add_protocol(&protocol_test, config_geti("sv_test_port"));
+	svcmgr_add_protocol(&protocol_echo, config_geti("sv_echo_port"));
 	init_subsystem("server", server_init, server_shutdown);
-	getchar();
+	LOG("server running...");
+	while(1) server_work();
 	return 0;
 }

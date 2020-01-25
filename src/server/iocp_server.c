@@ -146,7 +146,7 @@ int server_work(void){
 	work_done = 0;
 	while(1){
 		ret = GetQueuedCompletionStatusEx(ctx->iocp, evs,
-			MAX_EVENTS, &ev_count, 0, FALSE);
+			MAX_EVENTS, &ev_count, 200, FALSE);
 		if(!ret) break;
 		for(i = 0; i < ev_count; i += 1){
 			struct async_ov *ov =

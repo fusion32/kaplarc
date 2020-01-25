@@ -115,6 +115,9 @@ void scheduler_shutdown(void){
 	slab_destroy(slab);
 }
 
+//@TODO: returning a pointer to the node is a bad idea because if
+// we try to remove or reschedule the event after it went off we
+// could end up messing up with another entry
 struct schnode *scheduler_add(int64 delay, void (*func)(void*), void *arg){
 	struct schnode *node;
 	int64 time = delay + sys_tick_count();

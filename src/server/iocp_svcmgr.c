@@ -226,7 +226,7 @@ void svcmgr_shutdown(void){
 bool svcmgr_add_protocol(struct protocol *protocol, int port){
 	int i;
 	struct service *svc = NULL;
-	DEBUG_ASSERT(ctx->initialized && protocol != NULL);
+	DEBUG_ASSERT(!ctx->initialized && protocol != NULL);
 	for(i = 0; i < num_services; i += 1){
 		if(services[i].port == port){
 			svc = &services[i];
@@ -252,6 +252,24 @@ bool svcmgr_add_protocol(struct protocol *protocol, int port){
 			protocol, sizeof(struct protocol));
 	}
 	return true;
+}
+
+bool service_sends_first(struct service *svc){
+	DEBUG_ASSERT(svc->num_protocols > 0);
+	return svc->protocols[0].sends_first;
+}
+
+struct protocol *service_first_protocol(struct service *svc){
+	DEBUG_ASSERT(svc->num_protocols > 0);
+	return &svc->protocols[0];
+}
+struct protocol *service_select_protocol(struct service *svc,
+		uint8 *data, uint32 datalen){
+	for(int i = 0; i < svc->num_protocols; i += 1){
+		if(svc->protocols[i].identify(data, datalen))
+			return &svc->protocols[i];
+	}
+	return NULL;
 }
 
 #endif //PLATFORM_WINDOWS

@@ -33,14 +33,19 @@ void connmgr_shutdown(void);
 void connmgr_start_connection(SOCKET s,
 	struct sockaddr_in *addr,
 	struct service *svc);
-//void connmgr_swap_input(void);
-//void connmgr_swap_output(void);
+void connection_close(struct connection *c);
+void connection_abort(struct connection *c);
+bool connection_send(struct connection *c, uint8 *data, uint32 datalen);
 
 // iocp_service.c
 bool svcmgr_init(void);
 void svcmgr_start_shutdown(void);
 void svcmgr_shutdown(void);
 bool svcmgr_add_protocol(struct protocol *proto, int port);
+bool service_sends_first(struct service *svc);
+struct protocol *service_first_protocol(struct service *svc);
+struct protocol *service_select_protocol(struct service *svc,
+		uint8 *data, uint32 datalen);
 
 // iocp_server.c
 extern struct iocp_ctx server_ctx;
