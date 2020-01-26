@@ -115,10 +115,8 @@ void scheduler_shutdown(void){
 	slab_destroy(slab);
 }
 
-//@TODO: returning a pointer to the node is a bad idea because if
-// we try to remove or reschedule the event after it went off we
-// could end up messing up with another entry
-struct schnode *scheduler_add(int64 delay, void (*func)(void*), void *arg){
+bool scheduler_add(struct schref *outref, int64 delay,
+		void (*func)(void*), void *arg){
 	struct schnode *node;
 	int64 time = delay + sys_tick_count();
 	mutex_lock(&mtx);
@@ -127,20 +125,29 @@ struct schnode *scheduler_add(int64 delay, void (*func)(void*), void *arg){
 		LOG_ERROR("scheduler_add: reached maximum"
 			" capacity (%d)", MAX_NODES);
 		mutex_unlock(&mtx);
-		return NULL;
+		return false;
 	}
 	node->id = next_id++;
 	node->time = time;
 	node->func = func;
 	node->arg = arg;
 	ASSERT(SCH_INSERT(&tree, node));
+	if(outref != NULL){
+		outref->id = node->id;
+		outref->time = node->time;
+	}
 	mutex_unlock(&mtx);
-	return node;
+	return true;
 }
 
-bool scheduler_remove(struct schnode *node){
+bool scheduler_remove(struct schref *ref){
+	struct schnode *node;
+	struct schnode cmpnode = {
+		.id = ref->id,
+		.time = ref->time
+	};
 	mutex_lock(&mtx);
-	node = SCH_FIND(&tree, node);
+	node = SCH_FIND(&tree, &cmpnode);
 	if(node == NULL){
 		LOG_WARNING("scheduler_remove:"
 			" trying to remove invalid entry");
@@ -153,10 +160,15 @@ bool scheduler_remove(struct schnode *node){
 	return true;
 }
 
-bool scheduler_reschedule(struct schnode *node, int64 delay){
+bool scheduler_reschedule(struct schref *ref, int64 delay){
+	struct schnode *node;
+	struct schnode cmpnode = {
+		.id = ref->id,
+		.time = ref->time,
+	};
 	int64 time = delay + sys_tick_count();
 	mutex_lock(&mtx);
-	node = SCH_FIND(&tree, node);
+	node = SCH_FIND(&tree, &cmpnode);
 	if(node == NULL){
 		LOG_WARNING("scheduler_reschedule:"
 			" trying to reschedule invalid entry");
