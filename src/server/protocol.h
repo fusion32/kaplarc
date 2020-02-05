@@ -2,7 +2,6 @@
 #define SERVER_PROTOCOL_H_
 
 struct connection;
-struct packed_data;
 struct protocol{
 	/* name of the protocol: used for debugging */
 	char *name;

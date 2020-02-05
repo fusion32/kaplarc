@@ -4,11 +4,12 @@
 #include "def.h"
 
 struct packed_data{
-	size_t capacity;
-	size_t length;
+	size_t len;
 	size_t pos;
 	uint8 *base;
 };
+
+#define pd_update_length(pd) do{ (pd)->len = (pd)->pos; }while(0)
 
 // peek data
 uint8	pd_peek_byte(struct packed_data *pd);

@@ -4,10 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-void pd_init(struct packed_data *pd, size_t buflen, uint8 *buffer){
-	pd->length = 0;
+void pd_init(struct packed_data *pd, uint8 *buffer){
+	pd->len = 0;
 	pd->pos = 0;
-	pd->capacity = buflen;
 	pd->base = buffer;
 }
 
@@ -54,30 +53,19 @@ void pd_get_str(struct packed_data *pd, char *s, size_t maxlen){
 	pd->pos += len;
 }
 
-
-static INLINE void pd_update_length(struct packed_data *pd){
-	// the packed data starts at the beggining and
-	// end at the highest written position
-	if(pd->pos > pd->length)
-		pd->length = pd->pos;
-}
-
 void pd_add_byte(struct packed_data *pd, uint8 x){
 	encode_u8(pd->base + pd->pos, x);
 	pd->pos += 1;
-	pd_update_length(pd);
 }
 
 void pd_add_u16(struct packed_data *pd, uint16 x){
 	encode_u16_be(pd->base + pd->pos, x);
 	pd->pos += 2;
-	pd_update_length(pd);
 }
 
 void pd_add_u32(struct packed_data *pd, uint32 x){
 	encode_u32_be(pd->base + pd->pos, x);
 	pd->pos += 4;
-	pd_update_length(pd);
 }
 
 void pd_add_str(struct packed_data *pd, const char *s){
@@ -89,26 +77,22 @@ void pd_add_lstr(struct packed_data *pd, const char *s, size_t len){
 	if(len == 0) return;
 	memcpy(pd->base + pd->pos, s, len);
 	pd->pos += len;
-	pd_update_length(pd);
 }
 
 void pd_radd_byte(struct packed_data *pd, uint8 x){
 	if(pd->pos < 1) return;
-	pd_update_length(pd);
 	pd->pos -= 1;
 	encode_u8(pd->base + pd->pos, x);
 }
 
 void pd_radd_u16(struct packed_data *pd, uint16 x){
 	if(pd->pos < 2) return;
-	pd_update_length(pd);
 	pd->pos -= 2;
 	encode_u16_be(pd->base + pd->pos, x);
 }
 
 void pd_radd_u32(struct packed_data *pd, uint32 x){
 	if(pd->pos < 4) return;
-	pd_update_length(pd);
 	pd->pos -= 4;
 	encode_u32_be(pd->base + pd->pos, x);
 }
@@ -120,7 +104,6 @@ void pd_radd_str(struct packed_data *pd, const char *s){
 void pd_radd_lstr(struct packed_data *pd, const char *s, size_t len){
 	size_t total_len = len + 2;
 	if(pd->pos < total_len) return;
-	pd_update_length(pd);
 	pd->pos -= total_len;
 	encode_u16_be(pd->base + pd->pos, (uint16)len);
 	if(len > 0) memcpy(pd->base + pd->pos + 2, s, len);

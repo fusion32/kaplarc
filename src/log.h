@@ -3,11 +3,11 @@
 
 #include "def.h"
 
-bool	log_start(void);
-void	log_stop(void);
+bool log_start(void);
+void log_stop(void);
 
-void	log_add(const char *tag, const char *fmt, ...);
-void	log_add1(const char *tag, const char *fmt, va_list ap);
+void log_add(const char *tag, const char *fmt, ...);
+void log_add1(const char *tag, const char *fmt, va_list ap);
 
 #define LOG(...)		log_add("INFO", __VA_ARGS__)
 #define LOG_WARNING(...)	log_add("WARNING", __VA_ARGS__)

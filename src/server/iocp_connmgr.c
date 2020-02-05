@@ -10,7 +10,7 @@
 /* Connection Structure */
 // connection settings
 #define CONN_INPUT_SIZE 32768
-#define CONN_OUTPUT_SIZE 32768
+#define CONN_MAX_BODY_SIZE (CONN_INPUT_SIZE - 2)
 #define CONN_TRIES_BEFORE_CLOSING 5
 // connection flags
 #define CONN_CLOSING		0x01
@@ -109,6 +109,7 @@ void connection_dispatch_on_write(struct connection *c){
 
 static void connection_on_read_length(void *data, DWORD err, DWORD transferred){
 	struct connection *c = data;
+	uint16 body_length;
 
 	// decrease pending work
 	c->pending_work -= 1;
@@ -144,18 +145,19 @@ static void connection_on_read_length(void *data, DWORD err, DWORD transferred){
 	}
 
 	// decode body length and advance input pointer
-	c->input_body_length = decode_u16_be(c->input_ptr);
+	body_length = decode_u16_be(c->input_ptr);
 	c->input_ptr += 2;
 
-	// assert that c->input_body_length isn't zero
-	if(c->input_body_length == 0){
+	// assert that body_length isn't zero or
+	// overflows the input buffer
+	if(body_length > CONN_MAX_BODY_SIZE || body_length == 0){
 		connection_abort(c);
 		return;
 	}
 
 	// chain body read
-	connection_async_read(c, c->input_body_length,
-		connection_on_read_body);
+	c->input_body_length = body_length;
+	connection_async_read(c, body_length, connection_on_read_body);
 }
 
 static void connection_on_read_body(void *data, DWORD err, DWORD transferred){
@@ -345,6 +347,8 @@ static void connection_async_write(struct connection *c){
 }
 
 static void __connection_close(struct connection *c){
+	DEBUG_ASSERT(c != NULL);
+	DEBUG_ASSERT(c->s != INVALID_SOCKET);
 	// dispatch protocol close
 	connection_dispatch_on_close(c);
 	// remove from connection list
@@ -384,13 +388,12 @@ bool connmgr_init(void){
 	return true;
 }
 
-void connmgr_start_shutdown(void){
-	struct connection *c;
-	for(c = conn_head; c != NULL; c = c->next)
-		connection_abort(c);
-}
-
 void connmgr_shutdown(void){
+	struct connection *c;
+	// close all connections
+	for(c = conn_head; c != NULL; c = c->next)
+		__connection_close(c);
+	// release connections memory
 	slab_cache_destroy(connections);
 }
 

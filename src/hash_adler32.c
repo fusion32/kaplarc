@@ -1,4 +1,6 @@
-#include "adler32.h"
+// Adler32, by Mark Adler
+
+#include "hash.h"
 
 #define BASE 65521U
 #define NMAX 5552
@@ -9,8 +11,7 @@
 #define DO8(buf, i)	DO4(buf,i); DO4(buf,i+4);
 #define DO16(buf)	DO8(buf,0); DO8(buf,8);
 
-uint32 adler32(const uint8 *buf, size_t len)
-{
+uint32 adler32(const uint8 *buf, size_t len){
 	uint32 a = 1;
 	uint32 b = 0;
 	int k;

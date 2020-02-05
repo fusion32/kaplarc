@@ -3,16 +3,9 @@
 
 #include "def.h"
 
-struct schref{
-	int64 id;
-	int64 time;
-};
-
 bool scheduler_init(void);
 void scheduler_shutdown(void);
-bool scheduler_add(struct schref *outref, int64 delay,
-		void (*func)(void*), void *arg);
-bool scheduler_remove(struct schref *ref);
-bool scheduler_reschedule(struct schref *ref, int64 delay);
+bool scheduler_add(int64 delay, void (*func)(void*), void *arg);
+int64 scheduler_work(void);
 
 #endif //SCHEDULER_H_

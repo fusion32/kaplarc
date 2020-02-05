@@ -11,7 +11,7 @@
 
 int64 sys_tick_count(void){
 #ifdef PLATFORM_WINDOWS
-	return GetTickCount();
+	return GetTickCount64();
 #else
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);

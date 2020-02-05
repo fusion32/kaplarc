@@ -1,3 +1,4 @@
+#if 0
 #include "scheduler.h"
 #include "dispatcher.h"
 #include "log.h"
@@ -35,88 +36,26 @@ static struct rbtree tree;
 static struct slab *slab;
 
 // scheduler control
-static thread_t thr;
 static mutex_t mtx;
-static condvar_t cv;
 static int64 next_id = 1;
-static bool running = false;
-
-static void *scheduler(void *unused){
-	int64 delta;
-	void (*func)(void*);
-	void *arg;
-	struct schnode *next;
-
-	while(running){
-		mutex_lock(&mtx);
-		if(rbt_empty(&tree)){
-			condvar_wait(&cv, &mtx);
-			if(rbt_empty(&tree)){
-				mutex_unlock(&mtx);
-				continue;
-			}
-		}
-		next = SCH_MIN(&tree);
-		delta = next->time - sys_tick_count();
-		if(delta > 0){
-			condvar_timedwait(&cv, &mtx, delta);
-			next = SCH_MIN(&tree);
-			if(next == NULL || next->time > sys_tick_count()){
-				mutex_unlock(&mtx);
-				continue;
-			}
-		}
-		func = next->func;
-		arg = next->arg;
-		SCH_REMOVE(&tree, next);
-		slab_free(slab, next);
-		mutex_unlock(&mtx);
-
-		// dispatch task
-		dispatcher_add(func, arg);
-	}
-	return NULL;
-}
 
 bool scheduler_init(void){
-	// initialize tree
 	rbt_init(&tree, schnode_cmp);
-
-	// initialize node pool
 	slab = slab_create(MAX_NODES, sizeof(struct schnode));
 	if(slab == NULL){
 		LOG_ERROR("scheduler_init: failed to create node pool");
 		return false;
 	}
-
-	// spawn scheduler thread
 	mutex_init(&mtx);
-	condvar_init(&cv);
-	running = true;
-	if(thread_create(&thr, scheduler, NULL) != 0){
-		LOG_ERROR("scheduler_init:"
-			"failed to spawn scheduler thread");
-		return false;
-	}
 	return true;
 }
 
 void scheduler_shutdown(void){
-	// join scheduler thread
-	mutex_lock(&mtx);
-	running = false;
-	condvar_signal(&cv);
-	mutex_unlock(&mtx);
-	thread_join(&thr, NULL);
-
-	// destroy all
-	condvar_destroy(&cv);
 	mutex_destroy(&mtx);
 	slab_destroy(slab);
 }
 
-bool scheduler_add(struct schref *outref, int64 delay,
-		void (*func)(void*), void *arg){
+bool scheduler_add(int64 delay, void (*func)(void*), void *arg){
 	struct schnode *node;
 	int64 time = delay + sys_tick_count();
 	mutex_lock(&mtx);
@@ -132,52 +71,37 @@ bool scheduler_add(struct schref *outref, int64 delay,
 	node->func = func;
 	node->arg = arg;
 	ASSERT(SCH_INSERT(&tree, node));
-	if(outref != NULL){
-		outref->id = node->id;
-		outref->time = node->time;
-	}
 	mutex_unlock(&mtx);
 	return true;
 }
 
-bool scheduler_remove(struct schref *ref){
-	struct schnode *node;
-	struct schnode cmpnode = {
-		.id = ref->id,
-		.time = ref->time
-	};
-	mutex_lock(&mtx);
-	node = SCH_FIND(&tree, &cmpnode);
-	if(node == NULL){
-		LOG_WARNING("scheduler_remove:"
-			" trying to remove invalid entry");
+int64 scheduler_work(void){
+	void (*func)(void*);
+	void *arg;
+	struct schnode *next;
+	int64 now;
+	while(1){
+		now = sys_tick_count();
+		mutex_lock(&mtx);
+		next = SCH_MIN(&tree);
+		if(next == NULL){
+			mutex_unlock(&mtx);
+			return -1;
+		}
+		if(next->time > now){
+			mutex_unlock(&mtx);
+			return next->time;
+		}
+		func = next->func;
+		arg = next->arg;
+		SCH_REMOVE(&tree, next);
+		slab_free(slab, next);
 		mutex_unlock(&mtx);
-		return false;
+
+		// dispatch task
+		dispatcher_add(func, arg);
 	}
-	SCH_REMOVE(&tree, node);
-	slab_free(slab, node);
-	mutex_unlock(&mtx);
-	return true;
+	return -1;
 }
 
-bool scheduler_reschedule(struct schref *ref, int64 delay){
-	struct schnode *node;
-	struct schnode cmpnode = {
-		.id = ref->id,
-		.time = ref->time,
-	};
-	int64 time = delay + sys_tick_count();
-	mutex_lock(&mtx);
-	node = SCH_FIND(&tree, &cmpnode);
-	if(node == NULL){
-		LOG_WARNING("scheduler_reschedule:"
-			" trying to reschedule invalid entry");
-		return false;
-	}
-	SCH_REMOVE(&tree, node);
-	node->time = time;
-	SCH_INSERT(&tree, node);
-	if(node == SCH_MIN(&tree))
-		condvar_signal(&cv);
-	return true;
-}
+#endif

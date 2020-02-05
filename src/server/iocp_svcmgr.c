@@ -33,6 +33,10 @@ static void service_start_closing(struct service *svc);
 
 /* IMPL START */
 static SOCKET __create_iocp_socket(void){
+	// @TODO: using the socket as the COMPLETION_KEY when binding
+	// the socket to the iocp will make the COMPLETION_KEY from
+	// the OVERLAPPED_ENTRY be the socket and save us some (minimal)
+	// memory from adding it to every async_ov
 	DEBUG_ASSERT(ctx->iocp != NULL);
 	SOCKET s = WSASocket(AF_INET, SOCK_STREAM, 0,
 		NULL, 0, WSA_FLAG_OVERLAPPED);
@@ -178,8 +182,8 @@ static bool service_open(struct service *svc){
 }
 
 static void __service_close(struct service *svc){
+	DEBUG_ASSERT(svc != NULL);
 	DEBUG_ASSERT(svc->s != INVALID_SOCKET);
-	DEBUG_ASSERT(svc->pending_work == 0);
 	closesocket(svc->s);
 	svc->s = INVALID_SOCKET;
 	svc->closing = false;
@@ -212,15 +216,10 @@ fail:	for(i -= 1; i >= 0; i -= 1)
 	return false;
 }
 
-void svcmgr_start_shutdown(void){
+void svcmgr_shutdown(void){
 	// close services
 	for(int i = 0; i < num_services; i += 1)
-		service_start_closing(&services[i]);
-}
-
-void svcmgr_shutdown(void){
-	// all memory is static
-	return;
+		__service_close(&services[i]);
 }
 
 bool svcmgr_add_protocol(struct protocol *protocol, int port){

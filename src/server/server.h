@@ -12,7 +12,9 @@ extern struct protocol protocol_echo;
 // Server interface
 bool server_init(void);
 void server_shutdown(void);
-int server_work(void);
+bool server_add_task(void (*func)(void*), void *arg);
+bool server_add_tasks(struct task *arr, uint32 num_arr);
+void server_flush_tasks(void);
 bool svcmgr_add_protocol(struct protocol *protocol, int port);
 
 // Connection interface

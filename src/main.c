@@ -1,23 +1,18 @@
 #include "config.h"
 #include "def.h"
-#include "dispatcher.h"
 #include "log.h"
-#include "scheduler.h"
-#include "system.h"
-
-#include "db/db.h"
+#include "game/game.h"
 #include "server/server.h"
-#include "server/server_rsa.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-static
-void init_subsystem(const char *name, bool(*init)(void), void(*shutdown)(void)){
-	LOG("initializing `%s` subsystem", name);
+static void init_system(const char *name,
+		bool(*init)(void), void(*shutdown)(void)){
+	LOG("initializing `%s`...", name);
 	if(!init()){
-		// error messages should be
-		// provided by the interface
+		// error messages are provided by
+		// `init` in case of failure
 		getchar(); exit(-1);
 	}
 	atexit(shutdown);
@@ -25,31 +20,22 @@ void init_subsystem(const char *name, bool(*init)(void), void(*shutdown)(void)){
 
 #ifdef BUILD_TEST
 int kaplar_main(int argc, char **argv){
-#else
+#else // BUILD_TEST
 int main(int argc, char **argv){
 #endif // BUILD_TEST
 
-	// parse command line and load config
 	config_cmdline(argc, argv);
 	if(!config_load())
 		return -1;
 
-	// initialize core interfaces
-	//init_subsystem("dispatcher", dispatcher_init, dispatcher_shutdown);
-	//init_subsystem("scheduler", scheduler_init, scheduler_shutdown);
-	//init_subsystem("database", database_init, database_shutdown);
-
-	// initialize server interfaces
-	//init_subsystem("rsa", server_rsa_init, server_rsa_shutdown);
-	
-
-	// load server data
-	// init game state
-
-	// init server
 	svcmgr_add_protocol(&protocol_echo, config_geti("sv_echo_port"));
-	init_subsystem("server", server_init, server_shutdown);
-	LOG("server running...");
-	while(1) server_work();
+	//svcmgr_add_protocol(&protocol_info, config_geti("sv_info_port"));
+	//svcmgr_add_protocol(&protocol_login, config_geti("sv_login_port"));
+	//svcmgr_add_protocol(&protocol_game, config_geti("sv_game_port"));
+
+	init_system("server", server_init, server_shutdown);
+	init_system("game", game_init, game_shutdown);
+
+	game_run();
 	return 0;
 }

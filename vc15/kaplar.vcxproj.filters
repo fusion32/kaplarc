@@ -49,9 +49,6 @@
     <ClCompile Include="..\src\shard\shard.c">
       <Filter>Source Files\shard</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server\server_epoll.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\server\server_rsa.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
@@ -63,9 +60,6 @@
     </ClCompile>
     <ClCompile Include="..\src\db\pgsql.c">
       <Filter>Source Files\db</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\crypto\adler32.c">
-      <Filter>Source Files\crypto</Filter>
     </ClCompile>
     <ClCompile Include="..\src\crypto\base64.c">
       <Filter>Source Files\crypto</Filter>
@@ -139,6 +133,21 @@
     <ClCompile Include="..\src\server\protocol_echo.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\server\epoll_server.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hash_murmur2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hash_adler32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\game.c">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\server.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\def.h">
@@ -171,13 +180,7 @@
     <ClInclude Include="..\src\crypto\base64.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\crypto\adler32.h">
-      <Filter>Source Files\crypto</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\scheduler.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\dispatcher.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\config.h">
@@ -227,6 +230,12 @@
     </ClInclude>
     <ClInclude Include="..\src\server\iocp.h">
       <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\hash.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tasks.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

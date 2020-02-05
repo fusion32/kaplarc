@@ -89,7 +89,7 @@ static void server_cleanup_winsock(void){
 	WSACleanup();
 }
 
-bool server_init(void){
+bool internal_server_init(void){
 	if(ctx->initialized)
 		return true;
 	if(!server_init_winsock())
@@ -103,54 +103,45 @@ bool server_init(void){
 	ctx->initialized = true;
 	return true;
 
-fail3:	connmgr_start_shutdown();
-
-	// connmgr and svcmgr may have left pending work which
-	// will properly release resources
-	while(server_work() != 0)
-		continue;
-	svcmgr_shutdown();
-	connmgr_shutdown();
-
+	// the server won't get to run if this fails
+	// so we can safely release everything without
+	// running `internal_server_work`
+fail3:	connmgr_shutdown();
 fail2:	server_close_iocp();
 fail1:	server_cleanup_winsock();
 fail0:	return false;
 }
 
-void server_shutdown(void){
+void internal_server_shutdown(void){
 	if(!ctx->initialized) return;
-	svcmgr_start_shutdown();
-	connmgr_start_shutdown();
-
-	// connmgr and svcmgr may have left pending work which
-	// will properly release resources
-	while(server_work() != 0)
-		continue;
+	// server shouldn't be running when this is called
+	// so it's safe to release everything
 	svcmgr_shutdown();
 	connmgr_shutdown();
-
 	server_close_iocp();
 	server_cleanup_winsock();
 }
 
 #define MAX_EVENTS 256
-int server_work(void){
+void internal_server_work(void){
 	OVERLAPPED_ENTRY evs[MAX_EVENTS];
-	DWORD error, transferred, flags;
-	ULONG ev_count, i;
-	int work_done;
+	struct async_ov *ov;
 	void (*complete)(void*, DWORD, DWORD);
 	void *data;
+	DWORD error, transferred, flags;
+	ULONG ev_count, i;
 	BOOL ret;
-
-	work_done = 0;
-	while(1){
+	bool interrupt = false;
+	while(!interrupt){
 		ret = GetQueuedCompletionStatusEx(ctx->iocp, evs,
-			MAX_EVENTS, &ev_count, 200, FALSE);
+			MAX_EVENTS, &ev_count, INFINITE, FALSE);
 		if(!ret) break;
 		for(i = 0; i < ev_count; i += 1){
-			struct async_ov *ov =
-				(struct async_ov*)evs[i].lpOverlapped;
+			ov = (struct async_ov*)evs[i].lpOverlapped;
+			if(ov == NULL){
+				interrupt = true;
+				continue;
+			}
 			ret = WSAGetOverlappedResult(ov->s, &ov->ov,
 				&transferred, FALSE, &flags);
 			if(ret)	error = NOERROR;
@@ -159,9 +150,11 @@ int server_work(void){
 			data = ov->data;
 			complete(data, error, transferred);
 		}
-		work_done += ev_count;
 	}
-	return work_done;
+}
+
+void internal_server_interrupt(void){
+	PostQueuedCompletionStatus(ctx->iocp, 0, 0, NULL);
 }
 
 #endif //PLATFORM_WINDOWS

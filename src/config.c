@@ -1,6 +1,7 @@
 #include "config.h"
 #include "def.h"
 #include "log.h"
+#include "hash.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -18,28 +19,34 @@ static struct {
 	char value[MAX_VALUE_LENGTH];
 } table[] = {
 	// command line
-	{"config",		"config.lua"},
+	{"config", "config.lua"},
 
 	// server
-	{"sv_echo_port",	"7777"},
-	{"sv_login_port",	"7171"},
-	{"sv_info_port",	"7171"},
-	{"sv_game_port",	"7172"},
-
-	// connection
+	{"sv_echo_port", "7777"},
+	{"sv_login_port", "7171"},
+	{"sv_info_port", "7171"},
+	{"sv_game_port", "7172"},
 	{"conn_slots_per_slab", "50"},
 
+	{"tick_interval", "50"},
+	
+
 	// protocol game
-	{"game_input_swap_rate", "30"},
-	{"game_output_swap_rate", "30"},
+	//{"game_input_swap_rate", "30"},
+	//{"game_output_swap_rate", "30"},
 
 	// pgsql
-	{"pgsql_host",		"localhost"},
-	{"pgsql_port",		"5432"},
-	{"pgsql_dbname",	"kaplar"},
-	{"pgsql_user",		"admin"},
-	{"pgsql_pwd",		"admin"},
+	{"pgsql_host", "localhost"},
+	{"pgsql_port", "5432"},
+	{"pgsql_dbname", "kaplar"},
+	{"pgsql_user", "admin"},
+	{"pgsql_pwd", "admin"},
 };
+
+//@TODO: turn this table into a hashtable
+static uint32 __str_hash(const char *str, size_t len){
+	return murmur2_32((const uint8*)str, len, 0xC2EDF02D);
+}
 
 void config_cmdline(int argc, char **argv){
 	int i, j;

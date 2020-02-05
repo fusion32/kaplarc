@@ -19,9 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\game\game.c" />
+    <ClCompile Include="..\src\hash_adler32.c" />
+    <ClCompile Include="..\src\hash_murmur2.c" />
     <ClCompile Include="..\src\rbtree.c" />
     <ClCompile Include="..\src\config.c" />
-    <ClCompile Include="..\src\crypto\adler32.c" />
     <ClCompile Include="..\src\crypto\random.c" />
     <ClCompile Include="..\src\crypto\base64.c" />
     <ClCompile Include="..\src\crypto\bcrypt.c" />
@@ -36,10 +38,11 @@
     <ClCompile Include="..\src\server\iocp_connmgr.c" />
     <ClCompile Include="..\src\server\iocp_server.c" />
     <ClCompile Include="..\src\server\iocp_svcmgr.c" />
+    <ClCompile Include="..\src\server\server.c" />
     <ClCompile Include="..\src\slab.c" />
     <ClCompile Include="..\src\packed_data.c" />
     <ClCompile Include="..\src\scheduler.c" />
-    <ClCompile Include="..\src\server\server_epoll.c" />
+    <ClCompile Include="..\src\server\epoll_server.c" />
     <ClCompile Include="..\src\server\protocol_echo.c" />
     <ClCompile Include="..\src\server\server_rsa.c" />
     <ClCompile Include="..\src\shard\shard.c" />
@@ -61,9 +64,9 @@
   <ItemGroup>
     <ClInclude Include="..\src\db\local.h" />
     <ClInclude Include="..\src\game\game.h" />
+    <ClInclude Include="..\src\hash.h" />
     <ClInclude Include="..\src\rbtree.h" />
     <ClInclude Include="..\src\config.h" />
-    <ClInclude Include="..\src\crypto\adler32.h" />
     <ClInclude Include="..\src\crypto\random.h" />
     <ClInclude Include="..\src\crypto\base64.h" />
     <ClInclude Include="..\src\crypto\bcrypt.h" />
@@ -85,7 +88,7 @@
     <ClInclude Include="..\src\slab_cache.h" />
     <ClInclude Include="..\src\string.h" />
     <ClInclude Include="..\src\system.h" />
-    <ClInclude Include="..\src\dispatcher.h" />
+    <ClInclude Include="..\src\tasks.h" />
     <ClInclude Include="..\src\thread.h" />
     <ClInclude Include="..\src\buffer_util.h" />
   </ItemGroup>

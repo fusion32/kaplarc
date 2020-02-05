@@ -28,7 +28,6 @@ struct iocp_ctx{
 
 // iocp_connmgr.c
 bool connmgr_init(void);
-void connmgr_start_shutdown(void);
 void connmgr_shutdown(void);
 void connmgr_start_connection(SOCKET s,
 	struct sockaddr_in *addr,
@@ -39,7 +38,6 @@ bool connection_send(struct connection *c, uint8 *data, uint32 datalen);
 
 // iocp_service.c
 bool svcmgr_init(void);
-void svcmgr_start_shutdown(void);
 void svcmgr_shutdown(void);
 bool svcmgr_add_protocol(struct protocol *proto, int port);
 bool service_sends_first(struct service *svc);
@@ -49,9 +47,10 @@ struct protocol *service_select_protocol(struct service *svc,
 
 // iocp_server.c
 extern struct iocp_ctx server_ctx;
-bool server_init(void);
-void server_shutdown(void);
-int server_work(void);
+bool internal_server_init(void);
+void internal_server_shutdown(void);
+void internal_server_work(void);
+void internal_server_interrupt(void);
 
 #endif //PLATFORM_WINDOWS
 #endif //SERVER_IOCP_H_

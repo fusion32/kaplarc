@@ -6,7 +6,6 @@
 void config_cmdline(int argc, char **argv);
 bool config_load(void);
 bool config_load_from_path(const char *path);
-bool config_save(const char *path, bool overwrite);
 const char *config_get(const char *name);
 bool config_getb(const char *name);
 int config_geti(const char *name);
