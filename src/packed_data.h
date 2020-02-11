@@ -1,6 +1,6 @@
 #ifndef PACKED_DATA_H_
 #define PACKED_DATA_H_
-#include "../def.h"
+#include "def.h"
 
 struct data_reader{
 	uint8 *ptr;

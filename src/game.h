@@ -1,7 +1,7 @@
 #ifndef GAME_GAME_H_
 #define GAME_GAME_H_
 
-#include "../def.h"
+#include "def.h"
 
 // tibia protocols
 extern struct protocol protocol_login;

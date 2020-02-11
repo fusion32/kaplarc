@@ -16,7 +16,7 @@
  */
 
 
-#include "server.h"
+//#include "server.h"
 #if 0
 //#ifdef PLATFORM_LINUX
 #include "../log.h"

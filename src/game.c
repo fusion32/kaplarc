@@ -1,14 +1,12 @@
 #include "game.h"
-#include "game_allocator.h"
 #include "tibia_rsa.h"
-#include "../server/server.h"
+#include "server.h"
 
 static struct {
 	const char *name;
 	bool (*init)(void);
 	void (*shutdown)(void);
 } subsystems[] = {
-	{"game_allocator", game_allocator_init, game_allocator_shutdown},
 	{"tibia_rsa", tibia_rsa_init, tibia_rsa_shutdown},
 };
 

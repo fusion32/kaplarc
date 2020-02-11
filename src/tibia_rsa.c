@@ -1,5 +1,5 @@
-#include "../crypto/rsa.h"
-#include "../log.h"
+#include "crypto/rsa.h"
+#include "log.h"
 #include "tibia_rsa.h"
 
 static const char p[] =

@@ -18,7 +18,7 @@ int main(int argc, char **argv){
 
 	//RUN_TEST(rbtree);
 	RUN_TEST(slab);
-	RUN_TEST(slab_cache);
+	RUN_TEST(mem_cache);
 	LOG("all tests complete");
 	getchar();
 	return 0;

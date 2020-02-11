@@ -1,10 +1,12 @@
 #include "server.h"
-#include "../buffer_util.h"
-#include "../system.h"
+#include "buffer_util.h"
+#include "mem.h"
+#include "system.h"
 #include <string.h>
 
 // protocol handle
-#define ECHO_BUFFER_SIZE 1024
+#define ECHO_HANDLE_CACHE CACHE1K
+#define ECHO_BUFFER_SIZE 1000
 struct echo_handle{
 	bool output_ready;
 	uint8 output_buffer[ECHO_BUFFER_SIZE];
@@ -12,8 +14,6 @@ struct echo_handle{
 
 // protocol callbacks
 static bool identify(uint8 *data, uint32 datalen);
-static bool init(void);
-static void shutdown(void);
 static bool create_handle(struct connection *c, void **handle);
 static void destroy_handle(struct connection *c, void *handle);
 static void on_close(struct connection *c, void *handle);
@@ -34,8 +34,6 @@ struct protocol protocol_echo = {
 	.sends_first =			false,
 	.identify =			identify,
 
-	.init =				init,
-	.shutdown =			shutdown,
 	.create_handle =		create_handle,
 	.destroy_handle =		destroy_handle,
 	.on_close =			on_close,
@@ -52,23 +50,15 @@ static bool identify(uint8 *data, uint32 datalen){
 		data[2] == 'H' && data[3] == 'O';
 }
 
-static bool init(void){
-	return true;
-}
-
-static void shutdown(void){
-}
-
 static bool create_handle(struct connection *c, void **handle){
-	struct echo_handle *h =
-		sys_malloc(sizeof(struct echo_handle));
+	struct echo_handle *h = mem_alloc(ECHO_HANDLE_CACHE);
 	h->output_ready = true;
 	*handle = h;
 	return true;
 }
 
 static void destroy_handle(struct connection *c, void *handle){
-	sys_free(handle);
+	mem_free(ECHO_HANDLE_CACHE, handle);
 }
 
 static void on_close(struct connection *c, void *handle){

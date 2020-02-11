@@ -1,5 +1,5 @@
 #include "packed_data.h"
-#include "../buffer_util.h"
+#include "buffer_util.h"
 #include <stdlib.h>
 #include <string.h>
 

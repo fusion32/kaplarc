@@ -1,20 +1,19 @@
-#include "../buffer_util.h"
-#include "../config.h"
-#include "../hash.h"
-#include "../slab_cache.h"
-#include "../server/server.h"
+#include "protocol.h"
+#include "buffer_util.h"
+#include "config.h"
+#include "hash.h"
+#include "mem.h"
+#include "server.h"
 #include "packed_data.h"
 #include "tibia_rsa.h"
+#include "crypto/xtea.h"
 
-/* OUTPUT BUFFERS */
-#define BUFFER_MAX_SIZE 256
-#define BUFFERS_PER_SLAB 32
-static struct slab_cache *buffers;
+/* OUTPUT BUFFER */
+#define LOGIN_BUFFER_CACHE CACHE256
+#define LOGIN_BUFFER_SIZE 256
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
-static bool init(void);
-static void shutdown(void);
 static bool create_handle(struct connection *c, void **handle);
 static void destroy_handle(struct connection *c, void *handle);
 static void on_close(struct connection *c, void *handle);
@@ -33,8 +32,6 @@ struct protocol protocol_login = {
 	.sends_first = false,
 	.identify = identify,
 
-	.init = init,
-	.shutdown = shutdown,
 	.create_handle = create_handle,
 	.destroy_handle = destroy_handle,
 	.on_close = on_close,
@@ -59,23 +56,13 @@ bool identify(uint8 *data, uint32 datalen){
 	return datalen > 0 && data[0] == 0x01;
 }
 
-static bool init(void){
-	buffers = slab_cache_create(
-		BUFFERS_PER_SLAB, BUFFER_MAX_SIZE);
-	return buffers != NULL;
-}
-
-static void shutdown(void){
-	slab_cache_destroy(buffers);
-}
-
 static bool create_handle(struct connection *c, void **handle){
-	*handle = slab_cache_alloc(buffers);
+	*handle = mem_alloc(LOGIN_BUFFER_CACHE);
 	return *handle != NULL;
 }
 
 static void destroy_handle(struct connection *c, void *handle){
-	slab_cache_free(buffers, handle);
+	mem_free(LOGIN_BUFFER_CACHE, handle);
 }
 
 static void on_close(struct connection *c, void *handle){
@@ -97,22 +84,16 @@ on_recv_message(struct connection *c, void *handle,
 	return PROTO_OK;
 }
 
-#include <stdio.h>
-static void data_dump(uint8 *data, size_t datalen){
-	DEBUG_LOG("data_dump:");
-	for(uint32 i = 0; i < datalen; i += 1){
-		if((i & 0x0F) == 0)
-			printf("\n\t%02X", data[i]);
-		else
-			printf(" %02X", data[i]);
-	}
-	printf("\n");
-}
 static protocol_status_t
 on_recv_first_message(struct connection *c, void *handle,
 		uint8 *data, uint32 datalen){
 	size_t decoded_len;
 	struct data_reader reader;
+	struct data_writer writer;
+	uint16 version;
+	uint32 xtea[4];
+	char accname[32];
+	char password[32];
 
 	// 4 bytes -> checksum
 	// 1 byte -> protocol id
@@ -127,19 +108,38 @@ on_recv_first_message(struct connection *c, void *handle,
 	}
 
 	data_reader_init(&reader, data, datalen);
-	data_read_u32(&reader); // skip checksum
-	data_read_byte(&reader); // skip protocol id
-	data_read_u16(&reader); // client os
-	data_read_u16(&reader); // client version
-	// skip 12 unknown bytes
-	reader.ptr += 12;
+	reader.ptr += 7; // skip checksum, protocol id, and client os
+	version = data_read_u16(&reader);
+	reader.ptr += 12; // skip 12 unknown bytes
 
 	// rsa decode
 	if(!tibia_rsa_decode(reader.ptr,
 	  reader.end - reader.ptr, &decoded_len))
 		return PROTO_ABORT;
 	reader.end = reader.ptr + decoded_len;
-	data_dump(reader.ptr, decoded_len);
+
+	// xtea key
+	xtea[0] = data_read_u32(&reader);
+	xtea[1] = data_read_u32(&reader);
+	xtea[2] = data_read_u32(&reader);
+	xtea[3] = data_read_u32(&reader);
+
+	// account credentials
+	data_read_str(&reader, accname, 32);
+	data_read_str(&reader, password, 32);
+
+	DEBUG_LOG("xtea = {%08X, %08X, %08X, %08X}",
+		xtea[0], xtea[1], xtea[2], xtea[3]);
+	DEBUG_LOG("account name = %s", accname);
+	DEBUG_LOG("account password = %s", password);
+
+	// send login
+	//data_writer_init(&writer, handle, LOGIN_BUFFER_SIZE);
+	//data_write_str(&writer, "hello");
+	//connection_send(c, writer.base, writer.end - writer.base);
+
+
+
 	return PROTO_CLOSE;
 }
 

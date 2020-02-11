@@ -1,7 +1,7 @@
-#ifndef SERVER_SERVER_H_
-#define SERVER_SERVER_H_
+#ifndef SERVER_H_
+#define SERVER_H_
 
-#include "../def.h"
+#include "def.h"
 #include "protocol.h"
 
 struct connection;

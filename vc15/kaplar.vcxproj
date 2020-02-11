@@ -19,15 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\game\dispatcher.c" />
-    <ClCompile Include="..\src\game\game.c" />
     <ClCompile Include="..\src\adler32.c" />
-    <ClCompile Include="..\src\game\game_allocator.c" />
-    <ClCompile Include="..\src\game\packed_data.c" />
-    <ClCompile Include="..\src\game\tibia_rsa.c" />
-    <ClCompile Include="..\src\game\protocol_game.c" />
-    <ClCompile Include="..\src\game\scheduler.c" />
+    <ClCompile Include="..\src\dispatcher.c" />
+    <ClCompile Include="..\src\game.c" />
+    <ClCompile Include="..\src\mem.c" />
     <ClCompile Include="..\src\murmur2.c" />
+    <ClCompile Include="..\src\net\epoll_server.c" />
+    <ClCompile Include="..\src\net\iocp_connmgr.c" />
+    <ClCompile Include="..\src\net\iocp_server.c" />
+    <ClCompile Include="..\src\net\iocp_svcmgr.c" />
+    <ClCompile Include="..\src\otdata.c" />
+    <ClCompile Include="..\src\packed_data.c" />
+    <ClCompile Include="..\src\protocol_echo.c" />
+    <ClCompile Include="..\src\protocol_game.c" />
+    <ClCompile Include="..\src\protocol_login.c" />
     <ClCompile Include="..\src\rbtree.c" />
     <ClCompile Include="..\src\config.c" />
     <ClCompile Include="..\src\crypto\random.c" />
@@ -38,18 +43,12 @@
     <ClCompile Include="..\src\crypto\xtea.c" />
     <ClCompile Include="..\src\db\local.c" />
     <ClCompile Include="..\src\db\pgsql.c" />
-    <ClCompile Include="..\src\game\protocol_login.c" />
     <ClCompile Include="..\src\log.c" />
     <ClCompile Include="..\src\main.c" />
-    <ClCompile Include="..\src\server\iocp_connmgr.c" />
-    <ClCompile Include="..\src\server\iocp_server.c" />
-    <ClCompile Include="..\src\server\iocp_svcmgr.c" />
-    <ClCompile Include="..\src\server\server.c" />
+    <ClCompile Include="..\src\scheduler.c" />
+    <ClCompile Include="..\src\server.c" />
     <ClCompile Include="..\src\slab.c" />
-    <ClCompile Include="..\src\server\epoll_server.c" />
-    <ClCompile Include="..\src\server\protocol_echo.c" />
-    <ClCompile Include="..\src\shard\shard.c" />
-    <ClCompile Include="..\src\slab_cache.c" />
+    <ClCompile Include="..\src\mem_cache.c" />
     <ClCompile Include="..\src\string.c" />
     <ClCompile Include="..\src\system.c" />
     <ClCompile Include="..\src\test\base64_test.c" />
@@ -58,19 +57,21 @@
     <ClCompile Include="..\src\test\main_test.c" />
     <ClCompile Include="..\src\test\rbtree_test.c" />
     <ClCompile Include="..\src\test\rsa_test.c" />
-    <ClCompile Include="..\src\test\slab_cache_test.c" />
+    <ClCompile Include="..\src\test\mem_cache_test.c" />
     <ClCompile Include="..\src\test\slab_test.c" />
     <ClCompile Include="..\src\test\xtea_test.c" />
     <ClCompile Include="..\src\thread.c" />
+    <ClCompile Include="..\src\tibia_rsa.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\account.h" />
     <ClInclude Include="..\src\db\local.h" />
-    <ClInclude Include="..\src\game\game.h" />
-    <ClInclude Include="..\src\game\game_allocator.h" />
-    <ClInclude Include="..\src\game\packed_data.h" />
-    <ClInclude Include="..\src\game\tibia_rsa.h" />
-    <ClInclude Include="..\src\game\scheduler.h" />
+    <ClInclude Include="..\src\game.h" />
     <ClInclude Include="..\src\hash.h" />
+    <ClInclude Include="..\src\mem.h" />
+    <ClInclude Include="..\src\net\iocp.h" />
+    <ClInclude Include="..\src\packed_data.h" />
+    <ClInclude Include="..\src\protocol.h" />
     <ClInclude Include="..\src\rbtree.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\crypto\random.h" />
@@ -81,22 +82,19 @@
     <ClInclude Include="..\src\crypto\xtea.h" />
     <ClInclude Include="..\src\db\db.h" />
     <ClInclude Include="..\src\endian.h" />
-    <ClInclude Include="..\src\server\iocp.h" />
+    <ClInclude Include="..\src\scheduler.h" />
+    <ClInclude Include="..\src\server.h" />
     <ClInclude Include="..\src\slab.h" />
-    <ClInclude Include="..\src\server\server.h" />
-    <ClInclude Include="..\src\server\protocol.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\log.h" />
     <ClInclude Include="..\src\ringbuffer.h" />
-    <ClInclude Include="..\src\slab_cache.h" />
+    <ClInclude Include="..\src\mem_cache.h" />
     <ClInclude Include="..\src\string.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\tasks.h" />
     <ClInclude Include="..\src\thread.h" />
     <ClInclude Include="..\src\buffer_util.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\src\game\otdata.c" />
+    <ClInclude Include="..\src\tibia_rsa.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

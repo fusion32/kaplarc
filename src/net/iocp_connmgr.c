@@ -4,8 +4,10 @@
 
 #include "../buffer_util.h"
 #include "../config.h"
-#include "../slab_cache.h"
+#include "../mem_cache.h"
 #include "../thread.h"
+
+// @TODO: perhaps use the global allocator instead of a dedicated mem_cache
 
 /* Connection Structure */
 // connection settings
@@ -40,7 +42,7 @@ struct connection{
 
 /* Connection Manager Data */
 static struct connection *conn_head = NULL;
-static struct slab_cache *connections = NULL;
+static struct mem_cache *connections = NULL;
 
 /* STATIC FWD DECL */
 static void connection_dispatch_on_close(struct connection *c);
@@ -371,7 +373,7 @@ static void __connection_close(struct connection *c){
 	if(c->next) c->next->prev = c->prev;
 	// release connection
 	closesocket(c->s);
-	slab_cache_free(connections, c);
+	mem_cache_free(connections, c);
 }
 
 static void connection_start_closing(struct connection *c, bool abort){
@@ -392,12 +394,12 @@ static void connection_start_closing(struct connection *c, bool abort){
 }
 
 bool connmgr_init(void){
-	connections = slab_cache_create(
+	connections = mem_cache_create(
 		config_geti("conn_slots_per_slab"),
 		sizeof(struct connection));
 	if(!connections){
 		LOG_ERROR("connmgr_init: failed to create"
-			" connection slab cache");
+			" connection mem cache");
 		return false;
 	}
 	return true;
@@ -409,7 +411,7 @@ void connmgr_shutdown(void){
 	for(c = conn_head; c != NULL; c = c->next)
 		__connection_close(c);
 	// release connections memory
-	slab_cache_destroy(connections);
+	mem_cache_destroy(connections);
 }
 
 void connmgr_start_connection(SOCKET s,
@@ -417,7 +419,7 @@ void connmgr_start_connection(SOCKET s,
 		struct service *svc){
 	DEBUG_ASSERT(s != INVALID_SOCKET);
 	DEBUG_ASSERT(svc != NULL);
-	struct connection *c = slab_cache_alloc(connections);
+	struct connection *c = mem_cache_alloc(connections);
 	DEBUG_ASSERT(c != NULL);
 
 	// init connection
@@ -457,15 +459,8 @@ void connmgr_start_connection(SOCKET s,
 	}
 
 	// if the first reading atempt fails, abort connection
-	if(!connection_start_async_read(c, 2,
-			connection_on_read_length)){
-		// remove from connection list
-		conn_head = conn_head->next;
-		conn_head->prev = NULL;
-		// free connection
-		closesocket(s);
-		slab_cache_free(connections, c);
-	}
+	if(!connection_start_async_read(c, 2, connection_on_read_length))
+		connection_abort(c);
 }
 
 INLINE

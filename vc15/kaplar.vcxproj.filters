@@ -5,23 +5,17 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Source Files\server">
-      <UniqueIdentifier>{44f0fa6b-c11c-42c0-943a-0e0d21658b22}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\game">
-      <UniqueIdentifier>{ea951307-f243-42ef-9353-06640c559455}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\crypto">
       <UniqueIdentifier>{b87c92df-e49e-4b64-87cb-092b57db411b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\db">
       <UniqueIdentifier>{2561bc72-d272-4110-8a79-61c43c558339}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\shard">
-      <UniqueIdentifier>{e04ad086-2644-466f-a082-48297cde4de0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\test">
       <UniqueIdentifier>{066b9e28-a364-4181-b039-d38afc89633b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\net">
+      <UniqueIdentifier>{44f0fa6b-c11c-42c0-943a-0e0d21658b22}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -39,12 +33,6 @@
     </ClCompile>
     <ClCompile Include="..\src\string.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\shard\shard.c">
-      <Filter>Source Files\shard</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\game\protocol_login.c">
-      <Filter>Source Files\game</Filter>
     </ClCompile>
     <ClCompile Include="..\src\db\local.c">
       <Filter>Source Files\db</Filter>
@@ -97,38 +85,11 @@
     <ClCompile Include="..\src\test\main_test.c">
       <Filter>Source Files\test</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\slab_cache.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\slab.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\test\slab_cache_test.c">
-      <Filter>Source Files\test</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\test\slab_test.c">
       <Filter>Source Files\test</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\iocp_connmgr.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\iocp_server.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\iocp_svcmgr.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\protocol_echo.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\epoll_server.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\game\game.c">
-      <Filter>Source Files\game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\server.c">
-      <Filter>Source Files\server</Filter>
     </ClCompile>
     <ClCompile Include="..\src\adler32.c">
       <Filter>Source Files</Filter>
@@ -136,23 +97,56 @@
     <ClCompile Include="..\src\murmur2.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game\dispatcher.c">
-      <Filter>Source Files\game</Filter>
+    <ClCompile Include="..\src\protocol_echo.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game\scheduler.c">
-      <Filter>Source Files\game</Filter>
+    <ClCompile Include="..\src\server.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game\protocol_game.c">
-      <Filter>Source Files\game</Filter>
+    <ClCompile Include="..\src\net\epoll_server.c">
+      <Filter>Source Files\net</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game\tibia_rsa.c">
-      <Filter>Source Files\game</Filter>
+    <ClCompile Include="..\src\net\iocp_connmgr.c">
+      <Filter>Source Files\net</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game\packed_data.c">
-      <Filter>Source Files\game</Filter>
+    <ClCompile Include="..\src\net\iocp_server.c">
+      <Filter>Source Files\net</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game\game_allocator.c">
-      <Filter>Source Files\game</Filter>
+    <ClCompile Include="..\src\net\iocp_svcmgr.c">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scheduler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tibia_rsa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dispatcher.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\otdata.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\packed_data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol_game.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol_login.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mem_cache.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\test\mem_cache_test.c">
+      <Filter>Source Files\test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -195,12 +189,6 @@
     <ClInclude Include="..\src\buffer_util.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\server\protocol.h">
-      <Filter>Source Files\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\server\server.h">
-      <Filter>Source Files\server</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\crypto\random.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
@@ -216,17 +204,8 @@
     <ClInclude Include="..\src\db\local.h">
       <Filter>Source Files\db</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\slab_cache.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\slab.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\game\game.h">
-      <Filter>Source Files\game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\server\iocp.h">
-      <Filter>Source Files\server</Filter>
     </ClInclude>
     <ClInclude Include="..\src\hash.h">
       <Filter>Source Files</Filter>
@@ -234,22 +213,35 @@
     <ClInclude Include="..\src\tasks.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\game\scheduler.h">
-      <Filter>Source Files\game</Filter>
+    <ClInclude Include="..\src\protocol.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\game\tibia_rsa.h">
-      <Filter>Source Files\game</Filter>
+    <ClInclude Include="..\src\server.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\game\packed_data.h">
-      <Filter>Source Files\game</Filter>
+    <ClInclude Include="..\src\net\iocp.h">
+      <Filter>Source Files\net</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\game\game_allocator.h">
-      <Filter>Source Files\game</Filter>
+    <ClInclude Include="..\src\scheduler.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\src\game\otdata.c">
-      <Filter>Source Files\game</Filter>
-    </Text>
+    <ClInclude Include="..\src\tibia_rsa.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\account.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\packed_data.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mem.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mem_cache.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

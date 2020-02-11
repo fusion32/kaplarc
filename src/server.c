@@ -1,6 +1,5 @@
-#include "../def.h"
-#include "../tasks.h"
-#include "../thread.h"
+#include "def.h"
+#include "thread.h"
 #include "server.h"
 
 /* these will depend on the OS */
@@ -43,12 +42,12 @@ bool server_init(void){
 	exec_fp = NULL;
 	exec_arg = NULL;
 	mutex_init(&mtx);
-	if(thread_create(&thr, server_thread, NULL) != 0){
-		mutex_destroy(&mtx);
-		internal_server_shutdown();
-		return false;
-	}
-	return true;
+	if(thread_create(&thr, server_thread, NULL) == 0)
+		return true;
+
+	mutex_destroy(&mtx);
+	internal_server_shutdown();
+	return false;
 }
 
 void server_shutdown(void){

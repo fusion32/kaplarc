@@ -1,5 +1,6 @@
 #ifndef SERVER_PROTOCOL_H_
 #define SERVER_PROTOCOL_H_
+#include "def.h"
 
 typedef enum protocol_status{
 	PROTO_OK = 0,
@@ -21,10 +22,6 @@ struct protocol{
 	 * it owns the connection or not
 	 */
 	bool (*identify)(uint8 *data, uint32 datalen);
-
-	/* initialize/release protocol internals */
-	bool (*init)(void);
-	void (*shutdown)(void);
 
 	/* protocols will interact with the server through
 	 * the use of these handles
