@@ -1,6 +1,12 @@
 #ifndef SERVER_PROTOCOL_H_
 #define SERVER_PROTOCOL_H_
 
+typedef enum protocol_status{
+	PROTO_OK = 0,
+	PROTO_CLOSE,
+	PROTO_ABORT,
+} protocol_status_t;
+
 struct connection;
 struct protocol{
 	/* name of the protocol: used for debugging */
@@ -16,20 +22,28 @@ struct protocol{
 	 */
 	bool (*identify)(uint8 *data, uint32 datalen);
 
+	/* initialize/release protocol internals */
+	bool (*init)(void);
+	void (*shutdown)(void);
+
 	/* protocols will interact with the server through
 	 * the use of these handles
 	 */
-	void *(*create_handle)(struct connection *conn);
+	bool (*create_handle)(struct connection *conn, void **handle);
 	void (*destroy_handle)(struct connection *conn, void *handle);
 
 	/* events related to the protocol */
-	void (*on_connect)(struct connection *conn, void *handle);
 	void (*on_close)(struct connection *conn, void *handle);
-	void (*on_recv_message)(struct connection *conn,
-		void *handle, uint8 *data, uint32 datalen);
-	void (*on_recv_first_message)(struct connection *conn,
-		void *handle, uint8 *data, uint32 datalen);
-	void (*on_write)(struct connection *conn, void *handle);
+	protocol_status_t (*on_connect)(
+		struct connection *conn, void *handle);
+	protocol_status_t (*on_write)(
+		struct connection *conn, void *handle);
+	protocol_status_t (*on_recv_message)(
+		struct connection *conn, void *handle,
+		uint8 *data, uint32 datalen);
+	protocol_status_t (*on_recv_first_message)(
+		struct connection *conn, void *handle,
+		uint8 *data, uint32 datalen);
 };
 
 #endif //PROTOCOL_H_

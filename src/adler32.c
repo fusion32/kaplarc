@@ -1,4 +1,6 @@
+//
 // Adler32, by Mark Adler
+//
 
 #include "hash.h"
 

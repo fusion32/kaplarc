@@ -1,42 +1,156 @@
-#if 0
-#include "protocol_login.h"
-
+#include "../buffer_util.h"
 #include "../config.h"
-#include "../crypto/adler32.h"
-#include "../crypto/xtea.h"
-#include "../dispatcher.h"
-#include "../log.h"
-#include "../server/connection.h"
-#include "../server/message.h"
-#include "../server/outputmessage.h"
-#include "grsa.h"
+#include "../hash.h"
+#include "../slab_cache.h"
+#include "../server/server.h"
+#include "packed_data.h"
+#include "tibia_rsa.h"
+
+/* OUTPUT BUFFERS */
+#define BUFFER_MAX_SIZE 256
+#define BUFFERS_PER_SLAB 32
+static struct slab_cache *buffers;
+
+/* PROTOCOL DECL */
+static bool identify(uint8 *data, uint32 datalen);
+static bool init(void);
+static void shutdown(void);
+static bool create_handle(struct connection *c, void **handle);
+static void destroy_handle(struct connection *c, void *handle);
+static void on_close(struct connection *c, void *handle);
+static protocol_status_t on_connect(
+	struct connection *c, void *handle);
+static protocol_status_t on_write(
+	struct connection *c, void *handle);
+static protocol_status_t on_recv_message(
+	struct connection *c, void *handle,
+	uint8 *data, uint32 datalen);
+static protocol_status_t on_recv_first_message(
+	struct connection *c, void *handle,
+	uint8 *data, uint32 datalen);
+struct protocol protocol_login = {
+	.name = "login",
+	.sends_first = false,
+	.identify = identify,
+
+	.init = init,
+	.shutdown = shutdown,
+	.create_handle = create_handle,
+	.destroy_handle = destroy_handle,
+	.on_close = on_close,
+	.on_connect = on_connect,
+	.on_write = on_write,
+	.on_recv_message = on_recv_message,
+	.on_recv_first_message = on_recv_first_message,
+};
+
+/* IMPL START */
+bool identify(uint8 *data, uint32 datalen){
+	uint32 checksum;
+	// check if message contains checksum
+	if(datalen > 4){
+		checksum = adler32(data+4, datalen-4);
+		if(checksum == decode_u32_le(data)){
+			data += 4;
+			datalen -= 4;
+		}
+	}
+	// check protocol login identifier
+	return datalen > 0 && data[0] == 0x01;
+}
+
+static bool init(void){
+	buffers = slab_cache_create(
+		BUFFERS_PER_SLAB, BUFFER_MAX_SIZE);
+	return buffers != NULL;
+}
+
+static void shutdown(void){
+	slab_cache_destroy(buffers);
+}
+
+static bool create_handle(struct connection *c, void **handle){
+	*handle = slab_cache_alloc(buffers);
+	return *handle != NULL;
+}
+
+static void destroy_handle(struct connection *c, void *handle){
+	slab_cache_free(buffers, handle);
+}
+
+static void on_close(struct connection *c, void *handle){
+}
+
+static protocol_status_t
+on_connect(struct connection *conn, void *handle){
+	return PROTO_OK;
+}
+
+static protocol_status_t
+on_write(struct connection *conn, void *handle){
+	return PROTO_OK;
+}
+
+static protocol_status_t
+on_recv_message(struct connection *c, void *handle,
+		uint8 *data, uint32 datalen){
+	return PROTO_OK;
+}
+
+#include <stdio.h>
+static void data_dump(uint8 *data, size_t datalen){
+	DEBUG_LOG("data_dump:");
+	for(uint32 i = 0; i < datalen; i += 1){
+		if((i & 0x0F) == 0)
+			printf("\n\t%02X", data[i]);
+		else
+			printf(" %02X", data[i]);
+	}
+	printf("\n");
+}
+static protocol_status_t
+on_recv_first_message(struct connection *c, void *handle,
+		uint8 *data, uint32 datalen){
+	size_t decoded_len;
+	struct data_reader reader;
+
+	// 4 bytes -> checksum
+	// 1 byte -> protocol id
+	// 2 bytes -> client os
+	// 2 bytes -> client version
+	// 12 bytes -> ?
+	// 128 bytes -> rsa encoded data
+	if(datalen != 149){
+		DEBUG_LOG("protocol_login: invalid login message length"
+			" (expected = %d, got = %d)", 149, datalen);
+		return PROTO_ABORT;
+	}
+
+	data_reader_init(&reader, data, datalen);
+	data_read_u32(&reader); // skip checksum
+	data_read_byte(&reader); // skip protocol id
+	data_read_u16(&reader); // client os
+	data_read_u16(&reader); // client version
+	// skip 12 unknown bytes
+	reader.ptr += 12;
+
+	// rsa decode
+	if(!tibia_rsa_decode(reader.ptr,
+	  reader.end - reader.ptr, &decoded_len))
+		return PROTO_ABORT;
+	reader.end = reader.ptr + decoded_len;
+	data_dump(reader.ptr, decoded_len);
+	return PROTO_CLOSE;
+}
 
 /*
-#include "../server/protocol.h"
 class ProtocolLogin: public Protocol{
 private:
 	// internal data
 	bool use_checksum;
 	bool use_xtea;
 	uint32 xtea[4];
-
-	// protocol helpers
-	void message_begin(Message *msg);
-	void message_end(Message *msg);
-	void disconnect(const char *message);
-
-public:
-	// protocol information
-	static constexpr char	*name = "login";
-	static constexpr bool	single = false;
-	static bool		identify(Message *first);
-
-	// protocol interface
-	ProtocolLogin(Connection *conn);
-	virtual ~ProtocolLogin(void) override;
-	virtual void on_recv_first_message(Message *msg) override;
 };
-*/
 
 // helpers for this protocol
 static uint32 calc_checksum(Message *msg){
@@ -176,5 +290,4 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 	// close connection
 	connection_close(connection);
 }
-#endif
-
+*/

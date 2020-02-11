@@ -31,16 +31,10 @@
     <ClCompile Include="..\src\config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\dispatcher.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\log.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\scheduler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\string.c">
@@ -48,9 +42,6 @@
     </ClCompile>
     <ClCompile Include="..\src\shard\shard.c">
       <Filter>Source Files\shard</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server\server_rsa.c">
-      <Filter>Source Files\server</Filter>
     </ClCompile>
     <ClCompile Include="..\src\game\protocol_login.c">
       <Filter>Source Files\game</Filter>
@@ -78,9 +69,6 @@
     </ClCompile>
     <ClCompile Include="..\src\crypto\xtea.c">
       <Filter>Source Files\crypto</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\packed_data.c">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\thread.c">
       <Filter>Source Files</Filter>
@@ -136,17 +124,35 @@
     <ClCompile Include="..\src\server\epoll_server.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\hash_murmur2.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\hash_adler32.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\game\game.c">
       <Filter>Source Files\game</Filter>
     </ClCompile>
     <ClCompile Include="..\src\server\server.c">
       <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\adler32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\murmur2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\dispatcher.c">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\scheduler.c">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\protocol_game.c">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\tibia_rsa.c">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\packed_data.c">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game\game_allocator.c">
+      <Filter>Source Files\game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -180,9 +186,6 @@
     <ClInclude Include="..\src\crypto\base64.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\scheduler.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\config.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -201,16 +204,10 @@
     <ClInclude Include="..\src\crypto\random.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\server\server_rsa.h">
-      <Filter>Source Files\server</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\string.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\thread.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\packed_data.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\rbtree.h">
@@ -237,5 +234,22 @@
     <ClInclude Include="..\src\tasks.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\game\scheduler.h">
+      <Filter>Source Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game\tibia_rsa.h">
+      <Filter>Source Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game\packed_data.h">
+      <Filter>Source Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game\game_allocator.h">
+      <Filter>Source Files\game</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\src\game\otdata.c">
+      <Filter>Source Files\game</Filter>
+    </Text>
   </ItemGroup>
 </Project>

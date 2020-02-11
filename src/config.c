@@ -41,6 +41,10 @@ static struct {
 	{"pgsql_dbname", "kaplar"},
 	{"pgsql_user", "admin"},
 	{"pgsql_pwd", "admin"},
+
+	// misc
+	{"motd_num", "1"},
+	{"motd_str", "Kaplar!"},
 };
 
 //@TODO: turn this table into a hashtable

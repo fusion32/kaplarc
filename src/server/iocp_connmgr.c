@@ -43,10 +43,10 @@ static struct connection *conn_head = NULL;
 static struct slab_cache *connections = NULL;
 
 /* STATIC FWD DECL */
-static void connection_dispatch_on_connect(struct connection *c);
 static void connection_dispatch_on_close(struct connection *c);
-static bool connection_dispatch_on_recv_message(struct connection *c);
-static void connection_dispatch_on_write(struct connection *c);
+static protocol_status_t connection_dispatch_on_connect(struct connection *c);
+static protocol_status_t connection_dispatch_on_recv_message(struct connection *c);
+static protocol_status_t connection_dispatch_on_write(struct connection *c);
 static void connection_on_read_length(void *data, DWORD err, DWORD transferred);
 static void connection_on_read_body(void *data, DWORD err, DWORD transferred);
 static void connection_on_write(void *data, DWORD err, DWORD transferred);
@@ -61,15 +61,6 @@ static void connection_start_closing(struct connection *c, bool abort);
 
 /* IMPL START */
 static INLINE
-void connection_dispatch_on_connect(struct connection *c){
-	if(service_sends_first(c->svc)){
-		c->proto = service_first_protocol(c->svc);
-		c->proto_handle = c->proto->create_handle(c);
-		c->proto->on_connect(c, c->proto_handle);
-	}
-}
-
-static INLINE
 void connection_dispatch_on_close(struct connection *c){
 	if(c->proto != NULL){
 		c->proto->on_close(c, c->proto_handle);
@@ -79,32 +70,42 @@ void connection_dispatch_on_close(struct connection *c){
 	}
 }
 
-static INLINE
-bool connection_dispatch_on_recv_message(struct connection *c){
+static INLINE protocol_status_t
+connection_dispatch_on_connect(struct connection *c){
+	if(!service_sends_first(c->svc))
+		return PROTO_OK;
+	c->proto = service_first_protocol(c->svc);
+	DEBUG_ASSERT(c->proto != NULL);
+	if(!c->proto->create_handle(c, &c->proto_handle))
+		return PROTO_ABORT;
+	return c->proto->on_connect(c, c->proto_handle);
+}
+
+static INLINE protocol_status_t
+connection_dispatch_on_write(struct connection *c){
+	DEBUG_ASSERT(c->proto != NULL);
+	return c->proto->on_write(c, c->proto_handle);
+}
+
+static INLINE protocol_status_t
+connection_dispatch_on_recv_message(struct connection *c){
 	uint8 *data = c->input_ptr;
 	uint32 datalen = c->input_body_length;
 
 	// select protocol if this is the first message
 	if(c->proto == NULL){
 		c->proto = service_select_protocol(c->svc, data, datalen);
-		if(c->proto == NULL)
-			return false;
-		c->proto_handle = c->proto->create_handle(c);
+		if(!c->proto || !c->proto->create_handle(c, &c->proto_handle))
+			return PROTO_ABORT;
 	}
 
-	if(c->flags & CONN_FIRST_MSG){
-		c->proto->on_recv_message(c, c->proto_handle, data, datalen);
-	}else{
-		c->proto->on_recv_first_message(c, c->proto_handle, data, datalen);
+	if(!(c->flags & CONN_FIRST_MSG)){
 		c->flags |= CONN_FIRST_MSG;
+		return c->proto->on_recv_first_message(c,
+			c->proto_handle, data, datalen);
 	}
-	return true;
-}
-
-static INLINE
-void connection_dispatch_on_write(struct connection *c){
-	DEBUG_ASSERT(c->proto != NULL);
-	c->proto->on_write(c, c->proto_handle);
+	return c->proto->on_recv_message(c,
+		c->proto_handle, data, datalen);
 }
 
 static void connection_on_read_length(void *data, DWORD err, DWORD transferred){
@@ -145,7 +146,8 @@ static void connection_on_read_length(void *data, DWORD err, DWORD transferred){
 	}
 
 	// decode body length and advance input pointer
-	body_length = decode_u16_be(c->input_ptr);
+	// @NOTE: tibia protocols use little endian encoding
+	body_length = decode_u16_le(c->input_ptr);
 	c->input_ptr += 2;
 
 	// assert that body_length isn't zero or
@@ -198,9 +200,13 @@ static void connection_on_read_body(void *data, DWORD err, DWORD transferred){
 	}
 
 	// dispatch message to protocol
-	if(!connection_dispatch_on_recv_message(c)){
-		DEBUG_LOG("connection_on_read_body: failed to"
-			" dispatch message (no protocol)");
+	switch(connection_dispatch_on_recv_message(c)){
+	case PROTO_OK: break;
+	case PROTO_CLOSE:
+		connection_close(c);
+		return;
+	case PROTO_ABORT:
+	default:
 		connection_abort(c);
 		return;
 	}
@@ -251,7 +257,16 @@ static void connection_on_write(void *data, DWORD err, DWORD transferred){
 	c->flags &= ~CONN_OUTPUT_IN_PROGRESS;
 
 	// notify the protocol that the write succeded
-	connection_dispatch_on_write(c);
+	switch(connection_dispatch_on_write(c)){
+	case PROTO_OK: break;
+	case PROTO_CLOSE:
+		connection_close(c);
+		return;
+	case PROTO_ABORT:
+	default:
+		connection_abort(c);
+		return;
+	}
 }
 
 static bool connection_start_async_read(struct connection *c, ULONG len,
@@ -430,7 +445,16 @@ void connmgr_start_connection(SOCKET s,
 
 	// this only works for sends_first protocols, and will
 	// create the protocol and notify it of the connection
-	connection_dispatch_on_connect(c);
+	switch(connection_dispatch_on_connect(c)){
+	case PROTO_OK: break;
+	case PROTO_CLOSE:
+		connection_close(c);
+		return;
+	case PROTO_ABORT:
+	default:
+		connection_abort(c);
+		return;
+	}
 
 	// if the first reading atempt fails, abort connection
 	if(!connection_start_async_read(c, 2,

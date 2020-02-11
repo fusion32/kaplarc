@@ -6,7 +6,8 @@
 #include "hash.h"
 #include "buffer_util.h"
 
-static uint32 __decode_u32(const void *data){
+static INLINE
+uint32 __decode_u32(const void *data){
 #if ARCH_BIG_ENDIAN
 	return decode_u32_be((void*)data);
 #else

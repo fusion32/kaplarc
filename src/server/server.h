@@ -5,16 +5,12 @@
 #include "protocol.h"
 
 struct connection;
-struct packed_data;
-
 extern struct protocol protocol_echo;
 
 // Server interface
 bool server_init(void);
 void server_shutdown(void);
-bool server_add_task(void (*func)(void*), void *arg);
-bool server_add_tasks(struct task *arr, uint32 num_arr);
-void server_flush_tasks(void);
+void server_exec(void (*fp)(void*), void *arg);
 bool svcmgr_add_protocol(struct protocol *protocol, int port);
 
 // Connection interface

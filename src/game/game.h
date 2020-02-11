@@ -14,4 +14,8 @@ bool game_init(void);
 void game_shutdown(void);
 void game_run(void);
 
+//
+void game_dispatch(void);
+bool game_schedule(void);
+
 #endif //GAME_GAME_H

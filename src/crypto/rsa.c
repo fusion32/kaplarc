@@ -59,19 +59,20 @@ bool rsa_setkey(struct rsa_ctx *r, const char *p, const char *q, const char *e){
 	mpz_mod(r->dq, r->x3, r->x1);	// dq = x3 mod (q - 1)
 	mpz_invert(r->qi, r->q, r->p);	// qi = invert(q, p)
 
-	// the maximum message length that can be encoded with this key
-	r->encoding_limit = mpz_sizeinbytes(r->n) - 1;
+	// roughly the maximum message length that can
+	// be encoded with this key
+	r->encoding_limit = mpz_sizeinbytes(r->n);
 
 	return true;
 }
 
-void rsa_encode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *plen){
+void rsa_encode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *outlen){
 	mpz_import(r->x0, len, 1, 1, 0, 0, data);	// x0 = import(data)
 	mpz_powm(r->x1, r->x0, r->e, r->n);		// x1 = (x0 ^ e) mod n
-	mpz_export(data, plen, 1, 1, 0, 0, r->x1);	// data = export(x1);
+	mpz_export(data, outlen, 1, 1, 0, 0, r->x1);	// data = export(x1);
 }
 
-void rsa_decode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *plen){
+void rsa_decode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *outlen){
 	mpz_import(r->x0, len, 1, 1, 0, 0, data);	// x0 = import(data)
 	mpz_powm(r->x1, r->x0, r->dp, r->p);		// x1 = (x0 ^ dp) mod p
 	mpz_powm(r->x2, r->x0, r->dq, r->q);		// x2 = (x0 ^ dq) mod q
@@ -81,5 +82,5 @@ void rsa_decode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *plen){
 	mpz_mul(r->x3, r->x3, r->qi);			//
 	mpz_mod(r->x3, r->x3, r->p);			// x3 = (x3 * qi) mod p
 	mpz_addmul(r->x2, r->x3, r->q);			// x2 = x2 + x3 * q
-	mpz_export(data, plen, 1, 1, 0, 0, r->x2);	// data = export(x2)
+	mpz_export(data, outlen, 1, 1, 0, 0, r->x2);	// data = export(x2)
 }

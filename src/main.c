@@ -26,11 +26,11 @@ int main(int argc, char **argv){
 
 	config_cmdline(argc, argv);
 	if(!config_load())
-		return -1;
+		LOG_WARNING("running with default config");
 
 	svcmgr_add_protocol(&protocol_echo, config_geti("sv_echo_port"));
 	//svcmgr_add_protocol(&protocol_info, config_geti("sv_info_port"));
-	//svcmgr_add_protocol(&protocol_login, config_geti("sv_login_port"));
+	svcmgr_add_protocol(&protocol_login, config_geti("sv_login_port"));
 	//svcmgr_add_protocol(&protocol_game, config_geti("sv_game_port"));
 
 	init_system("server", server_init, server_shutdown);

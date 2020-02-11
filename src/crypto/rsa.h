@@ -14,7 +14,7 @@ void rsa_init(struct rsa_ctx *r);
 void rsa_init_clone(struct rsa_ctx *r, struct rsa_ctx *from);
 void rsa_cleanup(struct rsa_ctx *r);
 bool rsa_setkey(struct rsa_ctx *r, const char *p, const char *q, const char *e);
-void rsa_encode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *plen);
-void rsa_decode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *plen);
+void rsa_encode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *outlen);
+void rsa_decode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *outlen);
 
 #endif //CRYPTO_RSA_H_

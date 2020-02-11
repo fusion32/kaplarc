@@ -1,8 +1,6 @@
 #include "../crypto/rsa.h"
-#include "../def.h"
 #include "../log.h"
-#include "../thread.h"
-#include "server_rsa.h"
+#include "tibia_rsa.h"
 
 static const char p[] =
 	"142996239624163995200701773828988955507954033454661532174705160829"
@@ -14,43 +12,36 @@ static const char q[] =
 	"7096809910315212884101";
 static const char e[] = "65537";
 
+// We will use only RSA decoding and it'll be done only
+// on the server thread when receiving the first message
+// of the login or game protocols. This implies that
+// locks are not required.
 static struct rsa_ctx ctx;
-static mutex_t mtx;
 
-bool server_rsa_init(void){
+bool tibia_rsa_init(void){
 	rsa_init(&ctx);
 	if(!rsa_setkey(&ctx, p, q, e)){
-		LOG_ERROR("grsa_init: failed to set key");
+		LOG_ERROR("tibia_rsa_init: failed to set key");
 		rsa_cleanup(&ctx);
 		return false;
 	}
-	mutex_init(&mtx);
 	return true;
 }
 
-void server_rsa_shutdown(void){
-	mutex_destroy(&mtx);
+void tibia_rsa_shutdown(void){
 	rsa_cleanup(&ctx);
 }
 
-bool server_rsa_encode(uint8 *data, size_t len, size_t *plen){
-	mutex_lock(&mtx);
-	if(ctx.encoding_limit < len){
-		mutex_unlock(&mtx);
+bool tibia_rsa_encode(uint8 *data, size_t len, size_t *outlen){
+	if(ctx.encoding_limit < len)
 		return false;
-	}
-	rsa_encode(&ctx, data, len, plen);
-	mutex_unlock(&mtx);
+	rsa_encode(&ctx, data, len, outlen);
 	return true;
 }
 
-bool server_rsa_decode(uint8 *data, size_t len, size_t *plen){
-	mutex_lock(&mtx);
-	if(ctx.encoding_limit < len){
-		mutex_unlock(&mtx);
+bool tibia_rsa_decode(uint8 *data, size_t len, size_t *outlen){
+	if(ctx.encoding_limit < len)
 		return false;
-	}
-	rsa_decode(&ctx, data, len, plen);
-	mutex_unlock(&mtx);
+	rsa_decode(&ctx, data, len, outlen);
 	return true;
 }

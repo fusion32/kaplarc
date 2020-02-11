@@ -178,7 +178,14 @@ static bool service_open(struct service *svc){
 		return false;
 	}
 	svc->s = s;
-	return service_start_async_accept(svc);
+	if(!service_start_async_accept(svc)){
+		LOG_ERROR("service_open: failed to start"
+			" accept operation");
+		svc->s = INVALID_SOCKET;
+		closesocket(s);
+		return false;
+	}
+	return true;
 }
 
 static void __service_close(struct service *svc){
@@ -202,24 +209,45 @@ static void service_start_closing(struct service *svc){
 	}
 }
 
+static bool service_init(struct service *svc){
+	int i;
+	for(i = 0; i < svc->num_protocols; i += 1){
+		if(!svc->protocols[i].init())
+			goto fail;
+	}
+	if(service_open(svc))
+		return true;
+
+	// shutdown initialized protocols
+fail:	for(i -= 1; i >= 0; i -= 1)
+		svc->protocols[i].shutdown();
+	return false;
+}
+
+static void service_shutdown(struct service *svc){
+	for(int i = 0; i < svc->num_protocols; i += 1)
+		svc->protocols[i].shutdown();
+	__service_close(svc);
+}
+
+//@TODO: change the way protocols are added
 bool svcmgr_init(void){
-	// open services
 	int i;
 	for(i = 0; i < num_services; i += 1){
-		if(!service_open(&services[i]))
+		if(!service_init(&services[i]))
 			goto fail;
 	}
 	return true;
 
+	// shutdown initialized services
 fail:	for(i -= 1; i >= 0; i -= 1)
-		service_start_closing(&services[i]);
+		service_shutdown(&services[i]);
 	return false;
 }
 
 void svcmgr_shutdown(void){
-	// close services
 	for(int i = 0; i < num_services; i += 1)
-		__service_close(&services[i]);
+		service_shutdown(&services[i]);
 }
 
 bool svcmgr_add_protocol(struct protocol *protocol, int port){
@@ -241,7 +269,8 @@ bool svcmgr_add_protocol(struct protocol *protocol, int port){
 		svc->pending_work = 0;
 		svc->port = port;
 		svc->num_protocols = 1;
-		memcpy(&svc->protocols[0], protocol, sizeof(struct protocol));
+		memcpy(&svc->protocols[0],
+			protocol, sizeof(struct protocol));
 	}else{
 		if(protocol->sends_first ||
 		  svc->num_protocols >= MAX_SERVICE_PROTOCOLS ||

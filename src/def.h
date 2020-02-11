@@ -25,7 +25,8 @@ typedef int32_t		int32;
 typedef uint32_t	uint32;
 typedef int64_t		int64;
 typedef uint64_t	uint64;
-typedef uintptr_t	uintptr;
+//typedef uintptr_t	uintptr;
+//typedef ptrdiff_t	ptrdiff;
 
 // helper macros
 #define ARRAY_SIZE(a)		(sizeof(a)/sizeof((a)[0]))
