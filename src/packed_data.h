@@ -36,10 +36,4 @@ void data_write_u32(struct data_writer *writer, uint32 val);
 void data_write_str(struct data_writer *writer, const char *s);
 void data_write_lstr(struct data_writer *writer, const char *s, int len);
 
-void data_rwrite_byte(struct data_writer *writer, uint8 val);
-void data_rwrite_u16(struct data_writer *writer, uint16 val);
-void data_rwrite_u32(struct data_writer *writer, uint32 val);
-void data_rwrite_str(struct data_writer *writer, const char *s);
-void data_rwrite_lstr(struct data_writer *writer, const char *s, int len);
-
 #endif //PACKED_DATA_H_

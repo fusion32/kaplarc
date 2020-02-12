@@ -54,7 +54,10 @@ void data_read_str(struct data_reader *reader, char *s, int maxlen){
 	int copy_len = len;
 	DEBUG_ASSERT(len >= 0);
 	DEBUG_ASSERT((reader->end - reader->ptr) >= len);
-	if(len == 0) return;
+	if(len == 0){
+		if(maxlen > 0) s[0] = 0;
+		return;
+	}
 	if(maxlen > 0){
 		if(copy_len >= maxlen)
 			copy_len = maxlen - 1;
@@ -103,34 +106,4 @@ void data_write_lstr(struct data_writer *writer, const char *s, int len){
 	encode_u16_le(writer->ptr, (uint16)len);
 	if(len > 0) memcpy(writer->ptr + 2, s, len);
 	writer->ptr += total;
-}
-
-void data_rwrite_byte(struct data_writer *writer, uint8 val){
-	DEBUG_ASSERT((writer->ptr - writer->base) >= 1);
-	writer->ptr -= 1;
-	encode_u8(writer->ptr, val);
-}
-
-void data_rwrite_u16(struct data_writer *writer, uint16 val){
-	DEBUG_ASSERT((writer->ptr - writer->base) >= 2);
-	writer->ptr -= 2;
-	encode_u16_le(writer->ptr, val);
-}
-
-void data_rwrite_u32(struct data_writer *writer, uint32 val){
-	DEBUG_ASSERT((writer->ptr - writer->base) >= 4);
-	writer->ptr -= 4;
-	encode_u32_le(writer->ptr, val);
-}
-
-void data_rwrite_str(struct data_writer *writer, const char *s){
-	data_rwrite_lstr(writer, s, (int)strlen(s));
-}
-
-void data_rwrite_lstr(struct data_writer *writer, const char *s, int len){
-	int total = len + 2;
-	DEBUG_ASSERT((writer->ptr - writer->base) >= total);
-	writer->ptr -= total;
-	encode_u16_le(writer->ptr, (uint16)len);
-	if(len > 0) memcpy(writer->ptr + 2, s, len);
 }

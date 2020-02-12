@@ -21,6 +21,7 @@ typedef enum cache_idx{
 bool mem_init(void);
 void mem_shutdown(void);
 
+cache_idx_t mem_cache_idx(size_t size);
 void *mem_alloc(cache_idx_t cache);
 void mem_free(cache_idx_t cache, void *mem);
 

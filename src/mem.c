@@ -25,8 +25,9 @@ static struct {
 };
 
 bool mem_init(void){
+	cache_idx_t i;
 	mutex_init(&mtx);
-	for(int i = 0; i < NUM_CACHES; i += 1){
+	for(i = CACHE_FIRST; i <= CACHE_LAST; i += 1){
 		cache_table[i].cache = mem_cache_create(
 			cache_table[i].slots, cache_table[i].stride);
 		ASSERT(cache_table[i].cache != NULL);
@@ -35,9 +36,20 @@ bool mem_init(void){
 }
 
 void mem_shutdown(void){
-	for(int i = 0; i < NUM_CACHES; i += 1)
+	cache_idx_t i;
+	for(i = CACHE_FIRST; i <= CACHE_LAST; i += 1)
 		mem_cache_destroy(cache_table[i].cache);
 	mutex_destroy(&mtx);
+}
+
+cache_idx_t mem_cache_idx(size_t size){
+	cache_idx_t i;
+	for(i = CACHE_FIRST; i <= CACHE_LAST; i += 1){
+		if(cache_table[i].stride >= size)
+			return i;
+	}
+	UNREACHABLE();
+	return CACHE_LAST;
 }
 
 void *mem_alloc(cache_idx_t cache){

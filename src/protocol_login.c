@@ -9,8 +9,8 @@
 #include "crypto/xtea.h"
 
 /* OUTPUT BUFFER */
-#define LOGIN_BUFFER_CACHE CACHE256
-#define LOGIN_BUFFER_SIZE 256
+#define LOGIN_BUFFER_CACHE CACHE512
+#define LOGIN_BUFFER_SIZE 512
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
@@ -43,22 +43,19 @@ struct protocol protocol_login = {
 
 /* IMPL START */
 bool identify(uint8 *data, uint32 datalen){
+	// @NOTE: messages without checksum will use
+	// the old login protocol
 	uint32 checksum;
-	// check if message contains checksum
-	if(datalen > 4){
-		checksum = adler32(data+4, datalen-4);
-		if(checksum == decode_u32_le(data)){
-			data += 4;
-			datalen -= 4;
-		}
-	}
-	// check protocol login identifier
-	return datalen > 0 && data[0] == 0x01;
+	if(datalen < 5)
+		return false;
+	checksum = adler32(data+4, datalen-4);
+	return checksum == decode_u32_le(data)
+		&& data[4] == 0x01;
 }
 
 static bool create_handle(struct connection *c, void **handle){
 	*handle = mem_alloc(LOGIN_BUFFER_CACHE);
-	return *handle != NULL;
+	return true;
 }
 
 static void destroy_handle(struct connection *c, void *handle){
@@ -82,6 +79,67 @@ static protocol_status_t
 on_recv_message(struct connection *c, void *handle,
 		uint8 *data, uint32 datalen){
 	return PROTO_OK;
+}
+
+static void writer_begin(struct data_writer *writer){
+	// skip 8 bytes:
+	//  2 bytes - message length
+	//  4 bytes - checksum
+	//  2 bytes - unencrypted length
+	writer->ptr = writer->base + 8;
+}
+
+/*
+static void data_write_padding(struct data_writer *writer, int padding){
+	switch(padding){
+	case 7:	data_write_byte(writer, 0x33);
+	case 6:	data_write_u16(writer, 0x3333);
+		data_write_u32(writer, 0x33333333);
+		break;
+	case 5:	data_write_byte(writer, 0x33);
+	case 4:	data_write_u32(writer, 0x33333333);
+		break;
+	case 3: data_write_byte(writer, 0x33);
+	case 2: data_write_u16(writer, 0x3333);
+		break;
+	case 1:	data_write_byte(writer, 0x33);
+		break;
+	case 0:
+	default:
+		break;
+	}
+}
+*/
+
+static void writer_end(struct data_writer *writer, uint32 *xtea){
+	DEBUG_ASSERT(writer != NULL);
+	DEBUG_ASSERT(xtea != NULL);
+
+	// NOTE1: both the message length and unencrypted
+	// length don't include their own size
+	// NOTE2: the unencrypted length is encrypted
+	// together with the data
+
+	uint8 *database = writer->base + 6;
+	uint32 datalen = (uint32)(writer->ptr - database);
+	uint32 checksum;
+	int padding = (8 - (datalen & 7)) & 7;
+
+	// set unencrypted length (datalen - 2)
+	encode_u16_le(database, datalen-2);
+	// add padding for xtea encoding
+	datalen += padding;
+	while(padding-- > 0)
+		data_write_byte(writer, 0x33);
+	// xtea encode
+	xtea_encode(xtea, database, datalen);
+
+	// calc checksum
+	checksum = adler32(database, datalen);
+	// set message length (datalen + 6 - 2)
+	encode_u16_le(writer->base, datalen+4);
+	// set checksum
+	encode_u32_le(writer->base+2, checksum);
 }
 
 static protocol_status_t
@@ -112,6 +170,8 @@ on_recv_first_message(struct connection *c, void *handle,
 	version = data_read_u16(&reader);
 	reader.ptr += 12; // skip 12 unknown bytes
 
+	// version <= 760 didn't have encryption or checksum
+
 	// rsa decode
 	if(!tibia_rsa_decode(reader.ptr,
 	  reader.end - reader.ptr, &decoded_len))
@@ -130,137 +190,46 @@ on_recv_first_message(struct connection *c, void *handle,
 
 	DEBUG_LOG("xtea = {%08X, %08X, %08X, %08X}",
 		xtea[0], xtea[1], xtea[2], xtea[3]);
-	DEBUG_LOG("account name = %s", accname);
-	DEBUG_LOG("account password = %s", password);
+	DEBUG_LOG("account name = `%s`", accname);
+	DEBUG_LOG("account password = `%s`", password);
 
-	// send login
-	//data_writer_init(&writer, handle, LOGIN_BUFFER_SIZE);
-	//data_write_str(&writer, "hello");
-	//connection_send(c, writer.base, writer.end - writer.base);
+	// send disconnect message
+	data_writer_init(&writer, handle, LOGIN_BUFFER_SIZE);
+	writer_begin(&writer);
 
+	/*
+	data_write_byte(&writer, 0x0A);
+	data_write_str(&writer, "hello");
+	*/
 
+	// motd
+	data_write_byte(&writer, 0x14);
+	data_write_str(&writer, "1\nhello");
+	// character list
+	data_write_byte(&writer, 0x64);
+	data_write_byte(&writer, 1);
+	data_write_str(&writer, "Harambe");
+	data_write_str(&writer, "Isara");
+	data_write_u32(&writer, 16777343); // localhost
+	data_write_u16(&writer, 7171);
+	data_write_u16(&writer, 1);
 
+	writer_end(&writer, xtea);
+	ASSERT(connection_send(c, writer.base,
+		(uint32)(writer.ptr - writer.base)));
 	return PROTO_CLOSE;
 }
 
 /*
-class ProtocolLogin: public Protocol{
-private:
-	// internal data
-	bool use_checksum;
-	bool use_xtea;
-	uint32 xtea[4];
-};
-
-// helpers for this protocol
-static uint32 calc_checksum(Message *msg){
-	size_t offset = msg->readpos + 4;
-	return adler32(msg->buffer + offset, msg->length - offset);
-}
-void ProtocolLogin::message_begin(Message *msg){
-	msg->readpos = use_checksum ? 6 : 2;
-	msg->length = 0;
-}
-void ProtocolLogin::message_end(Message *msg){
-	int padding;
-	size_t start = use_checksum ? 6 : 2;
-	if(use_xtea){
-		padding = msg->length % 8;
-		while(padding-- > 0)
-			msg->add_byte(0x33);
-		xtea_encode(xtea, msg->buffer + start, msg->length);
-	}
-	if(use_checksum){
-		msg->readpos = 6;
-		msg->radd_u32(calc_checksum(msg));
-	}else{
-		msg->readpos = 2;
-	}
-	msg->radd_u16((uint16)msg->length);
-}
-
-void ProtocolLogin::disconnect(const char *message){
 	auto output = output_message(256);
-	if(output != NULL){
 		message_begin(output.get());
 		output->add_byte(0x0A);
 		output->add_str(message);
 		message_end(output.get());
 		connection_send(connection, std::move(output));
-	}
-	connection_close(connection);
-}
 
-
-// protocol implementation
-bool ProtocolLogin::identify(Message *first){
-	size_t offset = first->readpos;
-	if(first->peek_u32() == calc_checksum(first))
-		offset += 4;
-	return first->buffer[offset] == 0x01;
-}
-
-ProtocolLogin::ProtocolLogin(Connection *conn)
-  : Protocol(conn), use_checksum(false), use_xtea(false) {
-}
-
-ProtocolLogin::~ProtocolLogin(void){
-}
-
-void ProtocolLogin::on_recv_first_message(Message *msg){
-	uint16 system;
-	uint16 version;
-	char account[64];
-	char password[256];
-
-	// verify checksum
-	use_checksum = (msg->peek_u32() == calc_checksum(msg));
-	if(use_checksum)
-		msg->readpos += 4;
-
-	// verify protocol identifier
-	if(msg->get_byte() != 0x01){
-		disconnect("internal error");
-		return;
-	}
-
-	system = msg->get_u16();
-	version = msg->get_u16();
-	if(version <= 760){
-		disconnect("This server requires client version 8.6");
-		return;
-	}
-
-	msg->readpos += 12;
-	if(!grsa_decode(msg->buffer + msg->readpos,
-			(msg->length - msg->readpos), NULL)){
-		disconnect("internal error");
-		return;
-	}
-
-	// enable encryption
-	xtea[0] = msg->get_u32();
-	xtea[1] = msg->get_u32();
-	xtea[2] = msg->get_u32();
-	xtea[3] = msg->get_u32();
-	use_xtea = true;
-
-	msg->get_str(account, 64);
-	msg->get_str(password, 64);
-
-	if(account[0] == 0){
-		disconnect("Invalid account name");
-		return;
-	}
-
-	// authenticate user
-	if(true){
-		disconnect("Invalid account name and password combination");
-		return;
-	}
 
 	auto output = output_message(256);
-	if(output){
 		message_begin(output.get());
 
 		// send motd
@@ -284,10 +253,4 @@ void ProtocolLogin::on_recv_first_message(Message *msg){
 		output->add_u16(1);					// premium days left
 
 		message_end(output.get());
-		connection_send(connection, std::move(output));
-	}
-
-	// close connection
-	connection_close(connection);
-}
 */
