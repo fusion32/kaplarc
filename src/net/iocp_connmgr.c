@@ -4,6 +4,7 @@
 
 #include "../buffer_util.h"
 #include "../config.h"
+#include "../log.h"
 #include "../mem_cache.h"
 #include "../thread.h"
 

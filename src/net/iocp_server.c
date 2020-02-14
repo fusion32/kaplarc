@@ -1,4 +1,5 @@
 #include "iocp.h"
+#include "../log.h"
 
 #ifdef PLATFORM_WINDOWS
 

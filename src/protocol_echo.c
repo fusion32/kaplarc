@@ -5,7 +5,7 @@
 #include <string.h>
 
 // protocol handle
-#define ECHO_HANDLE_CACHE CACHE1K
+#define ECHO_HANDLE_SIZE sizeof(struct echo_handle)
 #define ECHO_BUFFER_SIZE 1000
 struct echo_handle{
 	bool output_ready;
@@ -51,14 +51,14 @@ static bool identify(uint8 *data, uint32 datalen){
 }
 
 static bool create_handle(struct connection *c, void **handle){
-	struct echo_handle *h = mem_alloc(ECHO_HANDLE_CACHE);
+	struct echo_handle *h = mem_alloc(ECHO_HANDLE_SIZE);
 	h->output_ready = true;
 	*handle = h;
 	return true;
 }
 
 static void destroy_handle(struct connection *c, void *handle){
-	mem_free(ECHO_HANDLE_CACHE, handle);
+	mem_free(ECHO_HANDLE_SIZE, handle);
 }
 
 static void on_close(struct connection *c, void *handle){

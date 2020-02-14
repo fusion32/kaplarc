@@ -9,8 +9,7 @@
 #include "crypto/xtea.h"
 
 /* OUTPUT BUFFER */
-#define LOGIN_BUFFER_CACHE CACHE512
-#define LOGIN_BUFFER_SIZE 512
+#define LOGIN_BUFFER_SIZE 1337
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
@@ -54,12 +53,12 @@ bool identify(uint8 *data, uint32 datalen){
 }
 
 static bool create_handle(struct connection *c, void **handle){
-	*handle = mem_alloc(LOGIN_BUFFER_CACHE);
+	*handle = mem_alloc(LOGIN_BUFFER_SIZE);
 	return true;
 }
 
 static void destroy_handle(struct connection *c, void *handle){
-	mem_free(LOGIN_BUFFER_CACHE, handle);
+	mem_free(LOGIN_BUFFER_SIZE, handle);
 }
 
 static void on_close(struct connection *c, void *handle){
@@ -88,28 +87,6 @@ static void writer_begin(struct data_writer *writer){
 	//  2 bytes - unencrypted length
 	writer->ptr = writer->base + 8;
 }
-
-/*
-static void data_write_padding(struct data_writer *writer, int padding){
-	switch(padding){
-	case 7:	data_write_byte(writer, 0x33);
-	case 6:	data_write_u16(writer, 0x3333);
-		data_write_u32(writer, 0x33333333);
-		break;
-	case 5:	data_write_byte(writer, 0x33);
-	case 4:	data_write_u32(writer, 0x33333333);
-		break;
-	case 3: data_write_byte(writer, 0x33);
-	case 2: data_write_u16(writer, 0x3333);
-		break;
-	case 1:	data_write_byte(writer, 0x33);
-		break;
-	case 0:
-	default:
-		break;
-	}
-}
-*/
 
 static void writer_end(struct data_writer *writer, uint32 *xtea){
 	DEBUG_ASSERT(writer != NULL);

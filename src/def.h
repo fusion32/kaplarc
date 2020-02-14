@@ -36,6 +36,7 @@ typedef ptrdiff_t	ptrdiff;
 #define MAX(x, y)		((x > y) ? (x) : (y))
 
 // @REMOVE
+#define PLATFORM_WINDOWS 1
 #define ARCH_BIG_ENDIAN 0
 #define ARCH_UNALIGNED_ACCESS 1
 #define ARCH_CACHE_LINE_SIZE 64
@@ -54,24 +55,31 @@ typedef ptrdiff_t	ptrdiff;
 // platform settings
 #if !defined(PLATFORM_LINUX) && !defined(PLATFORM_FREEBSD)	\
 		&& !defined(PLATFORM_WINDOWS)
-#	if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
-#		define PLATFORM_WINDOWS 1
-#	elif defined(__FreeBSD__)
-#		define PLATFORM_FREEBSD 1
-#	elif defined(__linux__)
-#		define PLATFORM_LINUX 1
-#	else
-#		error platform not supported
-#	endif
+#error "platform must be defined"
 #endif
 
 // compiler settings
 #if defined(_MSC_VER)
+#	include<intrin.h>
 #	define INLINE __forceinline
+#	define _CLZ32(x) ((int)__lzcnt(x))
+#	define _CLZ64(x) ((int)__lzcnt64(x))
+#	ifdef _WIN64
+#		define COMPILER_ENV64 1
+#	else
+#		define COMPILER_ENV32 1
+#	endif
 #elif defined(__GNUC__)
 #	define INLINE __attribute__((always_inline))
+#	define _CLZ32(x) ((int)__builtin_clzl(x))
+#	define _CLZ64(x) ((int)__builtin_clzll(x))
+#	if defined(__x86_64__)
+#		define COMPILER_ENV64 1
+#	else
+#		define COMPILER_ENV32 1
+#	endif
 #else
-#	define INLINE inline
+#	error "compiler not supported"
 #endif
 
 // debug settings
