@@ -80,7 +80,7 @@ void *slab_alloc(struct slab *s){
 
 bool slab_free(struct slab *s, void *ptr){
 	// check if ptr belongs to this slab
-	if(ptr < s->mem || ptr > OFFSET_POINTER(s->mem, s->capacity))
+	if(ptr < s->mem || ptr >= OFFSET_POINTER(s->mem, s->capacity))
 		return false;
 
 	// return memory to slab

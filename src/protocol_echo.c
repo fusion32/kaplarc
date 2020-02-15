@@ -4,7 +4,7 @@
 #include "system.h"
 #include <string.h>
 
-// protocol handle
+/* PROTOCOL HANDLE */
 #define ECHO_HANDLE_SIZE sizeof(struct echo_handle)
 #define ECHO_BUFFER_SIZE 1000
 struct echo_handle{
@@ -12,23 +12,21 @@ struct echo_handle{
 	uint8 output_buffer[ECHO_BUFFER_SIZE];
 };
 
-// protocol callbacks
+/* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
 static bool create_handle(struct connection *c, void **handle);
 static void destroy_handle(struct connection *c, void *handle);
 static void on_close(struct connection *c, void *handle);
 static protocol_status_t on_connect(
-	struct connection *conn, void *handle);
+	struct connection *c, void *handle);
 static protocol_status_t on_write(
-	struct connection *conn, void *handle);
+	struct connection *c, void *handle);
 static protocol_status_t on_recv_message(
-	struct connection *conn, void *handle,
+	struct connection *c, void *handle,
 	uint8 *data, uint32 datalen);
 static protocol_status_t on_recv_first_message(
-	struct connection *conn, void *handle,
+	struct connection *c, void *handle,
 	uint8 *data, uint32 datalen);
-
-// protocol definition
 struct protocol protocol_echo = {
 	.name =				"ECHO",
 	.sends_first =			false,
@@ -43,7 +41,7 @@ struct protocol protocol_echo = {
 	.on_recv_first_message =	on_recv_first_message,
 };
 
-// protocol callbacks
+/* IMPL START */
 static bool identify(uint8 *data, uint32 datalen){
 	return datalen >= 4 &&
 		data[0] == 'E' && data[1] == 'C' &&

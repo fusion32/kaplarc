@@ -8,8 +8,21 @@
 #include "tibia_rsa.h"
 #include "crypto/xtea.h"
 
-/* OUTPUT BUFFER */
+/* PROTOCOL HANDLE */
 #define GAME_HANDLE_SIZE sizeof(struct game_handle)
+#define MAX_KNOWN_CREATURES 150
+#define OUTPUT_BUFFER_SIZE 16384
+struct game_handle{
+	uint32 player_id;
+
+	// client known creatures
+	uint32 known_creatures;
+	uint32 known_creatures_list[MAX_KNOWN_CREATURES];
+
+	// output double buffering
+	//uint32 current_output_idx;
+	//uint8 output_buffers[2][OUTPUT_BUFFER_SIZE];
+};
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
@@ -40,3 +53,15 @@ struct protocol protocol_login = {
 	.on_recv_first_message = on_recv_first_message,
 };
 #endif
+
+/*
+class ProtocolGame : public Protocol
+{
+private:
+  std::list<uint32_t> knownCreatureList;
+  Player* player;
+  uint32_t eventConnect;
+  bool m_debugAssertSent;
+  bool m_acceptPackets;
+};
+*/

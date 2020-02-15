@@ -8,8 +8,8 @@
 #include "tibia_rsa.h"
 #include "crypto/xtea.h"
 
-/* OUTPUT BUFFER */
-#define LOGIN_BUFFER_SIZE 1337
+/* LOGIN OUTPUT BUFFER */
+#define LOGIN_BUFFER_SIZE 1024
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);

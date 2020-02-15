@@ -5,15 +5,20 @@
 #include "../buffer_util.h"
 #include "../config.h"
 #include "../log.h"
-#include "../mem_cache.h"
+#include "../mem.h"
 #include "../thread.h"
 
-// @TODO: perhaps use the global allocator instead of a dedicated mem_cache
+// NOTE1: login messages are always 149 bytes
+// NOTE2: game messages are usually small (less than 128 bytes)
+// NOTE3: having the input buffer size of 1792 bytes, allows the
+// connection to sit on the 2K memory cache and also avoid any
+// problem if a large string is sent from the client
 
 /* Connection Structure */
 // connection settings
-#define CONN_INPUT_SIZE 32768
-#define CONN_MAX_BODY_SIZE (CONN_INPUT_SIZE - 2)
+#define CONNECTION_SIZE sizeof(struct connection)
+#define CONN_INPUT_BUFFER_SIZE 1792
+#define CONN_MAX_BODY_SIZE (CONN_INPUT_BUFFER_SIZE - 2)
 #define CONN_TRIES_BEFORE_CLOSING 5
 // connection flags
 #define CONN_CLOSING		0x01
@@ -31,7 +36,6 @@ struct connection{
 	struct async_ov read_ov;
 	ULONG input_body_length;
 	uint8 *input_ptr;
-	uint8 input_buffer[CONN_INPUT_SIZE];
 	// output operation
 	struct async_ov write_ov;
 	uint32 output_length;
@@ -39,11 +43,29 @@ struct connection{
 	// connection list
 	struct connection *next;
 	struct connection *prev;
+	// input buffer (this positioning is to keep
+	// the connection control block close together)
+	uint8 input_buffer[CONN_INPUT_BUFFER_SIZE];
 };
 
-/* Connection Manager Data */
+/* Connection List */
 static struct connection *conn_head = NULL;
-static struct mem_cache *connections = NULL;
+
+static void __connection_list_insert(struct connection *c){
+	c->prev = NULL;
+	c->next = conn_head;
+	if(conn_head)
+		conn_head->prev = c;
+	conn_head = c;
+}
+static void __connection_list_remove(struct connection *c){
+	if(c->prev)
+		c->prev->next = c->next;
+	else
+		conn_head = c->next;
+	if(c->next)
+		c->next->prev = c->prev;
+}
 
 /* STATIC FWD DECL */
 static void connection_dispatch_on_close(struct connection *c);
@@ -65,6 +87,7 @@ static void connection_start_closing(struct connection *c, bool abort);
 /* IMPL START */
 static INLINE
 void connection_dispatch_on_close(struct connection *c){
+	static size_t a = sizeof(struct connection);
 	if(c->proto != NULL){
 		c->proto->on_close(c, c->proto_handle);
 		c->proto->destroy_handle(c, c->proto_handle);
@@ -370,11 +393,10 @@ static void __connection_close(struct connection *c){
 	// dispatch protocol close
 	connection_dispatch_on_close(c);
 	// remove from connection list
-	if(c->prev) c->prev->next = c->next;
-	if(c->next) c->next->prev = c->prev;
+	__connection_list_remove(c);
 	// release connection
 	closesocket(c->s);
-	mem_cache_free(connections, c);
+	mem_free(CONNECTION_SIZE, c);
 }
 
 static void connection_start_closing(struct connection *c, bool abort){
@@ -395,14 +417,7 @@ static void connection_start_closing(struct connection *c, bool abort){
 }
 
 bool connmgr_init(void){
-	connections = mem_cache_create(
-		config_geti("conn_slots_per_slab"),
-		sizeof(struct connection));
-	if(!connections){
-		LOG_ERROR("connmgr_init: failed to create"
-			" connection mem cache");
-		return false;
-	}
+	conn_head = NULL;
 	return true;
 }
 
@@ -411,8 +426,6 @@ void connmgr_shutdown(void){
 	// close all connections
 	for(c = conn_head; c != NULL; c = c->next)
 		__connection_close(c);
-	// release connections memory
-	mem_cache_destroy(connections);
 }
 
 void connmgr_start_connection(SOCKET s,
@@ -420,7 +433,7 @@ void connmgr_start_connection(SOCKET s,
 		struct service *svc){
 	DEBUG_ASSERT(s != INVALID_SOCKET);
 	DEBUG_ASSERT(svc != NULL);
-	struct connection *c = mem_cache_alloc(connections);
+	struct connection *c = mem_alloc(CONNECTION_SIZE);
 	DEBUG_ASSERT(c != NULL);
 
 	// init connection
@@ -440,11 +453,7 @@ void connmgr_start_connection(SOCKET s,
 	c->output_length = 0;
 	c->output_data = NULL;
 	// insert into connection list
-	c->prev = NULL;
-	c->next = conn_head;
-	if(conn_head)
-		conn_head->prev = c;
-	conn_head = c;
+	__connection_list_insert(c);
 
 	// this only works for sends_first protocols, and will
 	// create the protocol and notify it of the connection

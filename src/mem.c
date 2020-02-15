@@ -18,8 +18,8 @@ typedef enum cache_idx{
 	CACHE_FIRST = CACHE32,
 	CACHE_LAST = CACHE16K,
 	NUM_CACHES = CACHE_LAST + 1,
-	FIRST_PO2 = 5,
-	LAST_PO2 = 14,
+	FIRST_PO2 = 5, // 32B
+	LAST_PO2 = 14, // 16K
 } cache_idx_t;
 
 static mutex_t mtx;
@@ -91,10 +91,11 @@ void *mem_alloc(size_t size){
 }
 void mem_free(size_t size, void *ptr){
 	DEBUG_ASSERT(size > 0);
-	bool ret;
 	cache_idx_t cache = __size_to_cache_idx(size);
 	mutex_lock(&mtx);
-	ret = mem_cache_free(cache_table[cache].cache, ptr);
+	mem_cache_free(cache_table[cache].cache, ptr);
 	mutex_unlock(&mtx);
-	DEBUG_ASSERT(ret);
+	// if theres an error with the free operation
+	// an assertion will fail when the memcache's
+	// objcache is flushed back into the slabs
 }
