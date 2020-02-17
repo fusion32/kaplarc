@@ -1,10 +1,9 @@
 #include "config.h"
 #include "def.h"
 #include "log.h"
-#include "mem.h"
 #include "game.h"
-#include "server.h"
 #include "tibia_rsa.h"
+#include "server/server.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,8 +25,7 @@ int kaplar_main(int argc, char **argv){
 int main(int argc, char **argv){
 #endif // BUILD_TEST
 
-	// @TODO: maybe change `config` to `settings`
-	config_cmdline(argc, argv);
+	config_init(argc, argv);
 	if(!config_load())
 		LOG_WARNING("running with default config");
 

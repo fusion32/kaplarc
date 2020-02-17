@@ -4,7 +4,7 @@
 #include "../def.h"
 
 #ifdef PLATFORM_WINDOWS
-#include "../protocol.h"
+#include "protocol.h"
 #define WIN32_LEAN_AND_MEAN 1
 #include <winsock2.h>
 #include <mswsock.h>
@@ -36,7 +36,7 @@ void connection_close(struct connection *c);
 void connection_abort(struct connection *c);
 bool connection_send(struct connection *c, uint8 *data, uint32 datalen);
 
-// iocp_service.c
+// iocp_svcmgr.c
 bool svcmgr_init(void);
 void svcmgr_shutdown(void);
 bool svcmgr_add_protocol(struct protocol *proto, int port);
@@ -47,10 +47,10 @@ struct protocol *service_select_protocol(struct service *svc,
 
 // iocp_server.c
 extern struct iocp_ctx server_ctx;
-bool internal_server_init(void);
-void internal_server_shutdown(void);
-void internal_server_work(void);
-void internal_server_interrupt(void);
+bool server_internal_init(void);
+void server_internal_shutdown(void);
+void server_internal_work(void);
+void server_internal_interrupt(void);
 
 #endif //PLATFORM_WINDOWS
 #endif //SERVER_IOCP_H_

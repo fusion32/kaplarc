@@ -90,7 +90,7 @@ static void server_cleanup_winsock(void){
 	WSACleanup();
 }
 
-bool internal_server_init(void){
+bool server_internal_init(void){
 	if(ctx->initialized)
 		return true;
 	if(!server_init_winsock())
@@ -113,7 +113,7 @@ fail1:	server_cleanup_winsock();
 fail0:	return false;
 }
 
-void internal_server_shutdown(void){
+void server_internal_shutdown(void){
 	if(!ctx->initialized) return;
 	// server shouldn't be running when this is called
 	// so it's safe to release everything
@@ -124,7 +124,7 @@ void internal_server_shutdown(void){
 }
 
 #define MAX_EVENTS 256
-void internal_server_work(void){
+void server_internal_work(void){
 	OVERLAPPED_ENTRY evs[MAX_EVENTS];
 	struct async_ov *ov;
 	void (*complete)(void*, DWORD, DWORD);
@@ -154,7 +154,7 @@ void internal_server_work(void){
 	}
 }
 
-void internal_server_interrupt(void){
+void server_internal_interrupt(void){
 	PostQueuedCompletionStatus(ctx->iocp, 0, 0, NULL);
 }
 

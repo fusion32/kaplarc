@@ -1,21 +1,6 @@
 #include "slab.h"
-#include "log.h"
-#include "system.h"
-
-#include <stdlib.h>
-#include <stdio.h>
 
 #define FREENODE_NEXT(ptr) (*(void**)(ptr))
-
-struct slab{
-	uint stride;
-	uint capacity;
-	uint offset;
-	uint freecount;
-	void *freelist;
-	void *mem;
-	struct slab *next;
-};
 
 // @REVIEW
 // increasing the alignment past the cache line size wouldn't
@@ -38,12 +23,12 @@ struct slab *slab_create(uint slots, uint stride){
 	alignment_mask = alignment - 1;
 
 	// stride must be a multiple of alignment
-	if((stride & alignment_mask) != 0)
+	if(stride & alignment_mask)
 		stride = (stride + alignment_mask) & ~alignment_mask;
 
 	// properly align the offset to memory
 	mem_offset = sizeof(struct slab);
-	if((mem_offset & alignment_mask) != 0)
+	if(mem_offset & alignment_mask)
 		mem_offset = (mem_offset + alignment_mask) & ~alignment_mask;
 
 	// allocate and initialize slab
@@ -101,8 +86,4 @@ bool slab_is_full(struct slab *s){
 
 bool slab_is_empty(struct slab *s){
 	return s->offset == (s->freecount * s->stride);
-}
-
-struct slab **slab_next(struct slab *s){
-	return &s->next;
 }

@@ -5,7 +5,6 @@
 #include "../buffer_util.h"
 #include "../config.h"
 #include "../log.h"
-#include "../mem.h"
 #include "../thread.h"
 
 // NOTE1: login messages are always 149 bytes
@@ -399,7 +398,8 @@ static void __connection_close(struct connection *c){
 	mem_free(CONNECTION_SIZE, c);
 }
 
-static void connection_start_closing(struct connection *c, bool abort){
+static INLINE
+void connection_start_closing(struct connection *c, bool abort){
 	DEBUG_ASSERT(c != NULL);
 	if(c->pending_work == 0){
 		__connection_close(c);
@@ -422,10 +422,14 @@ bool connmgr_init(void){
 }
 
 void connmgr_shutdown(void){
-	struct connection *c;
+	struct connection *next, *tmp;
 	// close all connections
-	for(c = conn_head; c != NULL; c = c->next)
-		__connection_close(c);
+	next = conn_head;
+	while(next != NULL){
+		tmp = next;
+		next = next->next;
+		__connection_close(tmp);
+	}
 }
 
 void connmgr_start_connection(SOCKET s,
@@ -473,12 +477,10 @@ void connmgr_start_connection(SOCKET s,
 		connection_abort(c);
 }
 
-INLINE
 void connection_close(struct connection *c){
 	connection_start_closing(c, false);
 }
 
-INLINE
 void connection_abort(struct connection *c){
 	connection_start_closing(c, true);
 }

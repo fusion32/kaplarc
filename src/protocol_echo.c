@@ -1,6 +1,6 @@
-#include "server.h"
+#include "def.h"
+#include "server/server.h"
 #include "buffer_util.h"
-#include "mem.h"
 #include "system.h"
 #include <string.h>
 

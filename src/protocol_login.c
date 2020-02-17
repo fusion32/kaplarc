@@ -1,12 +1,10 @@
-#include "protocol.h"
 #include "buffer_util.h"
 #include "config.h"
 #include "hash.h"
-#include "mem.h"
-#include "server.h"
 #include "packed_data.h"
 #include "tibia_rsa.h"
 #include "crypto/xtea.h"
+#include "server/server.h"
 
 /* LOGIN OUTPUT BUFFER */
 #define LOGIN_BUFFER_SIZE 1024
@@ -71,7 +69,7 @@ on_connect(struct connection *conn, void *handle){
 
 static protocol_status_t
 on_write(struct connection *conn, void *handle){
-	return PROTO_OK;
+	return PROTO_CLOSE;
 }
 
 static protocol_status_t
@@ -134,7 +132,7 @@ on_recv_first_message(struct connection *c, void *handle,
 	// 1 byte -> protocol id
 	// 2 bytes -> client os
 	// 2 bytes -> client version
-	// 12 bytes -> ?
+	// 12 bytes -> tibia .dat, .spr, .pic checksum(?)
 	// 128 bytes -> rsa encoded data
 	if(datalen != 149){
 		DEBUG_LOG("protocol_login: invalid login message length"
@@ -179,6 +177,11 @@ on_recv_first_message(struct connection *c, void *handle,
 	data_write_str(&writer, "hello");
 	*/
 
+	// @TODO: with the account information, send a request to the database thread
+	// and wait for the data to be available before sending the character list
+	// or login error (this will avoid stalling the network thread, in which
+	// protocol handles run on, while waiting for the database read)
+
 	// motd
 	data_write_byte(&writer, 0x14);
 	data_write_str(&writer, "1\nhello");
@@ -196,38 +199,3 @@ on_recv_first_message(struct connection *c, void *handle,
 		(uint32)(writer.ptr - writer.base)));
 	return PROTO_CLOSE;
 }
-
-/*
-	auto output = output_message(256);
-		message_begin(output.get());
-		output->add_byte(0x0A);
-		output->add_str(message);
-		message_end(output.get());
-		connection_send(connection, std::move(output));
-
-
-	auto output = output_message(256);
-		message_begin(output.get());
-
-		// send motd
-		char buf[256];
-		StringPtr motd = {256, 0, buf};
-		str_format(&motd, "%d\n%s",
-			config_geti("motd_num"),
-			config_get("motd_message"));
-		output->add_byte(0x14);					// motd identifier
-		output->add_lstr(motd.data, motd.len);			// motd string
-
-		// send character list
-		output->add_byte(0x64);					// character list identifier
-		output->add_byte(1);					// character count
-		// for(...){
-			output->add_str("Jimmy");			// character name
-			output->add_str("World");			// character world
-			output->add_u32(0);				// world address
-			output->add_u16(config_geti("sv_game_port"));	// world port
-		// }
-		output->add_u16(1);					// premium days left
-
-		message_end(output.get());
-*/

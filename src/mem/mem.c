@@ -1,7 +1,6 @@
 #include "mem.h"
-#include "mem_cache.h"
-#include "log.h"
-#include "thread.h"
+#include "slab.h"
+#include "../thread.h"
 
 typedef enum cache_idx{
 	CACHE32 = 0,
@@ -26,7 +25,7 @@ static mutex_t mtx;
 static struct {
 	uint slots;
 	uint stride;
-	struct mem_cache *cache;
+	struct slab_cache *cache;
 } cache_table[] = {
 	// ~8K for small allocations
 	[CACHE32] = {256, 32, NULL},
@@ -49,7 +48,7 @@ bool mem_init(void){
 	cache_idx_t i;
 	mutex_init(&mtx);
 	for(i = CACHE_FIRST; i <= CACHE_LAST; i += 1){
-		cache_table[i].cache = mem_cache_create(
+		cache_table[i].cache = slab_cache_create(
 			cache_table[i].slots, cache_table[i].stride);
 		ASSERT(cache_table[i].cache != NULL);
 	}
@@ -59,7 +58,7 @@ bool mem_init(void){
 void mem_shutdown(void){
 	cache_idx_t i;
 	for(i = CACHE_FIRST; i <= CACHE_LAST; i += 1)
-		mem_cache_destroy(cache_table[i].cache);
+		slab_cache_destroy(cache_table[i].cache);
 	mutex_destroy(&mtx);
 }
 
@@ -68,10 +67,10 @@ __size_to_cache_idx(size_t size){
 	DEBUG_ASSERT(size > 0);
 #ifdef COMPILER_ENV32
 	int next_pow2 = 31 - _CLZ32(size)
-		+ !IS_POWER_OF_TWO(size);
+		+ (_POPCNT32(size) != 1);
 #else
 	int next_pow2 = 63 - _CLZ64(size)
-		+ !IS_POWER_OF_TWO(size);
+		+ (_POPCNT64(size) != 1);
 #endif
 	DEBUG_ASSERT(next_pow2 >= FIRST_PO2
 		&& next_pow2 <= LAST_PO2);
@@ -84,7 +83,7 @@ void *mem_alloc(size_t size){
 	void *ptr;
 	cache_idx_t cache = __size_to_cache_idx(size);
 	mutex_lock(&mtx);
-	ptr = mem_cache_alloc(cache_table[cache].cache);
+	ptr = slab_cache_alloc(cache_table[cache].cache);
 	mutex_unlock(&mtx);
 	DEBUG_ASSERT(ptr != NULL);
 	return ptr;
@@ -93,9 +92,9 @@ void mem_free(size_t size, void *ptr){
 	DEBUG_ASSERT(size > 0);
 	cache_idx_t cache = __size_to_cache_idx(size);
 	mutex_lock(&mtx);
-	mem_cache_free(cache_table[cache].cache, ptr);
+	slab_cache_free(cache_table[cache].cache, ptr);
 	mutex_unlock(&mtx);
 	// if theres an error with the free operation
-	// an assertion will fail when the memcache's
+	// an assertion will fail when the slabcache's
 	// objcache is flushed back into the slabs
 }

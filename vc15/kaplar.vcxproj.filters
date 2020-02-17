@@ -14,8 +14,11 @@
     <Filter Include="Source Files\test">
       <UniqueIdentifier>{066b9e28-a364-4181-b039-d38afc89633b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\net">
+    <Filter Include="Source Files\server">
       <UniqueIdentifier>{44f0fa6b-c11c-42c0-943a-0e0d21658b22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mem">
+      <UniqueIdentifier>{842b1cef-0d51-4297-aeff-bdeb4232822c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -85,9 +88,6 @@
     <ClCompile Include="..\src\test\main_test.c">
       <Filter>Source Files\test</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\slab.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\test\slab_test.c">
       <Filter>Source Files\test</Filter>
     </ClCompile>
@@ -99,21 +99,6 @@
     </ClCompile>
     <ClCompile Include="..\src\protocol_echo.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\server.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\epoll_server.c">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\iocp_connmgr.c">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\iocp_server.c">
-      <Filter>Source Files\net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\net\iocp_svcmgr.c">
-      <Filter>Source Files\net</Filter>
     </ClCompile>
     <ClCompile Include="..\src\scheduler.c">
       <Filter>Source Files</Filter>
@@ -139,13 +124,34 @@
     <ClCompile Include="..\src\protocol_login.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mem.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\src\server\iocp_connmgr.c">
+      <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mem_cache.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\src\server\iocp_server.c">
+      <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\test\mem_cache_test.c">
+    <ClCompile Include="..\src\server\iocp_svcmgr.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\server.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server\epoll_server.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mem\slab_cache.c">
+      <Filter>Source Files\mem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mem\slab.c">
+      <Filter>Source Files\mem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mem\arena.c">
+      <Filter>Source Files\mem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mem\mem.c">
+      <Filter>Source Files\mem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\test\slab_cache_test.c">
       <Filter>Source Files\test</Filter>
     </ClCompile>
   </ItemGroup>
@@ -204,23 +210,11 @@
     <ClInclude Include="..\src\db\local.h">
       <Filter>Source Files\db</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\slab.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\hash.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\tasks.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\protocol.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\server.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\net\iocp.h">
-      <Filter>Source Files\net</Filter>
     </ClInclude>
     <ClInclude Include="..\src\scheduler.h">
       <Filter>Source Files</Filter>
@@ -237,11 +231,20 @@
     <ClInclude Include="..\src\packed_data.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\mem.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="..\src\server\iocp.h">
+      <Filter>Source Files\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\mem_cache.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="..\src\server\protocol.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server\server.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mem\mem.h">
+      <Filter>Source Files\mem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mem\slab.h">
+      <Filter>Source Files\mem</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

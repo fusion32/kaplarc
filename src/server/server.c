@@ -1,12 +1,12 @@
-#include "def.h"
-#include "thread.h"
 #include "server.h"
+#include "../def.h"
+#include "../thread.h"
 
 /* these will depend on the OS */
-bool internal_server_init(void);
-void internal_server_shutdown(void);
-void internal_server_work(void);
-void internal_server_interrupt(void);
+bool server_internal_init(void);
+void server_internal_shutdown(void);
+void server_internal_work(void);
+void server_internal_interrupt(void);
 
 /* server state and dispatcher */
 static thread_t thr;
@@ -30,13 +30,13 @@ void *server_thread(void *unused){
 		mutex_unlock(&mtx);
 
 		// consume net i/o
-		internal_server_work();
+		server_internal_work();
 	}
 	return NULL;
 }
 
 bool server_init(void){
-	if(!internal_server_init())
+	if(!server_internal_init())
 		return false;
 	running = true;
 	exec_fp = NULL;
@@ -46,18 +46,18 @@ bool server_init(void){
 		return true;
 
 	mutex_destroy(&mtx);
-	internal_server_shutdown();
+	server_internal_shutdown();
 	return false;
 }
 
 void server_shutdown(void){
 	mutex_lock(&mtx);
 	running = false;
-	internal_server_interrupt();
+	server_internal_interrupt();
 	mutex_unlock(&mtx);
 	thread_join(&thr, NULL);
 	mutex_destroy(&mtx);
-	internal_server_shutdown();
+	server_internal_shutdown();
 }
 
 // @NOTE: This is called to run a task on the server thread
@@ -68,7 +68,7 @@ void server_exec(void (*fp)(void*), void *arg){
 	DEBUG_ASSERT(exec_fp == NULL);
 	exec_fp = fp;
 	exec_arg = arg;
-	internal_server_interrupt();
+	server_internal_interrupt();
 	mutex_unlock(&mtx);
 }
 
@@ -81,7 +81,7 @@ bool server_exec_check(void (*fp)(void*), void *arg){
 	}
 	exec_fp = fp;
 	exec_arg = arg;
-	internal_server_interrupt();
+	server_internal_interrupt();
 	mutex_unlock(&mtx);
 	return true;
 }

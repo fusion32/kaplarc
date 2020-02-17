@@ -1,11 +1,15 @@
 #ifndef DEF_H_
 #define DEF_H_
 
+// stdlib base
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <time.h>
+
+// memory allocator
+#include "mem/mem.h"
 
 // always enable assert
 #ifdef NDEBUG
@@ -27,13 +31,6 @@ typedef int64_t		int64;
 typedef uint64_t	uint64;
 typedef uintptr_t	uintptr;
 typedef ptrdiff_t	ptrdiff;
-
-// helper macros
-#define ARRAY_SIZE(a)		(sizeof(a)/sizeof((a)[0]))
-#define OFFSET_POINTER(ptr, x)	((void*)(((char*)(ptr)) + (x)))
-#define IS_POWER_OF_TWO(x)	((x != 0) && ((x & (x - 1)) == 0))
-#define MIN(x, y)		((x < y) ? (x) : (y))
-#define MAX(x, y)		((x > y) ? (x) : (y))
 
 // @REMOVE
 #define PLATFORM_WINDOWS 1
@@ -64,6 +61,8 @@ typedef ptrdiff_t	ptrdiff;
 #	define INLINE __forceinline
 #	define _CLZ32(x) ((int)__lzcnt(x))
 #	define _CLZ64(x) ((int)__lzcnt64(x))
+#	define _POPCNT32(x) ((int)__popcnt(x))
+#	define _POPCNT64(x) ((int)__popcnt64(x))
 #	ifdef _WIN64
 #		define COMPILER_ENV64 1
 #	else
@@ -73,6 +72,8 @@ typedef ptrdiff_t	ptrdiff;
 #	define INLINE __attribute__((always_inline))
 #	define _CLZ32(x) ((int)__builtin_clzl(x))
 #	define _CLZ64(x) ((int)__builtin_clzll(x))
+#	define _POPCNT32(x) ((int)__builtin_popcountl(x))
+#	define _POPCNT64(x) ((int)__builtin_popcountll(x))
 #	if defined(__x86_64__)
 #		define COMPILER_ENV64 1
 #	else
@@ -101,5 +102,12 @@ typedef ptrdiff_t	ptrdiff;
 #ifndef DB_PGSQL
 #	define DB_PGSQL 1
 #endif
+
+// useful macros
+#define ARRAY_SIZE(a)		(sizeof(a)/sizeof((a)[0]))
+#define OFFSET_POINTER(ptr, x)	((void*)(((char*)(ptr)) + (x)))
+#define IS_POWER_OF_TWO(x)	((x != 0) && ((x & (x - 1)) == 0))
+#define MIN(x, y)		((x < y) ? (x) : (y))
+#define MAX(x, y)		((x > y) ? (x) : (y))
 
 #endif //DEF_H_

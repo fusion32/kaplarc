@@ -1,14 +1,9 @@
 #include "slab.h"
-#include "def.h"
-#include "log.h"
-#include "system.h"
-
-#include <string.h>
 
 #define OBJCACHE_SIZE 256
-struct mem_cache{
-	uint32 slab_slots;
-	uint32 slab_stride;
+struct slab_cache{
+	uint slab_slots;
+	uint slab_stride;
 	struct slab *full;
 	struct slab *partial;
 	struct slab *empty;
@@ -22,7 +17,7 @@ static int slab_list_destroy(struct slab *head){
 	int ret = 0;
 	while(next != NULL){
 		tmp = next;
-		next = *slab_next(tmp);
+		next = tmp->next;
 		slab_destroy(tmp);
 		ret += 1;
 	}
@@ -31,19 +26,19 @@ static int slab_list_destroy(struct slab *head){
 
 #define PTR_ALIGNMENT		(sizeof(void*))
 #define PTR_ALIGNMENT_MASK	(sizeof(void*) - 1)
-struct mem_cache *mem_cache_create(uint slab_slots, uint slab_stride){
-	struct mem_cache *c;
+struct slab_cache *slab_cache_create(uint slab_slots, uint slab_stride){
+	struct slab_cache *c;
 
 	// check if stride has the minimum alignment requirement
 	if((slab_stride & PTR_ALIGNMENT_MASK) != 0){
-		LOG_WARNING("mem_cache_create: ajusting stride to have"
+		LOG_WARNING("slab_cache_create: ajusting stride to have"
 			" the minimum alignment of %u", PTR_ALIGNMENT);
 		slab_stride = (slab_stride + PTR_ALIGNMENT_MASK)
 				& ~PTR_ALIGNMENT_MASK;
 	}
 
 	// allocate control block and initialize it
-	c = sys_malloc(sizeof(struct mem_cache));
+	c = sys_malloc(sizeof(struct slab_cache));
 	c->slab_slots = slab_slots;
 	c->slab_stride = slab_stride;
 	// the first slab will be created on the first allocation
@@ -54,7 +49,7 @@ struct mem_cache *mem_cache_create(uint slab_slots, uint slab_stride){
 	return c;
 }
 
-void mem_cache_destroy(struct mem_cache *c){
+void slab_cache_destroy(struct slab_cache *c){
 	// destroy slabs
 	slab_list_destroy(c->full);
 	c->full = NULL;
@@ -67,7 +62,7 @@ void mem_cache_destroy(struct mem_cache *c){
 	sys_free(c);
 }
 
-void *mem_cache_alloc(struct mem_cache *c){
+void *slab_cache_alloc(struct slab_cache *c){
 	struct slab *s;
 	void *ptr;
 
@@ -84,9 +79,9 @@ void *mem_cache_alloc(struct mem_cache *c){
 			return ptr;
 
 		// remove from partial list
-		c->partial = *slab_next(s);
+		c->partial = s->next;
 		// insert into full list
-		*slab_next(s) = c->full;
+		s->next = c->full;
 		c->full = s;
 		// next partial slab
 		s = c->partial;
@@ -99,9 +94,9 @@ void *mem_cache_alloc(struct mem_cache *c){
 		ASSERT(ptr != NULL); // this shouldn't fail
 
 		// remove from empty list
-		c->empty = *slab_next(s);
+		c->empty = s->next;
 		// insert into partial list
-		*slab_next(s) = c->partial;
+		s->next = c->partial;
 		c->partial = s;
 
 		return ptr;
@@ -110,7 +105,7 @@ void *mem_cache_alloc(struct mem_cache *c){
 	// if there were no empty slabs, create new one
 	// and insert it into the partial list
 	s = slab_create(c->slab_slots, c->slab_stride);
-	*slab_next(s) = c->partial;
+	s->next = c->partial;
 	c->partial = s;
 
 	ptr = slab_alloc(s);
@@ -184,7 +179,7 @@ static bool __slab_flush_objects(struct slab *s, void **arr, int *pcount){
 	return true;
 }
 
-static void __mem_cache_flush_objcache(struct mem_cache *c){
+static void __slab_cache_flush_objcache(struct slab_cache *c){
 	DEBUG_ASSERT(c->objcache_count > 0);
 	struct slab **s, *tmp;
 	void **objcache;
@@ -200,54 +195,54 @@ static void __mem_cache_flush_objcache(struct mem_cache *c){
 	// checking the same slabs more than once
 
 	// return to partial slabs
-	for(s = &c->partial; count > 0 && *s != NULL; s = slab_next(*s)){
+	for(s = &c->partial; count > 0 && *s != NULL; s = &(*s)->next){
 		if(__slab_flush_objects(*s, objcache, &count)){
 			if(slab_is_empty(*s)){
 				// remove from partial list
 				tmp = *s;
-				*s = *slab_next(*s);
+				*s = tmp->next;
 				// insert into empty list
-				*slab_next(tmp) = c->empty;
+				tmp->next = c->empty;
 				c->empty = tmp;
 			}
 		}
 	}
 
 	// return to full slabs
-	for(s = &c->full; count > 0 && *s != NULL; s = slab_next(*s)){
+	for(s = &c->full; count > 0 && *s != NULL; s = &(*s)->next){
 		if(__slab_flush_objects(*s, objcache, &count)){
 			// remove from full list
 			tmp = *s;
-			*s = *slab_next(*s);
+			*s = tmp->next;
 			if(slab_is_empty(tmp)){
 				// insert into empty list
-				*slab_next(tmp) = c->empty;
+				tmp->next = c->empty;
 				c->empty = tmp;
 			}else{
 				// insert into partial list
-				*slab_next(tmp) = c->partial;
+				tmp->next = c->partial;
 				c->partial = tmp;
 			}
 		}
 	}
-	ASSERT(count == 0 && "invalid mem_cache_free");
+	ASSERT(count == 0 && "invalid slab_cache_free");
 	c->objcache_count = 0;
 }
 
-void mem_cache_free(struct mem_cache *c, void *ptr){
+void slab_cache_free(struct slab_cache *c, void *ptr){
 	// if the obj cache is full, flush the cache back
 	// into the slabs
 	if(c->objcache_count >= OBJCACHE_SIZE)
-		__mem_cache_flush_objcache(c);
+		__slab_cache_flush_objcache(c);
 
 	// now add the current object into the objcache
 	c->objcache[c->objcache_count++] = ptr;
 }
 
-int mem_cache_shrink(struct mem_cache *c){
+int slab_cache_shrink(struct slab_cache *c){
 	int ret;
 	if(c->objcache_count > 0)
-		__mem_cache_flush_objcache(c);
+		__slab_cache_flush_objcache(c);
 	ret = slab_list_destroy(c->empty);
 	c->empty = NULL;
 	return ret;

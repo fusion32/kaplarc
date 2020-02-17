@@ -2,7 +2,7 @@
 #ifdef BUILD_TEST
 
 #include "../log.h"
-#include "../slab.h"
+#include "../mem/slab.h"
 
 #define SLAB_SLOTS 1024
 #define SLAB_STRIDE sizeof(struct element)

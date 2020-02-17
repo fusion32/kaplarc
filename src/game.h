@@ -8,6 +8,9 @@ extern struct protocol protocol_login;
 //extern struct protocol protocol_game;
 //extern struct protocol protocol_old_login;
 //extern struct protocol protocol_old_game;
+
+// other protocols
+extern struct protocol protocol_echo;
 //extern struct protocol protocol_info;
 
 bool game_init(void);

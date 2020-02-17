@@ -1,6 +1,6 @@
 #ifndef SERVER_PROTOCOL_H_
 #define SERVER_PROTOCOL_H_
-#include "def.h"
+#include "../def.h"
 
 typedef enum protocol_status{
 	PROTO_OK = 0,

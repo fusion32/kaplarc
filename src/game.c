@@ -1,5 +1,5 @@
 #include "game.h"
-#include "server.h"
+//#include "server/server.h"
 
 bool game_init(void){
 	return true;
