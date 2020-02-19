@@ -82,6 +82,14 @@ static struct config_var *config_var_insert(const char *key, size_t keylen){
 	return NULL;
 }
 
+static void config_var_set_value(struct config_var *var,
+			const char *val, size_t vallen){
+	if(vallen >= MAX_VALUE_LENGTH)
+		vallen = MAX_VALUE_LENGTH - 1;
+	memcpy(&var->value, val, vallen);
+	var->value[vallen] = 0; // add nul-terminator
+}
+
 void __parse_argv(const char *argv, size_t *keylen,
 		const char **val, size_t *vallen){
 	const char *p;
@@ -134,12 +142,10 @@ void config_init(int argc, char **argv){
 				" from cmdline `%.*s`", keylen, key);
 			continue;
 		}
-		memcpy(&var->key, key, keylen);
-		if(vallen == 0){
-			val = "true";
-			vallen = 4;
-		}
-		memcpy(&var->value, val, vallen);
+		if(vallen == 0)
+			config_var_set_value(var, "true", 4);
+		else
+			config_var_set_value(var, val, vallen);
 	}
 }
 
@@ -178,9 +184,7 @@ bool config_load_from_path(const char *path){
 		lua_getglobal(L, key);
 		if(lua_isstring(L, -1) != 0){
 			val = lua_tolstring(L, -1, &vallen);
-			if(vallen >= MAX_VALUE_LENGTH)
-				vallen = MAX_VALUE_LENGTH - 1;
-			memcpy(var->value, val, vallen);
+			config_var_set_value(var, val, vallen);
 		}
 		lua_pop(L, 1);
 	}
