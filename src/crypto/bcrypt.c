@@ -118,8 +118,6 @@ bool bcrypt_checkpass(const char *pass, const char *hash){
 	if(!generate_hash(pass, hash, test_hash, BCRYPT_HASH_STRLEN))
 		return false;
 	hashlen = strlen(hash);
-	if(hashlen != strlen(test_hash) ||
-	   !hash_cmp(hash, test_hash, hashlen))
-		return false;
-	return true;
+	return hashlen == strlen(test_hash) &&
+		hash_cmp(hash, test_hash, hashlen);
 }

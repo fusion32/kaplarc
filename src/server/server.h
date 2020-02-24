@@ -1,5 +1,5 @@
-#ifndef SERVER_H_
-#define SERVER_H_
+#ifndef SERVER_SERVER_H_
+#define SERVER_SERVER_H_
 
 #include "../def.h"
 #include "protocol.h"
@@ -17,4 +17,4 @@ void connection_close(struct connection *c);
 void connection_abort(struct connection *c);
 bool connection_send(struct connection *c, uint8 *data, uint32 datalen);
 
-#endif //SERVER_H_
+#endif //SERVER_SERVER_H_

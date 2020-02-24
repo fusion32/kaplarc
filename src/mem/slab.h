@@ -1,5 +1,5 @@
-#ifndef MEM_INTERNAL_H_
-#define MEM_INTERNAL_H_ 1
+#ifndef MEM_SLAB_H_
+#define MEM_SLAB_H_ 1
 
 #include "../def.h"
 #include "../system.h"
@@ -29,4 +29,4 @@ void *slab_cache_alloc(struct slab_cache *c);
 void slab_cache_free(struct slab_cache *c, void *ptr);
 int slab_cache_shrink(struct slab_cache *c);
 
-#endif //MEM_INTERNAL_H_
+#endif //MEM_SLAB_H_

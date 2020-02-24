@@ -3,6 +3,8 @@
 #include "log.h"
 #include "game.h"
 #include "tibia_rsa.h"
+
+#include "database/database.h"
 #include "server/server.h"
 
 #include <stdio.h>
@@ -33,6 +35,9 @@ int main(int argc, char **argv){
 	init_system("mem", mem_init, mem_shutdown);
 	init_system("tibia_rsa", tibia_rsa_init, tibia_rsa_shutdown);
 
+	// database
+	init_system("database", database_init, database_shutdown);
+
 	// network
 	// @TODO: maybe change `server` to `net` or something else
 	// @TODO: move these `add_protocol` into the server system
@@ -43,6 +48,9 @@ int main(int argc, char **argv){
 	// game
 	init_system("game", game_init, game_shutdown);
 
-	game_run();
+	//game_run();
+	extern void database_test();
+	database_test();
+	getchar();
 	return 0;
 }

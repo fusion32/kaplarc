@@ -8,9 +8,6 @@
     <Filter Include="Source Files\crypto">
       <UniqueIdentifier>{b87c92df-e49e-4b64-87cb-092b57db411b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\db">
-      <UniqueIdentifier>{2561bc72-d272-4110-8a79-61c43c558339}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\test">
       <UniqueIdentifier>{066b9e28-a364-4181-b039-d38afc89633b}</UniqueIdentifier>
     </Filter>
@@ -19,6 +16,9 @@
     </Filter>
     <Filter Include="Source Files\mem">
       <UniqueIdentifier>{842b1cef-0d51-4297-aeff-bdeb4232822c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\database">
+      <UniqueIdentifier>{2561bc72-d272-4110-8a79-61c43c558339}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,12 +36,6 @@
     </ClCompile>
     <ClCompile Include="..\src\string.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\db\local.c">
-      <Filter>Source Files\db</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\db\pgsql.c">
-      <Filter>Source Files\db</Filter>
     </ClCompile>
     <ClCompile Include="..\src\crypto\base64.c">
       <Filter>Source Files\crypto</Filter>
@@ -154,6 +148,12 @@
     <ClCompile Include="..\src\test\slab_cache_test.c">
       <Filter>Source Files\test</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\database\local.c">
+      <Filter>Source Files\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\database\pgsql.c">
+      <Filter>Source Files\database</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\def.h">
@@ -189,9 +189,6 @@
     <ClInclude Include="..\src\config.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\db\db.h">
-      <Filter>Source Files\db</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\buffer_util.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -206,9 +203,6 @@
     </ClInclude>
     <ClInclude Include="..\src\rbtree.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\db\local.h">
-      <Filter>Source Files\db</Filter>
     </ClInclude>
     <ClInclude Include="..\src\hash.h">
       <Filter>Source Files</Filter>
@@ -245,6 +239,12 @@
     </ClInclude>
     <ClInclude Include="..\src\mem\slab.h">
       <Filter>Source Files\mem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\database\local.h">
+      <Filter>Source Files\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\database\database.h">
+      <Filter>Source Files\database</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

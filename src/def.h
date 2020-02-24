@@ -98,12 +98,7 @@ typedef ptrdiff_t	ptrdiff;
 #	define DEBUG_ASSERT(expr)	ASSERT(expr)
 #endif
 
-// database settings
-#ifndef DB_PGSQL
-#	define DB_PGSQL 1
-#endif
-
-// useful macros
+// common macros
 #define ARRAY_SIZE(a)		(sizeof(a)/sizeof((a)[0]))
 #define OFFSET_POINTER(ptr, x)	((void*)(((char*)(ptr)) + (x)))
 #define IS_POWER_OF_TWO(x)	((x != 0) && ((x & (x - 1)) == 0))

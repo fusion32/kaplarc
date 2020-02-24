@@ -3,7 +3,7 @@
 
 //@TODO: create a test
 
-struct arena{
+struct mem_arena{
 	uint8 *ptr;
 	uint8 *end;
 	uint8 mem[];
@@ -11,18 +11,18 @@ struct arena{
 
 #define PTR_ALIGNMENT		(sizeof(void*))
 #define PTR_ALIGNMENT_MASK	(sizeof(void*) - 1)
-struct arena *mem_arena_create(size_t capacity){
-	struct arena *a = sys_malloc(sizeof(struct arena) + capacity);
+struct mem_arena *mem_arena_create(size_t capacity){
+	struct mem_arena *a = sys_malloc(sizeof(struct mem_arena) + capacity);
 	a->ptr = a->mem;
 	a->end = a->mem + capacity;
 	return a;
 }
 
-void mem_arena_destroy(struct arena *a){
+void mem_arena_destroy(struct mem_arena *a){
 	sys_free(a);
 }
 
-void *mem_arena_aligned_alloc(struct arena *a,
+void *mem_arena_aligned_alloc(struct mem_arena *a,
 		size_t size, size_t alignment){
 	DEBUG_ASSERT(IS_POWER_OF_TWO(alignment));
 	size_t alignment_mask = alignment - 1;
@@ -42,10 +42,10 @@ void *mem_arena_aligned_alloc(struct arena *a,
 }
 
 INLINE
-void *mem_arena_alloc(struct arena *a, size_t size){
+void *mem_arena_alloc(struct mem_arena *a, size_t size){
 	return mem_arena_aligned_alloc(a, size, PTR_ALIGNMENT);
 }
 
-void mem_arena_reset(struct arena *a){
+void mem_arena_reset(struct mem_arena *a){
 	a->ptr = a->mem;
 }

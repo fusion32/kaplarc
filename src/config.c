@@ -38,7 +38,10 @@ config_defaults[] = {
 	{"pgsql_port", "5432"},
 	{"pgsql_dbname", "kaplar"},
 	{"pgsql_user", "admin"},
-	{"pgsql_pwd", "admin"},
+	{"pgsql_password", "admin"},
+	{"pgsql_connect_timeout", "5"},
+	{"pgsql_client_encoding", "UTF8"},
+	{"pgsql_application_name", "kaplarc"},
 
 	// misc
 	{"motd", "1\nKaplar!"},
@@ -200,17 +203,17 @@ const char *config_get(const char *key){
 	return "";
 }
 
-bool config_getb(const char *name){
-	const char *value = config_get(name);
+bool config_getb(const char *key){
+	const char *value = config_get(key);
 	return strcmp(value, "false") != 0;
 }
 
-int config_geti(const char *name){
-	const char *value = config_get(name);
+int config_geti(const char *key){
+	const char *value = config_get(key);
 	return (int)strtol(value, NULL, 10);
 }
 
-float config_getf(const char *name){
-	const char *value = config_get(name);
+float config_getf(const char *key){
+	const char *value = config_get(key);
 	return strtof(value, NULL);
 }
