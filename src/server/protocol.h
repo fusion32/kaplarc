@@ -3,8 +3,15 @@
 #include "../def.h"
 
 typedef enum protocol_status{
+	// default behaviour, the connection will keep going
 	PROTO_OK = 0,
+	// the connection will stop reading (only used from
+	// within the on_recv_* handlers and will trigger an
+	// assertion if used elsewhere)
+	PROTO_STOP_READING,
+	// the connection will be closed on return
 	PROTO_CLOSE,
+	// the connection will be aborted on return
 	PROTO_ABORT,
 } protocol_status_t;
 

@@ -6,10 +6,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
-
-// memory allocator
-#include "mem/mem.h"
 
 // always enable assert
 #ifdef NDEBUG
@@ -20,7 +18,6 @@
 #define UNREACHABLE() ASSERT(0 && "unreachable")
 
 // int types
-typedef unsigned int	uint;
 typedef int8_t		int8;
 typedef uint8_t		uint8;
 typedef int16_t		int16;
@@ -31,6 +28,9 @@ typedef int64_t		int64;
 typedef uint64_t	uint64;
 typedef uintptr_t	uintptr;
 typedef ptrdiff_t	ptrdiff;
+
+// memory allocator (require types)
+#include "mem/mem.h"
 
 // @REMOVE
 #define PLATFORM_WINDOWS 1
@@ -104,5 +104,17 @@ typedef ptrdiff_t	ptrdiff;
 #define IS_POWER_OF_TWO(x)	((x != 0) && ((x & (x - 1)) == 0))
 #define MIN(x, y)		((x < y) ? (x) : (y))
 #define MAX(x, y)		((x > y) ? (x) : (y))
+
+// string copy
+//	- src must be a valid nul-terminated string
+//	- dst is a char buffer of size dstlen
+static INLINE
+void kpl_strncpy(char *dst, size_t dstlen, char *src){
+	size_t cpylen = strlen(src);
+	if(cpylen >= dstlen)
+		cpylen = dstlen - 1;
+	memcpy(dst, src, cpylen);
+	dst[cpylen] = 0x00;
+}
 
 #endif //DEF_H_

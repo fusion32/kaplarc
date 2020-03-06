@@ -23,8 +23,8 @@ typedef enum cache_idx{
 
 static mutex_t mtx;
 static struct {
-	uint slots;
-	uint stride;
+	uint32 slots;
+	uint32 stride;
 	struct slab_cache *cache;
 } cache_table[] = {
 	// ~8K for small allocations

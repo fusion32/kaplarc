@@ -1,5 +1,6 @@
 #include "iocp.h"
 #include "../log.h"
+#include "../system.h"
 
 #ifdef PLATFORM_WINDOWS
 
@@ -124,18 +125,30 @@ void server_internal_shutdown(void){
 }
 
 #define MAX_EVENTS 256
+#define TIMEOUT_INTERVAL 5000 // 5s
 void server_internal_work(void){
+	// timeout
+	static int64 next_timeout_check = 0;
+	int64 now;
+
+	// events
 	OVERLAPPED_ENTRY evs[MAX_EVENTS];
 	struct async_ov *ov;
-	void (*complete)(void*, DWORD, DWORD);
-	void *data;
 	DWORD error, transferred, flags;
 	ULONG ev_count, i;
 	BOOL ret;
 	bool interrupt = false;
+
 	while(!interrupt){
-		ret = GetQueuedCompletionStatusEx(ctx->iocp, evs,
-			MAX_EVENTS, &ev_count, INFINITE, FALSE);
+		// timeout check
+		now = sys_tick_count();
+		if(next_timeout_check <= now){
+			connmgr_timeout_check();
+			next_timeout_check = now + TIMEOUT_INTERVAL;
+		}
+		// event processing
+		ret = GetQueuedCompletionStatusEx(ctx->iocp, evs, MAX_EVENTS,
+			&ev_count, (DWORD)(next_timeout_check - now), FALSE);
 		if(!ret) break;
 		for(i = 0; i < ev_count; i += 1){
 			ov = (struct async_ov*)evs[i].lpOverlapped;
@@ -147,9 +160,7 @@ void server_internal_work(void){
 				&transferred, FALSE, &flags);
 			if(ret)	error = NOERROR;
 			else	error = WSAGetLastError();
-			complete = ov->complete;
-			data = ov->data;
-			complete(data, error, transferred);
+			ov->complete(ov->data, error, transferred);
 		}
 	}
 }

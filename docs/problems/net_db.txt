@@ -1,0 +1,64 @@
+
+There are three main threads: database thread, game thread, server thread.
+- The database thread receives load/store tasks from the game thread and
+  send the results as events back to the game thread.
+- The server thread process all incoming network data, transforms them
+  into events and dispatch them to the game thread.
+- The game thread receives net and db events, and maintain the server state.
+
+
+LOGIN PROCEDURE
+
+account login 1
+	-> db dispatch: load account
+	-> game dispatch: check account and generate result
+	-> server dispatch: send result
+
+account login 2
+	-> db dispatch: load account
+	-> server dispatch: check account, generate and send result
+
+
+"account login 1" and "account login 2" would need more communication
+paths which would make the maintenance more difficult
+
+account login
+	-> game dispatch: account login event
+	-> db dispatch: account load
+	-> game dispatch: verify account and generate login protocol output
+	-> server dispatch: send login protocol output
+
+
+
+
+
+account login 3
+
+... on_recv_first_message(...){
+	...
+	/* reinterpret the output buffer as an account structure for database loading */
+	account_ptr = login_handle->buffer;
+	database_load_account(login_handle->account, __login_resolve, login_handle);
+	...
+}
+
+/* should run on the server thread or the game thread
+	(in the later case send_error and send_character_list
+	need to be dispatchs to the server thread)
+	*/
+... __login_resolve(void *udata){
+	struct account acc;
+	struct login_handle *handle = udata;
+	/* copy account data to the stack */
+	memcpy(&acc, handle->buffer, sizeof(struct account));
+	/* verify credentials, etc, etc..., and send response */
+	if(!password_verify(acc.password, acc.db_password))
+		send_error("invalid login or password");
+	if(acc.banned)
+		send_error("account banned");
+	send_character_list();
+}
+	
+
+
+	

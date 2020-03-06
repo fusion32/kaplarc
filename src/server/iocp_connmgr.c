@@ -26,6 +26,7 @@
 struct connection{
 	SOCKET s;
 	uint32 flags;
+	uint32 rdwr_count;
 	int pending_work;
 	struct sockaddr_in addr;
 	struct service *svc;
@@ -192,6 +193,9 @@ static void connection_on_read_body(void *data, DWORD err, DWORD transferred){
 
 	// decrease pending work
 	c->pending_work -= 1;
+	// increase read count when we receive the
+	// message body but not otherwise
+	c->rdwr_count += 1;
 
 	// handle connection closing
 	if(c->flags & CONN_CLOSING){
@@ -227,6 +231,7 @@ static void connection_on_read_body(void *data, DWORD err, DWORD transferred){
 	// dispatch message to protocol
 	switch(connection_dispatch_on_recv_message(c)){
 	case PROTO_OK: break;
+	case PROTO_STOP_READING: return;
 	case PROTO_CLOSE:
 		connection_close(c);
 		return;
@@ -247,6 +252,8 @@ static void connection_on_write(void *data, DWORD err, DWORD transferred){
 
 	// decrease pending work
 	c->pending_work -= 1;
+	// increase write count
+	c->rdwr_count += 1;
 
 	// handle connection closing
 	if(c->flags & CONN_CLOSING){
@@ -284,6 +291,9 @@ static void connection_on_write(void *data, DWORD err, DWORD transferred){
 	// notify the protocol that the write succeded
 	switch(connection_dispatch_on_write(c)){
 	case PROTO_OK: break;
+	case PROTO_STOP_READING:
+		UNREACHABLE();
+		break;
 	case PROTO_CLOSE:
 		connection_close(c);
 		return;
@@ -432,6 +442,19 @@ void connmgr_shutdown(void){
 	}
 }
 
+void connmgr_timeout_check(void){
+	struct connection *next, *tmp;
+	next = conn_head;
+	while(next != NULL){
+		tmp = next;
+		next = next->next;
+		if(tmp->rdwr_count == 0)
+			connection_abort(tmp);
+		else
+			tmp->rdwr_count = 0;
+	}
+}
+
 void connmgr_start_connection(SOCKET s,
 		struct sockaddr_in *addr,
 		struct service *svc){
@@ -443,6 +466,7 @@ void connmgr_start_connection(SOCKET s,
 	// init connection
 	c->s = s;
 	c->flags = 0;
+	c->rdwr_count = 1; // don't timeout a new connection too soon
 	c->pending_work = 0;
 	if(addr != NULL)
 		memcpy(&c->addr, addr, sizeof(struct sockaddr_in));
@@ -463,6 +487,9 @@ void connmgr_start_connection(SOCKET s,
 	// create the protocol and notify it of the connection
 	switch(connection_dispatch_on_connect(c)){
 	case PROTO_OK: break;
+	case PROTO_STOP_READING:
+		UNREACHABLE();
+		return;
 	case PROTO_CLOSE:
 		connection_close(c);
 		return;

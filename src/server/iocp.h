@@ -29,6 +29,7 @@ struct iocp_ctx{
 // iocp_connmgr.c
 bool connmgr_init(void);
 void connmgr_shutdown(void);
+void connmgr_timeout_check(void);
 void connmgr_start_connection(SOCKET s,
 	struct sockaddr_in *addr,
 	struct service *svc);

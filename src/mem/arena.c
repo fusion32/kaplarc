@@ -9,8 +9,6 @@ struct mem_arena{
 	uint8 mem[];
 };
 
-#define PTR_ALIGNMENT		(sizeof(void*))
-#define PTR_ALIGNMENT_MASK	(sizeof(void*) - 1)
 struct mem_arena *mem_arena_create(size_t capacity){
 	struct mem_arena *a = sys_malloc(sizeof(struct mem_arena) + capacity);
 	a->ptr = a->mem;
@@ -41,8 +39,8 @@ void *mem_arena_aligned_alloc(struct mem_arena *a,
 	return (void*)ptr;
 }
 
-INLINE
-void *mem_arena_alloc(struct mem_arena *a, size_t size){
+#define PTR_ALIGNMENT (sizeof(void*))
+INLINE void *mem_arena_alloc(struct mem_arena *a, size_t size){
 	return mem_arena_aligned_alloc(a, size, PTR_ALIGNMENT);
 }
 

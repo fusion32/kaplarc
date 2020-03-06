@@ -7,7 +7,15 @@
 #include "server/server.h"
 
 /* LOGIN OUTPUT BUFFER */
+#define LOGIN_HANDLE_SIZE sizeof(login_handle_t)
 #define LOGIN_BUFFER_SIZE 1024
+typedef union{
+	struct{
+		struct connection *conn;
+		uint32 xtea[4];
+	};
+	uint8 output_buffer[LOGIN_BUFFER_SIZE];
+} login_handle_t;
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
@@ -51,12 +59,12 @@ bool identify(uint8 *data, uint32 datalen){
 }
 
 static bool create_handle(struct connection *c, void **handle){
-	*handle = mem_alloc(LOGIN_BUFFER_SIZE);
+	*handle = mem_alloc(LOGIN_HANDLE_SIZE);
 	return true;
 }
 
 static void destroy_handle(struct connection *c, void *handle){
-	mem_free(LOGIN_BUFFER_SIZE, handle);
+	mem_free(LOGIN_HANDLE_SIZE, handle);
 }
 
 static void on_close(struct connection *c, void *handle){
@@ -78,7 +86,74 @@ on_recv_message(struct connection *c, void *handle,
 	return PROTO_OK;
 }
 
+static protocol_status_t
+on_recv_first_message(struct connection *c, void *handle,
+		uint8 *data, uint32 datalen){
+	login_handle_t *h = handle;
+	struct data_reader reader;
+	size_t decoded_len;
+	char account[32];
+	char password[32];
+	uint16 version;
+
+	// 4 bytes -> checksum
+	// 1 byte -> protocol id
+	// 2 bytes -> client os
+	// 2 bytes -> client version
+	// 12 bytes -> tibia .dat, .spr, .pic checksum(?)
+	// 128 bytes -> rsa encoded data
+	if(datalen != 149){
+		DEBUG_LOG("protocol_login: invalid login message length"
+			" (expected = %d, got = %d)", 149, datalen);
+		return PROTO_ABORT;
+	}
+
+	data_reader_init(&reader, data, datalen);
+	reader.ptr += 7;
+	version = data_read_u16(&reader);
+	reader.ptr += 12;
+
+	// version <= 760 didn't have checksum so this shouldn't
+	// happen unless its a purposely malformed message
+	if(version <= 760)
+		return PROTO_ABORT;
+
+	// rsa decode
+	if(!tibia_rsa_decode(reader.ptr,
+	  reader.end - reader.ptr, &decoded_len))
+		return PROTO_ABORT;
+	reader.end = reader.ptr + decoded_len;
+
+	// xtea key
+	h->xtea[0] = data_read_u32(&reader);
+	h->xtea[1] = data_read_u32(&reader);
+	h->xtea[2] = data_read_u32(&reader);
+	h->xtea[3] = data_read_u32(&reader);
+
+	// account credentials
+	data_read_str(&reader, account, sizeof(account));
+	data_read_str(&reader, password, sizeof(password));
+
+	DEBUG_LOG("xtea = {%08X, %08X, %08X, %08X}",
+		h->xtea[0], h->xtea[1], h->xtea[2], h->xtea[3]);
+	DEBUG_LOG("account name = `%s`", account);
+	DEBUG_LOG("account password = `%s`", password);
+
+	// the protocol won't receive anymore messages and will only
+	// send a response when the database loads the account info
+
+	// add event
+	// struct ev_account_login *ev;
+	// ev = push_account_login();
+	// strcpy(ev->accname, account);
+	// strcpy(ev->password, password);
+
+	//return PROTO_STOP_READING;
+	return PROTO_CLOSE;
+}
+
 static void writer_begin(struct data_writer *writer){
+	DEBUG_ASSERT(writer != NULL);
 	// skip 8 bytes:
 	//  2 bytes - message length
 	//  4 bytes - checksum
@@ -117,59 +192,19 @@ static void writer_end(struct data_writer *writer, uint32 *xtea){
 	encode_u32_le(writer->base+2, checksum);
 }
 
-static protocol_status_t
-on_recv_first_message(struct connection *c, void *handle,
-		uint8 *data, uint32 datalen){
-	size_t decoded_len;
-	struct data_reader reader;
+#if 0
+static void login_resolve(void *handle){
+	login_handle_t *h = handle;
 	struct data_writer writer;
-	uint16 version;
+	struct account acc;
 	uint32 xtea[4];
-	char accname[32];
-	char password[32];
 
-	// 4 bytes -> checksum
-	// 1 byte -> protocol id
-	// 2 bytes -> client os
-	// 2 bytes -> client version
-	// 12 bytes -> tibia .dat, .spr, .pic checksum(?)
-	// 128 bytes -> rsa encoded data
-	if(datalen != 149){
-		DEBUG_LOG("protocol_login: invalid login message length"
-			" (expected = %d, got = %d)", 149, datalen);
-		return PROTO_ABORT;
-	}
-
-	data_reader_init(&reader, data, datalen);
-	reader.ptr += 7; // skip checksum, protocol id, and client os
-	version = data_read_u16(&reader);
-	reader.ptr += 12; // skip 12 unknown bytes
-
-	// version <= 760 didn't have encryption or checksum
-
-	// rsa decode
-	if(!tibia_rsa_decode(reader.ptr,
-	  reader.end - reader.ptr, &decoded_len))
-		return PROTO_ABORT;
-	reader.end = reader.ptr + decoded_len;
-
-	// xtea key
-	xtea[0] = data_read_u32(&reader);
-	xtea[1] = data_read_u32(&reader);
-	xtea[2] = data_read_u32(&reader);
-	xtea[3] = data_read_u32(&reader);
-
-	// account credentials
-	data_read_str(&reader, accname, 32);
-	data_read_str(&reader, password, 32);
-
-	DEBUG_LOG("xtea = {%08X, %08X, %08X, %08X}",
-		xtea[0], xtea[1], xtea[2], xtea[3]);
-	DEBUG_LOG("account name = `%s`", accname);
-	DEBUG_LOG("account password = `%s`", password);
+	// copy data to the stack
+	memcpy(&xtea[0], &h->xtea[0], sizeof(h->xtea));
+	memcpy(&acc, &h->account, sizeof(h->account));
 
 	// send disconnect message
-	data_writer_init(&writer, handle, LOGIN_BUFFER_SIZE);
+	data_writer_init(&writer, h->buffer, LOGIN_BUFFER_SIZE);
 	writer_begin(&writer);
 
 	/*
@@ -199,3 +234,4 @@ on_recv_first_message(struct connection *c, void *handle,
 		(uint32)(writer.ptr - writer.base)));
 	return PROTO_CLOSE;
 }
+#endif 0

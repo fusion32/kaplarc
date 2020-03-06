@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #ifdef PLATFORM_WINDOWS
+#	define WIN32_LEAN_AND_MEAN 1
 #	include <windows.h>
 #else
 #	include <time.h>
@@ -49,7 +50,10 @@ void *sys_malloc(size_t size){
 }
 
 void *sys_realloc(void *ptr, size_t size){
-	return realloc(ptr, size);
+	void *newptr = realloc(ptr, size);
+	if(newptr == NULL)
+		sys_abort("sys_realloc: out of memory");
+	return newptr;
 }
 
 void sys_free(void *ptr){

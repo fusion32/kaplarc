@@ -17,8 +17,8 @@
     <Filter Include="Source Files\mem">
       <UniqueIdentifier>{842b1cef-0d51-4297-aeff-bdeb4232822c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\database">
-      <UniqueIdentifier>{2561bc72-d272-4110-8a79-61c43c558339}</UniqueIdentifier>
+    <Filter Include="Source Files\db">
+      <UniqueIdentifier>{d46a0817-da52-4ca7-9b12-d50631510422}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -32,9 +32,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\string.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\crypto\base64.c">
@@ -94,13 +91,7 @@
     <ClCompile Include="..\src\protocol_echo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\scheduler.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\tibia_rsa.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\dispatcher.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\game.c">
@@ -127,9 +118,6 @@
     <ClCompile Include="..\src\server\iocp_svcmgr.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server\server.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\server\epoll_server.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
@@ -148,11 +136,11 @@
     <ClCompile Include="..\src\test\slab_cache_test.c">
       <Filter>Source Files\test</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\database\local.c">
-      <Filter>Source Files\database</Filter>
+    <ClCompile Include="..\src\db\pgsql.c">
+      <Filter>Source Files\db</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\database\pgsql.c">
-      <Filter>Source Files\database</Filter>
+    <ClCompile Include="..\src\mem\array.c">
+      <Filter>Source Files\mem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -160,9 +148,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\log.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\ringbuffer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\system.h">
@@ -195,9 +180,6 @@
     <ClInclude Include="..\src\crypto\random.h">
       <Filter>Source Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\string.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\thread.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -207,16 +189,7 @@
     <ClInclude Include="..\src\hash.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\tasks.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\scheduler.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\tibia_rsa.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\account.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\game.h">
@@ -231,20 +204,17 @@
     <ClInclude Include="..\src\server\protocol.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\server\server.h">
-      <Filter>Source Files\server</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\mem\mem.h">
       <Filter>Source Files\mem</Filter>
     </ClInclude>
     <ClInclude Include="..\src\mem\slab.h">
       <Filter>Source Files\mem</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\database\local.h">
-      <Filter>Source Files\database</Filter>
+    <ClInclude Include="..\src\db\db_types.h">
+      <Filter>Source Files\db</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\database\database.h">
-      <Filter>Source Files\database</Filter>
+    <ClInclude Include="..\src\db\pgsql.h">
+      <Filter>Source Files\db</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

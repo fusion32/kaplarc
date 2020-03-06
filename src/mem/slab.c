@@ -9,9 +9,9 @@
 #define PTR_ALIGNMENT		(sizeof(void*))
 #define PTR_ALIGNMENT_MASK	(sizeof(void*) - 1)
 
-struct slab *slab_create(uint slots, uint stride){
-	uint capacity, mem_offset;
-	uint alignment, alignment_mask;
+struct slab *slab_create(uint32 slots, uint32 stride){
+	uint32 capacity, mem_offset;
+	uint32 alignment, alignment_mask;
 	struct slab *s;
 
 	// define object alignment
@@ -69,7 +69,7 @@ bool slab_free(struct slab *s, void *ptr){
 		return false;
 
 	// return memory to slab
-	uint last_offset = s->offset - s->stride;
+	uint32 last_offset = s->offset - s->stride;
 	if(ptr == OFFSET_POINTER(s->mem, last_offset)){
 		s->offset = last_offset;
 	}else{

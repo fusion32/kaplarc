@@ -1,0 +1,14 @@
+
+PROBLEM:
+	- its possible to make an infinite number of idle connections
+
+SOLUTION 1:
+	- perform a timeout routine every TIMEOUT seconds and discard
+	the inactive connections
+	- iterating over the connection linked list might be slow but
+	with the current (IOCP) connection structure it wouldn't make
+	a diference even if it was an array
+
+SOLUTION 2:
+	- try to find a better overall solution while rewriting the epoll backend
+

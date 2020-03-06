@@ -2,8 +2,8 @@
 
 #define OBJCACHE_SIZE 256
 struct slab_cache{
-	uint slab_slots;
-	uint slab_stride;
+	uint32 slab_slots;
+	uint32 slab_stride;
 	struct slab *full;
 	struct slab *partial;
 	struct slab *empty;
@@ -26,7 +26,7 @@ static int slab_list_destroy(struct slab *head){
 
 #define PTR_ALIGNMENT		(sizeof(void*))
 #define PTR_ALIGNMENT_MASK	(sizeof(void*) - 1)
-struct slab_cache *slab_cache_create(uint slab_slots, uint slab_stride){
+struct slab_cache *slab_cache_create(uint32 slab_slots, uint32 slab_stride){
 	struct slab_cache *c;
 
 	// check if stride has the minimum alignment requirement

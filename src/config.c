@@ -48,40 +48,42 @@ config_defaults[] = {
 };
 
 // config hash table
-#define MAX_COLLISION_TRIES 5
+#define MAX_COLLISIONS 2
 #define MAX_CONFIG_VARS 256
 static struct config_var config_table[MAX_CONFIG_VARS];
 
 static INLINE
-uint config_var_idx(const char *key, size_t len){
+uint32 config_var_idx(const char *key, size_t len){
 	return murmur2_32((const uint8*)key, len, 0xC2EDF02D) % MAX_CONFIG_VARS;
 }
 
 static struct config_var *config_var_find(const char *key, size_t keylen){
-	uint tries = 0;
-	uint idx = config_var_idx(key, keylen);
+	uint32 collisions = 0;
+	uint32 idx = config_var_idx(key, keylen);
 	do{
 		if(strncmp(config_table[idx].key, key, keylen) == 0)
 			return &config_table[idx];
-		tries += 1;
+		collisions += 1;
 		idx += 1;
 		if(idx >= MAX_CONFIG_VARS)
 			idx = 0;
-	}while(tries < MAX_COLLISION_TRIES);
+	}while(collisions < MAX_COLLISIONS);
 	return NULL;
 }
 
 static struct config_var *config_var_insert(const char *key, size_t keylen){
-	uint tries = 0;
-	uint idx = config_var_idx(key, keylen);
+	uint32 collisions = 0;
+	uint32 idx = config_var_idx(key, keylen);
 	do{
 		if(config_table[idx].key[0] == 0)
 			return &config_table[idx];
-		tries += 1;
+		DEBUG_LOG("config_var_insert: name collision with"
+			" `%s` and `%s`", key, config_table[idx].key);
+		collisions += 1;
 		idx += 1;
 		if(idx >= MAX_CONFIG_VARS)
 			idx = 0;
-	}while(tries < MAX_COLLISION_TRIES);
+	}while(collisions < MAX_COLLISIONS);
 	return NULL;
 }
 
@@ -123,7 +125,7 @@ void config_init(int argc, char **argv){
 	// zero all config vars
 	memset(config_table, 0, sizeof(config_table));
 	// load in defaults
-	for(int i = 0; i < ARRAY_SIZE(config_table); i += 1){
+	for(int i = 0; i < ARRAY_SIZE(config_defaults); i += 1){
 		key = config_defaults[i].key;
 		var = config_var_insert(key, strlen(key));
 		if(var == NULL){
