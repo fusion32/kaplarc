@@ -2,9 +2,9 @@
 #include "config.h"
 #include "hash.h"
 #include "packed_data.h"
+#include "server.h"
 #include "tibia_rsa.h"
 #include "crypto/xtea.h"
-#include "server/server.h"
 
 /* LOGIN OUTPUT BUFFER */
 #define LOGIN_HANDLE_SIZE sizeof(login_handle_t)

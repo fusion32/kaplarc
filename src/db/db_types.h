@@ -3,12 +3,9 @@
 
 #include "../def.h"
 
-struct db_date{
-	int year, month, day;
-};
-
 struct db_result_account{
-	struct db_date premend;
+	int32 id;
+	int64 premend;
 	char password[64];
 	char charlist[256];
 };

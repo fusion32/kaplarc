@@ -43,6 +43,7 @@
     <ClCompile Include="..\src\crypto\xtea.c" />
     <ClCompile Include="..\src\log.c" />
     <ClCompile Include="..\src\main.c" />
+    <ClCompile Include="..\src\server.c" />
     <ClCompile Include="..\src\server\epoll_server.c" />
     <ClCompile Include="..\src\server\iocp_connmgr.c" />
     <ClCompile Include="..\src\server\iocp_server.c" />
@@ -79,6 +80,7 @@
     <ClInclude Include="..\src\endian.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\log.h" />
+    <ClInclude Include="..\src\server.h" />
     <ClInclude Include="..\src\server\iocp.h" />
     <ClInclude Include="..\src\server\protocol.h" />
     <ClInclude Include="..\src\system.h" />

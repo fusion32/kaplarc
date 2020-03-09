@@ -49,11 +49,9 @@ int main(int argc, char **argv){
 	//game_run();
 	struct db_result_account acc;
 	ASSERT(pgsql_load_account("admin", &acc));
-	LOG("acc: {%s, %s, %s, %04d-%02d-%02d}",
-		"admin", acc.password, acc.charlist,
-		acc.premend.year,
-		acc.premend.month,
-		acc.premend.day);
+	LOG("acc: {'%s', '%s', '%llu', '%s'}",
+		"admin", acc.password,
+		acc.premend, acc.charlist);
 	getchar();
 	return 0;
 }

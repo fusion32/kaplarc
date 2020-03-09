@@ -1,6 +1,6 @@
+#include "def.h"
 #include "server.h"
-#include "../def.h"
-#include "../thread.h"
+#include "thread.h"
 
 /* these will depend on the OS */
 bool server_internal_init(void);

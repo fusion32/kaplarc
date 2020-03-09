@@ -1,5 +1,5 @@
 #include "def.h"
-#include "server/server.h"
+#include "server.h"
 #include "buffer_util.h"
 #include "system.h"
 #include <string.h>

@@ -106,15 +106,46 @@ typedef ptrdiff_t	ptrdiff;
 #define MAX(x, y)		((x > y) ? (x) : (y))
 
 // string copy
-//	- src must be a valid nul-terminated string
 //	- dst is a char buffer of size dstlen
+//	- src must be a valid nul-terminated string
 static INLINE
-void kpl_strncpy(char *dst, size_t dstlen, char *src){
+void kpl_strncpy(char *dst, size_t dstsize, const char *src){
 	size_t cpylen = strlen(src);
-	if(cpylen >= dstlen)
-		cpylen = dstlen - 1;
+	if(cpylen >= dstsize)
+		cpylen = dstsize - 1;
 	memcpy(dst, src, cpylen);
 	dst[cpylen] = 0x00;
+}
+
+// string cat
+//	- dst must be a valid nul-terminated string
+//	- dstsize is the size of dst in memory
+//	- src must be a valid nul-terminated string
+static INLINE
+void kpl_strncat(char *dst, size_t dstsize, const char *src){
+	// if dst is a valid nul-terminated string,
+	// dstsize - dstlen cannot underflow
+	size_t dstlen = strlen(dst);
+	kpl_strncpy(dst + dstlen, dstsize - dstlen, src);
+}
+
+// string cat n
+//	- dst and dstsize are the same as in string cat
+//	- ... is a NULL-terminated list of strings to
+//	  concatenate
+static INLINE
+void kpl_strncat_n(char *dst, size_t dstsize, ...){
+	const char *src;
+	va_list ap;
+
+	va_start(ap, dstsize);
+	while(1){
+		src = va_arg(ap, const char*);
+		if(src == NULL)
+			break;
+		kpl_strncat(dst, dstsize, src);
+	}
+	va_end(ap);
 }
 
 #endif //DEF_H_

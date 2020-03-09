@@ -142,6 +142,9 @@
     <ClCompile Include="..\src\mem\array.c">
       <Filter>Source Files\mem</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\server.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\def.h">
@@ -215,6 +218,9 @@
     </ClInclude>
     <ClInclude Include="..\src\db\pgsql.h">
       <Filter>Source Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\server.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
