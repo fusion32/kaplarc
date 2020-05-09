@@ -47,8 +47,8 @@ int main(int argc, char **argv){
 	init_system("game", game_init, game_shutdown);
 
 	//game_run();
-	struct db_result_account acc;
-	ASSERT(pgsql_load_account("admin", &acc));
+	struct db_result_account_login acc;
+	ASSERT(pgsql_load_account_login("admin", &acc));
 	LOG("acc: {'%s', '%s', '%llu', '%s'}",
 		"admin", acc.password,
 		acc.premend, acc.charlist);

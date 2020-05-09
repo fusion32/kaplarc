@@ -139,9 +139,6 @@
     <ClCompile Include="..\src\db\pgsql.c">
       <Filter>Source Files\db</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mem\array.c">
-      <Filter>Source Files\mem</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\server.c">
       <Filter>Source Files</Filter>
     </ClCompile>

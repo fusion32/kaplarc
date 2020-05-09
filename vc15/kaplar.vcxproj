@@ -23,7 +23,6 @@
     <ClCompile Include="..\src\db\pgsql.c" />
     <ClCompile Include="..\src\game.c" />
     <ClCompile Include="..\src\mem\arena.c" />
-    <ClCompile Include="..\src\mem\array.c" />
     <ClCompile Include="..\src\mem\mem.c" />
     <ClCompile Include="..\src\mem\slab.c" />
     <ClCompile Include="..\src\mem\slab_cache.c" />

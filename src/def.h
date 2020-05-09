@@ -74,7 +74,7 @@ typedef ptrdiff_t	ptrdiff;
 #	define _CLZ64(x) ((int)__builtin_clzll(x))
 #	define _POPCNT32(x) ((int)__builtin_popcountl(x))
 #	define _POPCNT64(x) ((int)__builtin_popcountll(x))
-#	if defined(__x86_64__)
+#	ifdef __x86_64__
 #		define COMPILER_ENV64 1
 #	else
 #		define COMPILER_ENV32 1

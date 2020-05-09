@@ -1,5 +1,5 @@
 -- database schema notes:
---	* no multiple worlds
+--  * no multiple worlds
 --  * foreign keys reduce parsing complexity
 --    while keeping data consistency
 

@@ -171,7 +171,7 @@ static bool __slab_flush_objects(struct slab *s, void **arr, int *pcount){
 		continue;
 	// update count
 	*pcount -= (i - j);
-	// copy the remainder of the array
+	// shift the remainder of the array
 	while(i < count){
 		arr[j] = arr[i];
 		j += 1; i += 1;
@@ -190,9 +190,9 @@ static void __slab_cache_flush_objcache(struct slab_cache *c){
 	count = c->objcache_count;
 	__ptr_qsort(objcache, 0, count-1);
 
-	// NOTE: order is important because we move slabs from
-	// the full list into the partial list and would end up
-	// checking the same slabs more than once
+	// NOTE: the following order is important because we move
+	// slabs from the full list into the partial list and would
+	// end up checking the same slabs more than once
 
 	// return to partial slabs
 	for(s = &c->partial; count > 0 && *s != NULL; s = &(*s)->next){

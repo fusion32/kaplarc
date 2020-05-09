@@ -3,8 +3,7 @@
 
 #include "../def.h"
 
-struct db_result_account{
-	int32 id;
+struct db_result_account_login{
 	int64 premend;
 	char password[64];
 	char charlist[256];

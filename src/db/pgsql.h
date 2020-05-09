@@ -8,7 +8,8 @@ bool pgsql_init(void);
 void pgsql_shutdown(void);
 
 // loading functions
-bool pgsql_load_account(const char *accname, struct db_result_account *acc);
+bool pgsql_load_account_login(const char *accname,
+		struct db_result_account_login *acc);
 
 // storing functions
 

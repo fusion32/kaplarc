@@ -71,20 +71,21 @@ void pgsql_shutdown(void){
 }
 
 // binary int/float is sent in network byte order
-static int32 pq_getint32(const char *data){
+static INLINE int32 pq_getint32(const char *data){
 	return decode_u32_be((uint8*)data);
 }
-static int64 pq_getint64(const char *data){
+static INLINE int64 pq_getint64(const char *data){
 	return decode_u64_be((uint8*)data);
 }
-static float pq_getfloat(const char *data){
+static INLINE float pq_getfloat(const char *data){
 	return decode_f32_be((uint8*)data);
 }
-static double pq_getdouble(const char *data){
+static INLINE double pq_getdouble(const char *data){
 	return decode_f64_be((uint8*)data);
 }
 
-bool pgsql_load_account(const char *accname, struct db_result_account *acc){
+bool pgsql_load_account_login(const char *accname,
+		struct db_result_account_login *acc){
 	char account_id[4];
 	PGresult *res;
 	const char *param_value;
@@ -146,7 +147,7 @@ bool pgsql_load_account(const char *accname, struct db_result_account *acc){
 }
 
 /*
-void pgsql_set_account_premend(int32 account_id, int32 premend){
+void pgsql_store_account_premend(int32 account_id, int32 premend){
 	// $1 = premend;
 	// $2 = account_id;
 	UPDATE accounts

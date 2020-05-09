@@ -8,7 +8,8 @@
 #include "../thread.h"
 
 // NOTE1: login messages are always 149 bytes
-// NOTE2: game messages are usually small (less than 128 bytes)
+// NOTE2: game messages are usually small (less than 16 bytes without accounting for strings)
+
 // NOTE3: having the input buffer size of 1792 bytes, allows the
 // connection to sit on the 2K memory cache and also avoid any
 // problem if a large string is sent from the client
@@ -47,6 +48,59 @@ struct connection{
 	// the connection control block close together)
 	uint8 input_buffer[CONN_INPUT_BUFFER_SIZE];
 };
+
+/* @TODO
+#define MAX_CONNECTIONS 0x4000
+static struct conn_control controls[MAX_CONNECTIONS];
+static struct conn_input_op input_ops[MAX_CONNECTIONS];
+static struct conn_output_op output_ops[MAX_CONNECTIONS];
+static uint8 conn_input_buffers[CONN_INPUT_BUFFER_SIZE][MAX_CONNECTIONS];
+*/
+
+/*
+CONNECTION UID = 0xAAAABBBB
+
+	0xAAAA =	16bits to add some entropy to avoid a scenario where
+			a connection that gets released and a new connection
+			that is put into the same slot are treated as the same
+			connection
+
+	0xBBBB =	16bits for the connection slot
+*/
+
+/*
+#define MAX_CONNECTIONS 0x4000
+#if MAX_CONNECTIONS > UINT16_MAX
+#	error "Max number of concurrent connections should not exceed UINT16_MAX."
+#endif
+
+#define CONN_INUSE	0x01
+struct conn_control{
+	uint32 flags;
+};
+static struct conn_control controls[MAX_CONNECTIONS];
+static uint16 freelist_head = UINT16_MAX;
+
+// find better names
+static uint16 highest_slot_in_use = 0;
+static uint16 counter = 0;
+
+#define CONN_INVALID_UID ((uint32)0xFFFFFFFFUL);
+static uint32 gen_connection_uid(void){
+	uint16 slot;
+	uint32 uid = (uint32)(counter++) << 16;
+	if(freelist_head != UINT16_MAX){
+		slot = freelist_head;
+		freelist_head = controls[slot].flags >> 16;
+		controls[slot].flags ^= CONN_INUSE;
+	}else{
+		if(highest_slot_in_use >= MAX_CONNECTIONS)
+			return CONN_INVALID_UID;
+		slot = highest_slot_in_use++;
+	}
+	return uid | slot;
+}
+*/
 
 /* Connection List */
 static struct connection *conn_head = NULL;
