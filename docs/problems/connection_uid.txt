@@ -1,0 +1,59 @@
+PROBLEM:
+	- if a connection timeout right before the game output swap
+	  we would try to send a message through an invalid connection
+	  handle
+
+SOLUTION: CONNECTION UIDS
+
+==========================================================================
+
+CONNECTION UID = 0xAAAABBBB
+
+	0xAAAA =	16bits to add some entropy to avoid a scenario where
+			a connection that gets released and a new connection
+			that is put into the same slot are treated as the same
+			connection
+
+	0xBBBB =	16bits for the connection slot
+
+HOW THIS COULD BREAK:
+	If we use a counter for the entropy, the connection would need to live
+	long enough for the counter to wrap around once and have the exact value
+	of (0xAAAA - 1) before closing the connection and accepting a new one.
+	Now the probability of this happening is extremely low but still it has
+	some kind of systematic chance of happening.
+
+	If we use a RNG for the entropy, the chances of getting the same 16bit
+	value for the same slot are also extremely low.
+
+	On top of that, if we make sure that recently dropped connections are
+	put into standby for 30 or more seconds before getting into the connection
+	freelist, the chances of a problem regarding connection uids will drop
+	to probably zero.
+
+	If we use (time in ms)/32768 for the entropy, we get resolution of
+	32.768 seconds and for a 16bit counter, we get a ~25 days range. With the
+	use of a 1 min standby list (described above) we certainly drop any
+	error chances to zero.
+
+WHAT WE WILL DO:
+	In reality the commentary above is just psychosis and we really
+	only need to generate an UID using the connection slot and some kind
+	of entropy AND THEN check if the selected slot has the same UID as the
+	previous connection occupying that slot. If that is the case then the
+	entropy part would be regenerated and the UID would be checked again
+	until the connection has a different UID from the one before it.
+
+	BETTER YET, we could get the previous connection 16bit entropy part
+	and simply add 1 to get a different connection.
+
+	IN SUMMARY, we could simply store the entropy part of the uid on the
+	connecton structure as a counter. When a new connection is assigned to
+	that slot, the counter is incremented and it is put together with the
+	slot number to create an UID. When a connection is referenced for
+	sending/reading/closing, the entropy part is matched with the one in
+	the connecton structure and if it differs, the connection it was originally
+	issued is no longer active and the operation has no reason to happen.
+	Also in with this approach, there is no need for a standby list.
+
+

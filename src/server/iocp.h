@@ -33,9 +33,9 @@ void connmgr_timeout_check(void);
 void connmgr_start_connection(SOCKET s,
 	struct sockaddr_in *addr,
 	struct service *svc);
-void connection_close(struct connection *c);
-void connection_abort(struct connection *c);
-bool connection_send(struct connection *c, uint8 *data, uint32 datalen);
+void connection_close(uint32 uid);
+void connection_abort(uint32 uid);
+bool connection_send(uint32 uid, uint8 *data, uint32 datalen);
 
 // iocp_svcmgr.c
 bool svcmgr_init(void);

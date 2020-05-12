@@ -1,3 +1,4 @@
+#if 0
 #include "buffer_util.h"
 #include "config.h"
 #include "hash.h"
@@ -234,4 +235,5 @@ static void login_resolve(void *handle){
 		(uint32)(writer.ptr - writer.base)));
 	return PROTO_CLOSE;
 }
-#endif 0
+#endif // 0
+#endif // 0

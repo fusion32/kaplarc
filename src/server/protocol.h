@@ -15,7 +15,6 @@ typedef enum protocol_status{
 	PROTO_ABORT,
 } protocol_status_t;
 
-struct connection;
 struct protocol{
 	/* name of the protocol: used for debugging */
 	char *name;
@@ -33,21 +32,17 @@ struct protocol{
 	/* protocols will interact with the server through
 	 * the use of these handles
 	 */
-	bool (*create_handle)(struct connection *conn, void **handle);
-	void (*destroy_handle)(struct connection *conn, void *handle);
+	bool (*create_handle)(uint32 conn, void **handle);
+	void (*destroy_handle)(uint32 conn, void *handle);
 
 	/* events related to the protocol */
-	void (*on_close)(struct connection *conn, void *handle);
-	protocol_status_t (*on_connect)(
-		struct connection *conn, void *handle);
-	protocol_status_t (*on_write)(
-		struct connection *conn, void *handle);
-	protocol_status_t (*on_recv_message)(
-		struct connection *conn, void *handle,
-		uint8 *data, uint32 datalen);
-	protocol_status_t (*on_recv_first_message)(
-		struct connection *conn, void *handle,
-		uint8 *data, uint32 datalen);
+	void (*on_close)(uint32 conn, void *handle);
+	protocol_status_t (*on_connect)(uint32 conn, void *handle);
+	protocol_status_t (*on_write)(uint32 conn, void *handle);
+	protocol_status_t (*on_recv_message)(uint32 conn,
+		void *handle, uint8 *data, uint32 datalen);
+	protocol_status_t (*on_recv_first_message)(uint32 conn,
+		void *handle, uint8 *data, uint32 datalen);
 };
 
 #endif //PROTOCOL_H_

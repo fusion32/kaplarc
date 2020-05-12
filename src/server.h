@@ -13,8 +13,8 @@ void server_exec(void (*fp)(void*), void *arg);
 bool svcmgr_add_protocol(struct protocol *protocol, int port);
 
 // Connection interface
-void connection_close(struct connection *c);
-void connection_abort(struct connection *c);
-bool connection_send(struct connection *c, uint8 *data, uint32 datalen);
+void connection_close(uint32 uid);
+void connection_abort(uint32 uid);
+bool connection_send(uint32 uid, uint8 *data, uint32 datalen);
 
 #endif //SERVER_SERVER_H_
