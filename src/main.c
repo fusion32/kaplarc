@@ -38,9 +38,9 @@ int main(int argc, char **argv){
 
 	// network
 	extern struct protocol protocol_echo;
-	//extern struct protocol protocol_login;
+	extern struct protocol protocol_login;
 	svcmgr_add_protocol(&protocol_echo, config_geti("sv_echo_port"));
-	//svcmgr_add_protocol(&protocol_login, config_geti("sv_login_port"));
+	svcmgr_add_protocol(&protocol_login, config_geti("sv_login_port"));
 	init_system("server", server_init, server_shutdown);
 
 	// game

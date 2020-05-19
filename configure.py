@@ -32,7 +32,7 @@ Options: (options in the same section are mutually exclusive)
 
     [database backend]:
         -cassandra (default)-
-	-pgsql              -
+        -pgsql              -
 '''
 
 MakefileHeader = r'''

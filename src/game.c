@@ -2,12 +2,72 @@
 //#include "db/db.h"
 //#include "server/server.h"
 
+struct network_event{
+	uint32 connection;
+	uint8 data[];
+};
+
+
+/*
+
+VER1 - incoming packets are piped into a game input buffer
+
+		We expect that all clients send at least one packet
+	per network frame but having more than maybe 5 or more is
+	extremely unlikely as these are simply input commands from
+	the client.
+		We intend to set the update rate to 30Hz (it could
+	be higher) so having more than 5 * 30 = 150 inputs per sec
+	coming from the client is unrealistic so in the end, this
+	VER1 might be the better approach.
+
+VER2 - incoming packets are piped into a per connection input buffer
+
+	In the best case scenario, all connections will send/recv packets
+	to the server in a single network frame so we'd need to iterate over
+	them in some way or another. Then iterating over them in a single step
+	instead of hopping around is better for cache locality IF we expect
+	a high amount of messages to be received in a single network frame
+	which is unrealistic (see VER1).
+
+login event: (into the login protocol input buffer) (ver1)
+	0xAAAAAAAA	== connection
+	data: (variable length)
+		[accname len][accname data]	== accname string
+		[password len][password data]	== password string
+
+login event: (into the game protocol input buffer) (ver2)
+	0xAAAAAAAA	== connection
+	data: (variable length)
+		[0xFF]				== an event id not used by the game protocol
+		[0xFF]				== an event id to identify the event
+		[accname len][accname data]	== accname string
+		[password len][password data]	== password string
+
+player common event: (into the game protocol input buffer)
+	0xAAAAAAAA	== connection
+	data:
+		[0x??]	== event id
+
+*/
+
+struct login_event{
+	uint32 connection;
+	char accname[32];
+	char password[32];
+};
+
 bool game_init(void){
 	return true;
 }
 
 void game_shutdown(void){
 }
+
+void game_run(void){
+
+}
+
 
 /*
 NETWORK <-> GAME (I didn't include the database interaction but i'm thinking of something similar)
@@ -258,20 +318,3 @@ NOTE -	My previous idea was to have multiple of these double buffered
 
 		- player_common_event (0 bytes)
 */
-
-void game_run(void){
-	//for(ev in acc_login_requests):
-	//	db_load_account(acc_login_resolve, ev.accname, ev.password)
-
-	//for(ev in acc_login_resolve_events):
-	//	acc_login_resolve(ev.data)
-	//	add_connection_to_output_send
-
-	// account login flow:
-	// account_login (name, password) --> db_load_account (login_resolve, name, password)
-	// db_result_account (login_resolve, loaded_info) --> login_resolve (loaded_info)
-	// login_resolve --> network_send
-
-	//
-}
-

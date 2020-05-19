@@ -1,4 +1,3 @@
-#if 0
 #include "buffer_util.h"
 #include "config.h"
 #include "hash.h"
@@ -12,7 +11,7 @@
 #define LOGIN_BUFFER_SIZE 1024
 typedef union{
 	struct{
-		struct connection *conn;
+		uint32 conn;
 		uint32 xtea[4];
 	};
 	uint8 output_buffer[LOGIN_BUFFER_SIZE];
@@ -20,19 +19,15 @@ typedef union{
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
-static bool create_handle(struct connection *c, void **handle);
-static void destroy_handle(struct connection *c, void *handle);
-static void on_close(struct connection *c, void *handle);
-static protocol_status_t on_connect(
-	struct connection *c, void *handle);
-static protocol_status_t on_write(
-	struct connection *c, void *handle);
-static protocol_status_t on_recv_message(
-	struct connection *c, void *handle,
-	uint8 *data, uint32 datalen);
-static protocol_status_t on_recv_first_message(
-	struct connection *c, void *handle,
-	uint8 *data, uint32 datalen);
+static bool create_handle(uint32 c, void **handle);
+static void destroy_handle(uint32 c, void *handle);
+static void on_close(uint32 c, void *handle);
+static protocol_status_t on_connect(uint32 c, void *handle);
+static protocol_status_t on_write(uint32 c, void *handle);
+static protocol_status_t on_recv_message(uint32 c,
+	void *handle, uint8 *data, uint32 datalen);
+static protocol_status_t on_recv_first_message(uint32 c,
+	void *handle, uint8 *data, uint32 datalen);
 struct protocol protocol_login = {
 	.name = "login",
 	.sends_first = false,
@@ -59,37 +54,33 @@ bool identify(uint8 *data, uint32 datalen){
 		&& data[4] == 0x01;
 }
 
-static bool create_handle(struct connection *c, void **handle){
+static bool create_handle(uint32 c, void **handle){
 	*handle = mem_alloc(LOGIN_HANDLE_SIZE);
 	return true;
 }
 
-static void destroy_handle(struct connection *c, void *handle){
+static void destroy_handle(uint32 c, void *handle){
 	mem_free(LOGIN_HANDLE_SIZE, handle);
 }
 
-static void on_close(struct connection *c, void *handle){
+static void on_close(uint32 c, void *handle){
 }
 
-static protocol_status_t
-on_connect(struct connection *conn, void *handle){
+static protocol_status_t on_connect(uint32 c, void *handle){
 	return PROTO_OK;
 }
 
-static protocol_status_t
-on_write(struct connection *conn, void *handle){
+static protocol_status_t on_write(uint32 c, void *handle){
 	return PROTO_CLOSE;
 }
 
-static protocol_status_t
-on_recv_message(struct connection *c, void *handle,
-		uint8 *data, uint32 datalen){
+static protocol_status_t on_recv_message(uint32 c,
+		void *handle, uint8 *data, uint32 datalen){
 	return PROTO_OK;
 }
 
-static protocol_status_t
-on_recv_first_message(struct connection *c, void *handle,
-		uint8 *data, uint32 datalen){
+static protocol_status_t on_recv_first_message(uint32 c,
+		void *handle, uint8 *data, uint32 datalen){
 	login_handle_t *h = handle;
 	struct data_reader reader;
 	size_t decoded_len;
@@ -134,22 +125,17 @@ on_recv_first_message(struct connection *c, void *handle,
 	// account credentials
 	data_read_str(&reader, account, sizeof(account));
 	data_read_str(&reader, password, sizeof(password));
+	/* pipe account and password to the game input buffer */
+
+	//memcpy(/*game input buffer*/ NULL, &c, 4); // add connection id
+	// add the remaining of the message which should be the account name and account password
+	//memcpy(/*game input buffer*/ NULL, reader.ptr, reader.end - reader.ptr);
 
 	DEBUG_LOG("xtea = {%08X, %08X, %08X, %08X}",
 		h->xtea[0], h->xtea[1], h->xtea[2], h->xtea[3]);
 	DEBUG_LOG("account name = `%s`", account);
 	DEBUG_LOG("account password = `%s`", password);
 
-	// the protocol won't receive anymore messages and will only
-	// send a response when the database loads the account info
-
-	// add event
-	// struct ev_account_login *ev;
-	// ev = push_account_login();
-	// strcpy(ev->accname, account);
-	// strcpy(ev->password, password);
-
-	//return PROTO_STOP_READING;
 	return PROTO_CLOSE;
 }
 
@@ -170,23 +156,22 @@ static void writer_end(struct data_writer *writer, uint32 *xtea){
 	// length don't include their own size
 	// NOTE2: the unencrypted length is encrypted
 	// together with the data
-
-	uint8 *database = writer->base + 6;
-	uint32 datalen = (uint32)(writer->ptr - database);
+	uint8 *data = writer->base + 6;
+	uint32 datalen = (uint32)(writer->ptr - data);
 	uint32 checksum;
 	int padding = (8 - (datalen & 7)) & 7;
 
 	// set unencrypted length (datalen - 2)
-	encode_u16_le(database, datalen-2);
+	encode_u16_le(data, datalen-2);
 	// add padding for xtea encoding
 	datalen += padding;
 	while(padding-- > 0)
 		data_write_byte(writer, 0x33);
 	// xtea encode
-	xtea_encode(xtea, database, datalen);
+	xtea_encode(xtea, data, datalen);
 
 	// calc checksum
-	checksum = adler32(database, datalen);
+	checksum = adler32(data, datalen);
 	// set message length (datalen + 6 - 2)
 	encode_u16_le(writer->base, datalen+4);
 	// set checksum
@@ -235,5 +220,4 @@ static void login_resolve(void *handle){
 		(uint32)(writer.ptr - writer.base)));
 	return PROTO_CLOSE;
 }
-#endif // 0
 #endif // 0
