@@ -1,12 +1,59 @@
 #include "game.h"
+#include "buffer_util.h"
 //#include "db/db.h"
 //#include "server/server.h"
 
-struct network_event{
-	uint32 connection;
-	uint8 data[];
-};
+/* DOUBLE BUFFERING INDICES */
+// in both cases, game_idx = 1 - other_idx
+static int network_idx = 0;
+//static int database_idx = 0;
 
+/* ACCOUNT/PLAYER INPUT (NET -> GAME) */
+// @REVISIT: is this enough? should it be in the config?
+#define GAME_INPUT_BUFFER_SIZE (4 * 1024 * 1024) // 4MB
+static int game_input_buffer_length[2];
+static uint8 game_input_buffer[2][GAME_INPUT_BUFFER_SIZE];
+
+
+// THESE SHOULD BE CALLED ONLY FROM THE NET THREAD
+// (@TODO: add documentation on how the threads work and interact)
+
+//	Input that contain strings or any variable length array should
+// be checked for consistency before being added to the input buffer
+// or it could happen that an artificial message could break something.
+//	This could also be solved by also inserting the message length
+// along with the message but it would increase the memory overhead so
+// it is better to let the net thread do it.
+
+bool game_add_input(uint32 prefix, uint16 command, uint8 *data, uint32 datalen){
+	int idx = network_idx;
+	int nextpos = game_input_buffer_length[idx];
+	uint32 total_len = 6 + datalen;
+	uint8 *buffer;
+	if((nextpos + total_len) >= GAME_INPUT_BUFFER_SIZE){
+		LOG_ERROR("game_add_input: game input buffer overflow");
+		return false;
+	}
+	buffer = &game_input_buffer[idx][nextpos];
+	encode_u32_le(buffer, prefix);
+	encode_u16_le(buffer, command);
+	memcpy(buffer + 4, data, datalen);
+	return true;
+}
+
+// THIS SHOULD BE CALLED ONLY FROM THE GAME THREAD
+// (@TODO: add documentation on how the threads work and interact)
+void game_consume_input(void){
+	int idx = 1 - network_idx;
+	int i, len = game_input_buffer_length[idx];
+	uint8 *buffer = &game_input_buffer[idx][0];
+
+	i = 0;
+	while(i < len){
+		// @TODO: parse all messages and properly handle them
+		return;
+	}
+}
 
 /*
 
@@ -18,17 +65,21 @@ VER1 - incoming packets are piped into a game input buffer
 	the client.
 		We intend to set the update rate to 30Hz (it could
 	be higher) so having more than 5 * 30 = 150 inputs per sec
-	coming from the client is unrealistic so in the end, this
-	VER1 might be the better approach.
+	coming from the client is unrealistic and in the end, VER1
+	might be the better approach.
+		Of course this doesn't apply to the output as there
+	may be alot of output in a given time.
+
+	@TODO: add some network statistics build option
 
 VER2 - incoming packets are piped into a per connection input buffer
 
-	In the best case scenario, all connections will send/recv packets
-	to the server in a single network frame so we'd need to iterate over
-	them in some way or another. Then iterating over them in a single step
-	instead of hopping around is better for cache locality IF we expect
-	a high amount of messages to be received in a single network frame
-	which is unrealistic (see VER1).
+		In the best case scenario, all connections will send/recv
+	packets to the server in a single network frame so we'd need to
+	iterate over them in some way or another. Then iterating over them
+	in a single step instead of hopping around is better for cache
+	locality IF we expect a high amount of messages to be received in
+	a single network frame which is unrealistic (see VER1).
 
 login event: (into the login protocol input buffer) (ver1)
 	0xAAAAAAAA	== connection
@@ -36,7 +87,7 @@ login event: (into the login protocol input buffer) (ver1)
 		[accname len][accname data]	== accname string
 		[password len][password data]	== password string
 
-login event: (into the game protocol input buffer) (ver2)
+login event: (into the game protocol input buffer) (ver2) <====
 	0xAAAAAAAA	== connection
 	data: (variable length)
 		[0xFF]				== an event id not used by the game protocol
@@ -50,12 +101,6 @@ player common event: (into the game protocol input buffer)
 		[0x??]	== event id
 
 */
-
-struct login_event{
-	uint32 connection;
-	char accname[32];
-	char password[32];
-};
 
 bool game_init(void){
 	return true;

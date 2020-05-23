@@ -13,7 +13,8 @@
 #define MAX_KNOWN_CREATURES 150
 #define OUTPUT_BUFFER_SIZE 16384
 struct game_handle{
-	uint32 player_id;
+	uint32 connection;
+	uint32 player;
 
 	// client known creatures
 	uint32 known_creatures;
@@ -26,20 +27,16 @@ struct game_handle{
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
-static bool create_handle(struct connection *c, void **handle);
-static void destroy_handle(struct connection *c, void *handle);
-static void on_close(struct connection *c, void *handle);
-static protocol_status_t on_connect(
-	struct connection *c, void *handle);
-static protocol_status_t on_write(
-	struct connection *c, void *handle);
-static protocol_status_t on_recv_message(
-	struct connection *c, void *handle,
-	uint8 *data, uint32 datalen);
-static protocol_status_t on_recv_first_message(
-	struct connection *c, void *handle,
-	uint8 *data, uint32 datalen);
-struct protocol protocol_login = {
+static bool create_handle(uint32 c, void **handle);
+static void destroy_handle(uint32 c, void *handle);
+static void on_close(uint32 c, void *handle);
+static protocol_status_t on_connect(uint32 c, void *handle);
+static protocol_status_t on_write(uint32 c, void *handle);
+static protocol_status_t on_recv_message(uint32 c,
+	void *handle, uint8 *data, uint32 datalen);
+static protocol_status_t on_recv_first_message(uint32 c,
+	void *handle, uint8 *data, uint32 datalen);
+struct protocol protocol_game = {
 	.name = "game",
 	.sends_first = true,
 	.identify = identify,

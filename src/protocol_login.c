@@ -5,13 +5,14 @@
 #include "server.h"
 #include "tibia_rsa.h"
 #include "crypto/xtea.h"
+#include "game.h"
 
 /* LOGIN OUTPUT BUFFER */
 #define LOGIN_HANDLE_SIZE sizeof(login_handle_t)
 #define LOGIN_BUFFER_SIZE 1024
 typedef union{
 	struct{
-		uint32 conn;
+		uint32 connection;
 		uint32 xtea[4];
 	};
 	uint8 output_buffer[LOGIN_BUFFER_SIZE];
@@ -82,60 +83,75 @@ static protocol_status_t on_recv_message(uint32 c,
 static protocol_status_t on_recv_first_message(uint32 c,
 		void *handle, uint8 *data, uint32 datalen){
 	login_handle_t *h = handle;
-	struct data_reader reader;
+	uint8 *decoded;
 	size_t decoded_len;
-	char account[32];
-	char password[32];
+	uint16 accname_len;
+	uint16 password_len;
 	uint16 version;
 
-	// 4 bytes -> checksum
-	// 1 byte -> protocol id
-	// 2 bytes -> client os
-	// 2 bytes -> client version
-	// 12 bytes -> tibia .dat, .spr, .pic checksum(?)
-	// 128 bytes -> rsa encoded data
+	// data + 0 == checksum (4 bytes)
+	// data + 4 == protocol id (1 bytes)
+	// data + 5 == client os (2 bytes)
+	// data + 7 == client version (2 bytes)
+	// data + 9 == tibia .dat, .spr, .pic checksum (12 bytes)
+	// data + 21 == rsa encoded data (128 bytes)
 	if(datalen != 149){
 		DEBUG_LOG("protocol_login: invalid login message length"
 			" (expected = %d, got = %d)", 149, datalen);
-		return PROTO_ABORT;
+		return PROTO_CLOSE;
 	}
 
-	data_reader_init(&reader, data, datalen);
-	reader.ptr += 7;
-	version = data_read_u16(&reader);
-	reader.ptr += 12;
-
+	version = decode_u16_le(data + 7);
 	// version <= 760 didn't have checksum so this shouldn't
 	// happen unless its a purposely malformed message
 	if(version <= 760)
-		return PROTO_ABORT;
+		return PROTO_CLOSE;
 
 	// rsa decode
-	if(!tibia_rsa_decode(reader.ptr,
-	  reader.end - reader.ptr, &decoded_len))
-		return PROTO_ABORT;
-	reader.end = reader.ptr + decoded_len;
+	decoded = data + 21;
+	if(!tibia_rsa_decode(decoded, 128, &decoded_len))
+		return PROTO_CLOSE;
+
+	// decoded + 0 == xtea key (16 bytes)
+	// decoded + 16 == accname length (2 bytes)
+	// decoded + 18 == accname data (<= 30 bytes)
+	// decoded + 18 + V == password length (2 bytes)
+	// decoded + 20 + V == password data (<= 30 bytes)
+	if(decoded_len != 127)
+		// this value seems to be constant and the bytes after
+		// the password are just padding bytes
+		return PROTO_CLOSE;
 
 	// xtea key
-	h->xtea[0] = data_read_u32(&reader);
-	h->xtea[1] = data_read_u32(&reader);
-	h->xtea[2] = data_read_u32(&reader);
-	h->xtea[3] = data_read_u32(&reader);
-
-	// account credentials
-	data_read_str(&reader, account, sizeof(account));
-	data_read_str(&reader, password, sizeof(password));
-	/* pipe account and password to the game input buffer */
-
-	//memcpy(/*game input buffer*/ NULL, &c, 4); // add connection id
-	// add the remaining of the message which should be the account name and account password
-	//memcpy(/*game input buffer*/ NULL, reader.ptr, reader.end - reader.ptr);
-
+	h->xtea[0] = decode_u32_le(decoded + 0);
+	h->xtea[1] = decode_u32_le(decoded + 4);
+	h->xtea[2] = decode_u32_le(decoded + 8);
+	h->xtea[3] = decode_u32_le(decoded + 12);
 	DEBUG_LOG("xtea = {%08X, %08X, %08X, %08X}",
 		h->xtea[0], h->xtea[1], h->xtea[2], h->xtea[3]);
-	DEBUG_LOG("account name = `%s`", account);
-	DEBUG_LOG("account password = `%s`", password);
 
+	// check if accname is valid
+	accname_len = decode_u16_le(decoded + 16);
+	if(accname_len > 30){
+		// send_disconnect("invalid input length");
+		return PROTO_CLOSE;
+	}
+	DEBUG_LOG("account name = `%.*s`", accname_len, decoded + 18);
+
+	// check if password is valid
+	password_len = decode_u16_le(decoded + 18 + accname_len);
+	if(password_len > 30){
+		// send_disconnect("invalid input length");
+		return PROTO_CLOSE;
+	}
+	DEBUG_LOG("account password = `%.*s`",
+		password_len, decoded + 20 + accname_len);
+
+
+	// add account and password to the game input buffer
+	// @NOTE: MUST ADD SOME WAY TO REFERENCE THE PROTOCOL HANDLE
+	//game_add_input(c, CMD_ACCOUNT_LOGIN, decoded + 16, (uint32)(decoded_len - 16));
+	//return PROTO_STOP_READING;
 	return PROTO_CLOSE;
 }
 

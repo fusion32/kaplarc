@@ -7,12 +7,6 @@
  * READER
  */
 
-void data_reader_init(struct data_reader *reader,
-		uint8 *data, uint32 datalen){
-	reader->ptr = data;
-	reader->end = data + datalen;
-}
-
 uint8 data_peek_byte(struct data_reader *reader){
 	DEBUG_ASSERT((reader->end - reader->ptr) >= 1);
 	return decode_u8(reader->ptr);
@@ -70,13 +64,6 @@ void data_read_str(struct data_reader *reader, char *s, int maxlen){
 /*
  * WRITER
  */
-
-void data_writer_init(struct data_writer *writer,
-		uint8 *data, uint32 datalen){
-	writer->ptr = data;
-	writer->base = data;
-	writer->end = data + datalen;
-}
 
 void data_write_byte(struct data_writer *writer, uint8 val){
 	DEBUG_ASSERT((writer->end - writer->ptr) >= 1);
