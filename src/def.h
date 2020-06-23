@@ -30,7 +30,7 @@ typedef uintptr_t	uintptr;
 typedef ptrdiff_t	ptrdiff;
 
 // memory allocator (require types)
-#include "mem/mem.h"
+//#include "mem/mem.h"
 
 // @REMOVE
 #define PLATFORM_WINDOWS 1

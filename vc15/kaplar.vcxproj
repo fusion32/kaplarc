@@ -28,6 +28,7 @@
     <ClCompile Include="..\src\mem\slab_cache.c" />
     <ClCompile Include="..\src\murmur2.c" />
     <ClCompile Include="..\src\otdata.c" />
+    <ClCompile Include="..\src\outbuf.c" />
     <ClCompile Include="..\src\packed_data.c" />
     <ClCompile Include="..\src\protocol_echo.c" />
     <ClCompile Include="..\src\protocol_game.c" />
@@ -42,11 +43,11 @@
     <ClCompile Include="..\src\crypto\xtea.c" />
     <ClCompile Include="..\src\log.c" />
     <ClCompile Include="..\src\main.c" />
-    <ClCompile Include="..\src\server.c" />
     <ClCompile Include="..\src\server\epoll_server.c" />
     <ClCompile Include="..\src\server\iocp_connmgr.c" />
     <ClCompile Include="..\src\server\iocp_server.c" />
     <ClCompile Include="..\src\server\iocp_svcmgr.c" />
+    <ClCompile Include="..\src\server\server.c" />
     <ClCompile Include="..\src\system.c" />
     <ClCompile Include="..\src\test\base64_test.c" />
     <ClCompile Include="..\src\test\bcrypt_test.c" />
@@ -67,6 +68,7 @@
     <ClInclude Include="..\src\hash.h" />
     <ClInclude Include="..\src\mem\mem.h" />
     <ClInclude Include="..\src\mem\slab.h" />
+    <ClInclude Include="..\src\outbuf.h" />
     <ClInclude Include="..\src\packed_data.h" />
     <ClInclude Include="..\src\rbtree.h" />
     <ClInclude Include="..\src\config.h" />
@@ -79,9 +81,9 @@
     <ClInclude Include="..\src\endian.h" />
     <ClInclude Include="..\src\def.h" />
     <ClInclude Include="..\src\log.h" />
-    <ClInclude Include="..\src\server.h" />
     <ClInclude Include="..\src\server\iocp.h" />
     <ClInclude Include="..\src\server\protocol.h" />
+    <ClInclude Include="..\src\server\server.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\thread.h" />
     <ClInclude Include="..\src\buffer_util.h" />

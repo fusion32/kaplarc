@@ -1,11 +1,11 @@
 #include "buffer_util.h"
 #include "config.h"
+#include "game.h"
 #include "hash.h"
 #include "packed_data.h"
-#include "server.h"
 #include "tibia_rsa.h"
+#include "server/server.h"
 #include "crypto/xtea.h"
-#include "game.h"
 
 /* LOGIN OUTPUT BUFFER */
 #define LOGIN_HANDLE_SIZE sizeof(login_handle_t)
@@ -18,16 +18,29 @@ typedef union{
 	uint8 output_buffer[LOGIN_BUFFER_SIZE];
 } login_handle_t;
 
+
+struct login_protocol_handle{
+	uint32 connection;
+	uint32 output_length;
+	void *output_buffer;
+};
+
+struct game_protocol_handle{
+	uint32 connection;
+	uint32 output_lengths[2];
+	void *output_buffers[2];
+};
+
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
-static bool create_handle(uint32 c, void **handle);
-static void destroy_handle(uint32 c, void *handle);
-static void on_close(uint32 c, void *handle);
-static protocol_status_t on_connect(uint32 c, void *handle);
-static protocol_status_t on_write(uint32 c, void *handle);
-static protocol_status_t on_recv_message(uint32 c,
+static bool create_handle(uint32 connection, void **handle);
+static void destroy_handle(uint32 connection, void *handle);
+static void on_close(uint32 connection, void *handle);
+static protocol_status_t on_connect(uint32 connection, void *handle);
+static protocol_status_t on_write(uint32 connection, void *handle);
+static protocol_status_t on_recv_message(uint32 connection,
 	void *handle, uint8 *data, uint32 datalen);
-static protocol_status_t on_recv_first_message(uint32 c,
+static protocol_status_t on_recv_first_message(uint32 connection,
 	void *handle, uint8 *data, uint32 datalen);
 struct protocol protocol_login = {
 	.name = "login",
@@ -55,42 +68,48 @@ bool identify(uint8 *data, uint32 datalen){
 		&& data[4] == 0x01;
 }
 
-static bool create_handle(uint32 c, void **handle){
-	*handle = mem_alloc(LOGIN_HANDLE_SIZE);
+static bool create_handle(uint32 connection, void **handle){
+	// no op
 	return true;
 }
 
-static void destroy_handle(uint32 c, void *handle){
-	mem_free(LOGIN_HANDLE_SIZE, handle);
+static void destroy_handle(uint32 connection, void *handle){
+	// no op
 }
 
-static void on_close(uint32 c, void *handle){
+static void on_close(uint32 connection, void *handle){
+	// no op
+	DEBUG_LOG("protocol_login: on_close");
 }
 
-static protocol_status_t on_connect(uint32 c, void *handle){
+static protocol_status_t on_connect(uint32 connection, void *handle){
+	// no op
 	return PROTO_OK;
 }
 
-static protocol_status_t on_write(uint32 c, void *handle){
+static protocol_status_t on_write(uint32 connection, void *handle){
+	// close protocol after the disconnect message or
+	// character list has been sent
 	return PROTO_CLOSE;
 }
 
-static protocol_status_t on_recv_message(uint32 c,
+static protocol_status_t on_recv_message(uint32 connection,
 		void *handle, uint8 *data, uint32 datalen){
+	// no op
 	return PROTO_OK;
 }
 
-static protocol_status_t on_recv_first_message(uint32 c,
+static protocol_status_t on_recv_first_message(uint32 connection,
 		void *handle, uint8 *data, uint32 datalen){
-	login_handle_t *h = handle;
 	uint8 *decoded;
 	size_t decoded_len;
 	uint16 accname_len;
 	uint16 password_len;
 	uint16 version;
 
-	// data + 0 == checksum (4 bytes)
-	// data + 4 == protocol id (1 bytes)
+	// data + 0 == checksum (4 bytes)	|-> verified at the `identify` function
+	// data + 4 == protocol id (1 bytes)	|
+
 	// data + 5 == client os (2 bytes)
 	// data + 7 == client version (2 bytes)
 	// data + 9 == tibia .dat, .spr, .pic checksum (12 bytes)
@@ -122,37 +141,33 @@ static protocol_status_t on_recv_first_message(uint32 c,
 		// the password are just padding bytes
 		return PROTO_CLOSE;
 
-	// xtea key
-	h->xtea[0] = decode_u32_le(decoded + 0);
-	h->xtea[1] = decode_u32_le(decoded + 4);
-	h->xtea[2] = decode_u32_le(decoded + 8);
-	h->xtea[3] = decode_u32_le(decoded + 12);
-	DEBUG_LOG("xtea = {%08X, %08X, %08X, %08X}",
-		h->xtea[0], h->xtea[1], h->xtea[2], h->xtea[3]);
+	// @NOTE: the client doesn't allow for accname or password
+	// to be larger than 30 bytes so we don't need to send a
+	// disconnect message if the login message is bad
 
 	// check if accname is valid
 	accname_len = decode_u16_le(decoded + 16);
-	if(accname_len > 30){
-		// send_disconnect("invalid input length");
+	if(accname_len > 30)
 		return PROTO_CLOSE;
-	}
-	DEBUG_LOG("account name = `%.*s`", accname_len, decoded + 18);
 
 	// check if password is valid
 	password_len = decode_u16_le(decoded + 18 + accname_len);
-	if(password_len > 30){
-		// send_disconnect("invalid input length");
+	if(password_len > 30)
 		return PROTO_CLOSE;
-	}
+
+	DEBUG_LOG("xtea = {%08X, %08X, %08X, %08X}",
+		decode_u32_le(decoded + 0), decode_u32_le(decoded + 4),
+		decode_u32_le(decoded + 8), decode_u32_le(decoded + 12));
+	DEBUG_LOG("account name = `%.*s`", accname_len, (decoded + 18));
 	DEBUG_LOG("account password = `%.*s`",
-		password_len, decoded + 20 + accname_len);
+		password_len, (decoded + 20 + accname_len));
 
 
-	// add account and password to the game input buffer
-	// @NOTE: MUST ADD SOME WAY TO REFERENCE THE PROTOCOL HANDLE
-	//game_add_input(c, CMD_ACCOUNT_LOGIN, decoded + 16, (uint32)(decoded_len - 16));
-	//return PROTO_STOP_READING;
-	return PROTO_CLOSE;
+	// send login request to the game thread and stop reading
+	// (in the worst case it is timed out)
+	game_add_net_input(CMD_ACCOUNT_LOGIN, connection,
+		decoded, (20 + accname_len + password_len));
+	return PROTO_STOP_READING;
 }
 
 static void writer_begin(struct data_writer *writer){
@@ -195,6 +210,31 @@ static void writer_end(struct data_writer *writer, uint32 *xtea){
 }
 
 #if 0
+static void send_disconnect(uint32 connection, uint32 *xtea, const char *message){
+	// get output buffer
+	uint16 messagelen = (uint16)strlen(message);
+	uint8 *outbuffer;
+
+	/*
+	data_write_byte(&writer, 0x0A);
+	data_write_str(&writer, "hello");
+	*/
+	encode_u8(outbuffer + 8, 0x0A);
+	encode_u16_le(outbuffer + 9, messagelen);
+	memcpy(outbuffer + 11, message, messagelen);
+
+
+
+	// connection_send
+
+	struct data_writer writer;
+	// get output buffer, setup writer
+	data_write_byte(&writer, 0x0A);
+	data_write_str(&writer, message);
+	writer_end(&writer, xtea);
+	// send buffer
+}
+
 static void login_resolve(void *handle){
 	login_handle_t *h = handle;
 	struct data_writer writer;

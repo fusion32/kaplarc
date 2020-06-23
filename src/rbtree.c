@@ -437,7 +437,7 @@ struct rbnode *rbnode_next(struct rbnode *cur){
 }
 
 struct rbnode *rbnode_prev(struct rbnode *cur){
-	// same as next_node but in reverse
+	// same as rbnode_next but in reverse
 	if(cur == NULL)
 		return NULL;
 	if(cur->left != NULL){

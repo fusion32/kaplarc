@@ -8,14 +8,17 @@ void game_shutdown(void);
 void game_run(void);
 
 // @TODO: maybe use the same way of sending messages from
-// the network thread with the database thread
+// the network thread with the database thread (this will
+// require a different input buffer because instead two
+// threads would try write to it)
 //#define CMD_DBRESULT_ACCOUNT_LOGIN	0xFF01
 //#define CMD_DBRESULT_PLAYER_LOGIN	0xFF02
 
 // LOGIN PROTOCOL
-#define CMD_ACCOUNT_LOGIN			0x0100	// MADE UP FOR PARSING
+#define CMD_ACCOUNT_LOGIN			0x0101	// MADE UP FOR PARSING
 
 // GAME PROTOCOL
+//#define MAKE_PLAYER_CMD(opcode)		(uint16)(0x0000 | (opcode))
 #define CMD_PLAYER_LOGIN			0x0001	// MADE UP FOR PARSING
 #define CMD_PLAYER_LOGOUT			0x0014
 #define CMD_PLAYER_KEEP_ALIVE			0x001E
@@ -84,7 +87,7 @@ void game_run(void);
 #define CMD_PLAYER_QUESTLINE_REQUEST		0x00F1
 //#define PLAYER_VIOLATION_REPORT		0x00F2
 
-bool game_add_input(uint32 prefix, uint16 command, uint8 *data, uint32 datalen);
+bool game_add_net_input(uint16 command, uint32 command_handle, uint8 *data, uint16 datalen);
 
 
 #endif //GAME_GAME_H

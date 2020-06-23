@@ -4,6 +4,7 @@
 #include "../def.h"
 
 #ifdef PLATFORM_WINDOWS
+#include "server.h"
 #include "protocol.h"
 #define WIN32_LEAN_AND_MEAN 1
 #include <winsock2.h>

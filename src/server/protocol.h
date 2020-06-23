@@ -29,6 +29,9 @@ struct protocol{
 	 */
 	bool (*identify)(uint8 *data, uint32 datalen);
 
+	/* the maximum output buffer size for the protocol*/
+	uint32 output_buffer_size;
+
 	/* protocols will interact with the server through
 	 * the use of these handles
 	 */

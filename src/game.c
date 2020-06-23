@@ -1,18 +1,21 @@
 #include "game.h"
 #include "buffer_util.h"
-//#include "db/db.h"
-//#include "server/server.h"
+#include "server/server.h"
 
 /* DOUBLE BUFFERING INDICES */
 // in both cases, game_idx = 1 - other_idx
-static int network_idx = 0;
+static int net_idx = 0;
 //static int database_idx = 0;
 
-/* ACCOUNT/PLAYER INPUT (NET -> GAME) */
-// @REVISIT: is this enough? should it be in the config?
-#define GAME_INPUT_BUFFER_SIZE (4 * 1024 * 1024) // 4MB
-static int game_input_buffer_length[2];
-static uint8 game_input_buffer[2][GAME_INPUT_BUFFER_SIZE];
+// @REVISIT:
+//	- should the input buffer size be in the config?
+//	(would require dynamic allocation)
+//	- should the input buffer grow (in blocks)?
+
+/* LOGIN/PLAYER INPUT (NET -> GAME) */
+#define NET_INPUT_BUFFER_SIZE (4 * 1024 * 1024) // 4MB
+static int net_input_bufptr[2];
+static uint8 net_input_buffer[2][NET_INPUT_BUFFER_SIZE];
 
 
 // THESE SHOULD BE CALLED ONLY FROM THE NET THREAD
@@ -21,32 +24,40 @@ static uint8 game_input_buffer[2][GAME_INPUT_BUFFER_SIZE];
 //	Input that contain strings or any variable length array should
 // be checked for consistency before being added to the input buffer
 // or it could happen that an artificial message could break something.
-//	This could also be solved by also inserting the message length
-// along with the message but it would increase the memory overhead so
-// it is better to let the net thread do it.
 
-bool game_add_input(uint32 prefix, uint16 command, uint8 *data, uint32 datalen){
-	int idx = network_idx;
-	int nextpos = game_input_buffer_length[idx];
-	uint32 total_len = 6 + datalen;
+//	INPUT LAYOUT
+//		u16: input length
+//		u16: command
+//		u32: command handle (eg: connection for login commands, player for player commands, etc...)
+//		u8 x input length: command data
+
+bool game_add_net_input(uint16 command, uint32 command_handle, uint8 *data, uint16 datalen){
 	uint8 *buffer;
-	if((nextpos + total_len) >= GAME_INPUT_BUFFER_SIZE){
-		LOG_ERROR("game_add_input: game input buffer overflow");
+	int idx = net_idx;
+	int bufptr = net_input_bufptr[idx];
+	uint16 input_len = 8 + datalen;
+	if((bufptr + input_len) >= NET_INPUT_BUFFER_SIZE){
+		LOG_ERROR("game_add_player_input: player input buffer overflow");
 		return false;
 	}
-	buffer = &game_input_buffer[idx][nextpos];
-	encode_u32_le(buffer, prefix);
-	encode_u16_le(buffer, command);
-	memcpy(buffer + 4, data, datalen);
+	// encode data into the current input buffer
+	buffer = &net_input_buffer[idx][bufptr];
+	encode_u16_le(buffer + 0, input_len);
+	encode_u16_le(buffer + 2, command);
+	encode_u32_le(buffer + 4, command_handle);
+	memcpy(buffer + 8, data, datalen);
+	// advance the current buffer pointer
+	net_input_bufptr[idx] += input_len;
 	return true;
 }
 
-// THIS SHOULD BE CALLED ONLY FROM THE GAME THREAD
+// THESE SHOULD BE CALLED ONLY FROM THE GAME THREAD
 // (@TODO: add documentation on how the threads work and interact)
+#if 0
 void game_consume_input(void){
-	int idx = 1 - network_idx;
-	int i, len = game_input_buffer_length[idx];
-	uint8 *buffer = &game_input_buffer[idx][0];
+	int idx = 1 - net_idx;
+	int i, len = net_input_bufptr[idx];
+	uint8 *buffer = &net_input_buffer[idx][0];
 
 	i = 0;
 	while(i < len){
@@ -54,6 +65,7 @@ void game_consume_input(void){
 		return;
 	}
 }
+#endif
 
 /*
 
@@ -109,9 +121,25 @@ bool game_init(void){
 void game_shutdown(void){
 }
 
-void game_run(void){
+static void server_sync_routine(void *arg){
+	// 1 - iterate over PLAYERS and if they have a non null
+	// outbuf, send it through the connection
 
+	// 2 - swap the input buffers
+
+	// 3 - return
+
+	LOG("hello");
 }
+
+#ifdef PLATFORM_WINDOWS
+void game_run(void){
+	while(1){
+		server_sync(server_sync_routine, NULL);
+		Sleep(1000);
+	}
+}
+#endif
 
 
 /*

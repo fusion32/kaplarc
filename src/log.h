@@ -3,8 +3,8 @@
 
 #include "def.h"
 
-bool log_start(void);
-void log_stop(void);
+void log_to_file(void);
+void log_to_stdout(void);
 
 void log_add(const char *tag, const char *fmt, ...);
 void log_add1(const char *tag, const char *fmt, va_list ap);

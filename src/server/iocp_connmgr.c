@@ -34,33 +34,6 @@
 #define CONN_FIRST_MSG			0x08
 #define CONN_OUTPUT_IN_PROGRESS		0x10
 
-/*
-struct connection{
-	SOCKET s;
-	uint32 flags;
-	uint32 rdwr_count;
-	int pending_work;
-	struct sockaddr_in addr;
-	struct service *svc;
-	struct protocol *proto;
-	void *proto_handle;
-	// input operation
-	struct async_ov read_ov;
-	ULONG input_body_length;
-	uint8 *input_ptr;
-	// output operation
-	struct async_ov write_ov;
-	uint32 output_length;
-	uint8 *output_data;
-	// connection list
-	struct connection *next;
-	struct connection *prev;
-	// input buffer (this positioning is to keep
-	// the connection control block close together)
-	uint8 input_buffer[CONN_INPUT_BUFFER_SIZE];
-};
-*/
-
 struct conn_ctl{
 	uint32 uid;
 	uint32 flags;
@@ -80,8 +53,8 @@ struct conn_input_ctl{
 
 struct conn_output_ctl{
 	struct async_ov write_ov;
-	uint32 output_length;
-	uint8 *output_data;
+	uint32 datalen;
+	uint8 *data;
 };
 
 /* Connection List */
@@ -349,7 +322,7 @@ static void internal_on_write(void *data, DWORD err, DWORD transferred){
 	}
 
 	// this should not happen
-	if(out->output_length != transferred){
+	if(out->datalen != transferred){
 		DEBUG_ASSERT(0 &&
 			"WS ERROR: write operation completed with"
 			" a transferred amount diferent from the"
@@ -431,8 +404,8 @@ static bool internal_start_async_write(struct conn_ctl *c, struct conn_output_ct
 	DWORD error;
 	int ret;
 	// prepare buffer
-	wsabuf.len = out->output_length;
-	wsabuf.buf = out->output_data;
+	wsabuf.len = out->datalen;
+	wsabuf.buf = out->data;
 	// prepare overlapped
 	memset(&out->write_ov.ov, 0, sizeof(OVERLAPPED));
 	out->write_ov.s = c->s;
@@ -603,8 +576,8 @@ bool connection_send(uint32 uid, uint8 *data, uint32 datalen){
 	}
 
 	out = CONN_OUTPUT_CTL(c);
-	out->output_length = datalen;
-	out->output_data = data;
+	out->datalen = datalen;
+	out->data = data;
 	return internal_start_async_write(c, out);
 }
 

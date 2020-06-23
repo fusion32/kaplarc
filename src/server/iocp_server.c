@@ -39,8 +39,8 @@ static bool server_load_winsock_extensions(void){
 	// create dummy socket needed for WSAIoctl
 	s = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, 0);
 	if(s == INVALID_SOCKET){
-		LOG_ERROR("wsa_init: failed to create dummy"
-			" socket (error = %d)", WSAGetLastError());
+		LOG_ERROR("wsa_load_extensions: failed to create"
+			" dummy socket (error = %d)", WSAGetLastError());
 		return false;
 	}
 

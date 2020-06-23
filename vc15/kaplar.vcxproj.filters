@@ -139,7 +139,10 @@
     <ClCompile Include="..\src\db\pgsql.c">
       <Filter>Source Files\db</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\server.c">
+    <ClCompile Include="..\src\server\server.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\outbuf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -216,7 +219,10 @@
     <ClInclude Include="..\src\db\pgsql.h">
       <Filter>Source Files\db</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\server.h">
+    <ClInclude Include="..\src\server\server.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\outbuf.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,12 +1,12 @@
 #include "def.h"
-#include "server.h"
 #include "buffer_util.h"
 #include "system.h"
+#include "server/server.h"
 #include <string.h>
 
 /* PROTOCOL HANDLE */
 #define ECHO_HANDLE_SIZE sizeof(struct echo_handle)
-#define ECHO_BUFFER_SIZE 1000
+#define ECHO_BUFFER_SIZE (1024 - sizeof(bool))
 struct echo_handle{
 	bool output_ready;
 	uint8 output_buffer[ECHO_BUFFER_SIZE];
@@ -45,14 +45,14 @@ static bool identify(uint8 *data, uint32 datalen){
 }
 
 static bool create_handle(uint32 c, void **handle){
-	struct echo_handle *h = mem_alloc(ECHO_HANDLE_SIZE);
+	struct echo_handle *h = sys_malloc(ECHO_HANDLE_SIZE);
 	h->output_ready = true;
 	*handle = h;
 	return true;
 }
 
 static void destroy_handle(uint32 c, void *handle){
-	mem_free(ECHO_HANDLE_SIZE, handle);
+	sys_free(handle);
 }
 
 static void on_close(uint32 c, void *handle){
