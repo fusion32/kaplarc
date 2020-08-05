@@ -1,8 +1,8 @@
-#ifndef CRYPTO_XTEA_H_
-#define CRYPTO_XTEA_H_
+#ifndef KAPLAR_CRYPTO_XTEA_H_
+#define KAPLAR_CRYPTO_XTEA_H_ 1
 
-#include "../def.h"
+#include "../common.h"
 void xtea_encode(uint32 *k, uint8 *data, size_t len);
 void xtea_decode(uint32 *k, uint8 *data, size_t len);
 
-#endif //CRYPTO_XTEA_H_
+#endif //KAPLAR_CRYPTO_XTEA_H_

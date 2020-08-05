@@ -1,7 +1,7 @@
-#ifndef GAME_GAME_H_
-#define GAME_GAME_H_
+#ifndef KAPLAR_GAME_H_
+#define KAPLAR_GAME_H_ 1
 
-#include "def.h"
+#include "common.h"
 
 bool game_init(void);
 void game_shutdown(void);
@@ -90,4 +90,4 @@ void game_run(void);
 bool game_add_net_input(uint16 command, uint32 command_handle, uint8 *data, uint16 datalen);
 
 
-#endif //GAME_GAME_H
+#endif //KAPLAR_GAME_H

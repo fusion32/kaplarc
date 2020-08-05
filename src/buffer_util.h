@@ -1,7 +1,7 @@
-#ifndef BUFFER_UTIL_H_
-#define BUFFER_UTIL_H_
+#ifndef KAPLAR_BUFFER_UTIL_H_
+#define KAPLAR_BUFFER_UTIL_H_ 1
 
-#include "def.h"
+#include "common.h"
 #include "endian.h"
 
 static INLINE void encode_u8(uint8 *data, uint8 val){
@@ -207,4 +207,4 @@ static INLINE double decode_f64_le(uint8 *data){
 	return val;
 }
 
-#endif //BUFFER_UTIL_H_
+#endif //KAPLAR_BUFFER_UTIL_H_

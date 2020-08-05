@@ -21,7 +21,7 @@
 /* Connection Structure */
 
 // connection settings
-#define MAX_CONNECTIONS			8192
+#define MAX_CONNECTIONS			4096
 #if MAX_CONNECTIONS > UINT16_MAX
 #	error "Max number of concurrent connections should not exceed UINT16_MAX."
 #endif
@@ -239,8 +239,7 @@ static void internal_on_read_body(void *data, DWORD err, DWORD transferred){
 
 	// decrease pending work
 	c->pending_work -= 1;
-	// increase read count when we receive the
-	// message body but not otherwise
+	// increase read count after we receive the message body
 	c->rdwr_count += 1;
 
 	// handle connection closing

@@ -3,7 +3,7 @@
 // https://sites.google.com/site/murmurhash/
 //
 
-#include "hash.h"
+#include "common.h"
 #include "buffer_util.h"
 
 static INLINE

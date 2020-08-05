@@ -1,7 +1,7 @@
-#ifndef RBTREE_H_
-#define RBTREE_H_
+#ifndef KAPLAR_RBTREE_H_
+#define KAPLAR_RBTREE_H_ 1
 
-#include "def.h"
+#include "common.h"
 
 #define RBTREE_CACHED_MIN 1
 
@@ -12,6 +12,9 @@
 #define RBT_MIN(node_type, t)		((node_type*)rbt_min((t)))
 #define RBT_FIND(node_type, t, n)	((node_type*)rbt_find((t), RBNODE(n)))
 #define RBT_INITIALIZER(cmp)		(struct rbtree){NULL, NULL, cmp}
+
+#define RBNODE_RED 0
+#define RBNODE_BLACK 1
 
 struct rbnode{
 	int color;
@@ -44,4 +47,4 @@ struct rbnode *rbt_max(struct rbtree *t);
 struct rbnode *rbnode_next(struct rbnode *cur);
 struct rbnode *rbnode_prev(struct rbnode *cur);
 
-#endif //RBTREE_H_
+#endif //KAPLAR_RBTREE_H_

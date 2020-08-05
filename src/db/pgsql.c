@@ -1,11 +1,19 @@
-#include "pgsql.h"
+
+// NOTE1: any "format" param from the query functions can be
+//	either `0` for string format or `1` for binary format
+// NOTE2: binary int/float is sent in big endian
+
+#define DB_INTERNAL 1
+
+#include "database.h"
 #include "../buffer_util.h"
 #include "../config.h"
 #include "../log.h"
+#include "../thread.h"
 
 #include <libpq-fe.h>
 
-static struct{
+static const struct{
 	const char *config_key;
 	const char *param_key;
 } pgsql_params[] = {
@@ -19,7 +27,7 @@ static struct{
 	{"pgsql_application_name",	"application_name"},
 
 /*
-	// @TODO enable SSL
+	// @TODO enable SSL (IMPORTANT)
 	{"pgsql_sslmode",		"sslmode"},
 	{"pgsql_sslcert",		"sslcert"},
 	{"pgsql_sslkey",		"sslkey"},
@@ -29,8 +37,9 @@ static struct{
 };
 #define NUM_PARAMS ARRAY_SIZE(pgsql_params)
 
+// DB INTERNAL ROUTINES
 static PGconn *conn = NULL;
-bool pgsql_init(void){
+bool db_internal_connect(void){
 	DEBUG_ASSERT(conn == NULL);
 
 	// k & v are null terminated arrays
@@ -52,98 +61,135 @@ bool pgsql_init(void){
 
 	conn = PQconnectdbParams(k, v, 0);
 	if(conn == NULL){
-		LOG_ERROR("pgsql_init: failed to create connection handle");
+		LOG_ERROR("db_connect: failed to create connection handle");
 		return false;
 	}
 	if(PQstatus(conn) != CONNECTION_OK){
-		LOG_ERROR("pgsql_init: connection failed: %s",
-			PQerrorMessage(conn));
+		LOG_ERROR("db_connect: %s", PQerrorMessage(conn));
 		conn = NULL;
 		return false;
 	}
 	return true;
 }
 
-void pgsql_shutdown(void){
+bool db_internal_connection_reset(void){
+	DEBUG_ASSERT(conn != NULL);
+	PQreset(conn);
+	if(PQstatus(conn) != CONNECTION_OK){
+		LOG_ERROR("db_connection_reset: %s", PQerrorMessage(conn));
+		return false;
+	}
+	return true;
+}
+
+void db_internal_connection_close(void){
 	DEBUG_ASSERT(conn != NULL);
 	PQfinish(conn);
 	conn = NULL;
 }
 
-// binary int/float is sent in network byte order
-static INLINE int32 pq_getint32(const char *data){
-	return decode_u32_be((uint8*)data);
+// db result interface
+INLINE int db_result_nrows(db_result_t *res){
+	return PQntuples(res);
 }
-static INLINE int64 pq_getint64(const char *data){
-	return decode_u64_be((uint8*)data);
+INLINE int32 db_result_get_int32(db_result_t *res, int row, int field){
+	return decode_u32_be(PQgetvalue(res, row, field));
 }
-static INLINE float pq_getfloat(const char *data){
-	return decode_f32_be((uint8*)data);
+INLINE int64 db_result_get_int64(db_result_t *res, int row, int field){
+	return decode_u64_be(PQgetvalue(res, row, field));
 }
-static INLINE double pq_getdouble(const char *data){
-	return decode_f64_be((uint8*)data);
+INLINE float db_result_get_float(db_result_t *res, int row, int field){
+	return decode_f32_be(PQgetvalue(res, row, field));
+}
+INLINE double db_result_get_double(db_result_t *res, int row, int field){
+	return decode_f64_be(PQgetvalue(res, row, field));
+}
+INLINE const char *db_result_get_value(db_result_t *res, int row, int field){
+	return PQgetvalue(res, row, field);
+}
+INLINE void db_result_clear(db_result_t *res){
+	PQclear(res);
 }
 
-bool pgsql_load_account_login(const char *accname,
-		struct db_result_account_login *acc){
-	char account_id[4];
+db_result_t *db_load_account_info(const char *accname){
 	PGresult *res;
-	const char *param_value;
-	int param_length;
-	int param_format;
-	int ntuples;
-
-	// load account info
-	param_value = accname;
 	res = PQexecParams(conn,
-		"SELECT"
-			" account_id,"
-			" date_part('epoch', premend)::bigint,"
-			" password"
-		" FROM accounts WHERE lower(name) = $1",
-		1, NULL, &param_value, NULL, NULL, 1);
+		"SELECT account_id, date_part('epoch', premend)::bigint, password"
+		" FROM accounts"
+		" WHERE lower(name) = $1",
+		/*nParams = */		1,
+		/*paramTypes = */	NULL,
+		/*paramValues = */	&accname,
+		/*paramLengths = */	NULL,
+		/*paramFormats = */	NULL,
+		/*resultFormat = */	1);
 	if(res == NULL || PQresultStatus(res) != PGRES_TUPLES_OK){
-		LOG_ERROR(PQerrorMessage(conn));
+		LOG_ERROR("db_load_account_info: %s", PQerrorMessage(conn));
 		if(res != NULL)
 			PQclear(res);
-		return false;
+		return NULL;
 	}
-	memcpy(account_id, PQgetvalue(res, 0, 0), 4);
-	acc->premend = pq_getint64(PQgetvalue(res, 0, 1));
-	kpl_strncpy(acc->password, sizeof(acc->password),
-		PQgetvalue(res, 0, 2));
-	PQclear(res);
+	return res;
+}
 
-	// load charlist
-	param_value = account_id;
-	param_length = 4; // sizeof(int32)
-	param_format = 1; // binary
+db_result_t *db_load_account_charlist(int32 account_id){
+	PGresult *res;
+	char param_buf[sizeof(int32)];
+	char *param_value = param_buf;
+	int param_length = sizeof(int32);
+	int param_format = 1;
+	encode_u32_be(param_buf, account_id);
 	res = PQexecParams(conn,
-		"SELECT name FROM players"
+		"SELECT name"
+		" FROM players"
 		" WHERE account_id = $1"
 		" ORDER BY name ASC",
-		1, NULL, &param_value, &param_length, &param_format, 1);
+		/*nParams = */		1,
+		/*paramTypes = */	NULL,
+		/*paramValues = */	&param_value,
+		/*paramLengths = */	&param_length,
+		/*paramFormats = */	&param_format,
+		/*resultFormat = */	1);
 	if(res == NULL || PQresultStatus(res) != PGRES_TUPLES_OK){
-		LOG_ERROR(PQerrorMessage(conn));
+		LOG_ERROR("db_load_account_charlist: %s", PQerrorMessage(conn));
 		if(res != NULL)
 			PQclear(res);
-		return false;
+		return NULL;
 	}
-	ntuples = PQntuples(res);
-	if(ntuples <= 0){
-		acc->charlist[0] = 0;
+	return res;
+}
+
+void db_print_account(const char *accname){
+	int32 id;
+	int64 premend;
+	const char *pwd;
+	int nrows;
+	db_result_t *res = db_load_account_info(accname);
+	if(res == NULL){
+		LOG_ERROR("failed to load account");
+		return;
+	}
+	id = db_result_get_int32(res, 0, 0);
+	premend = db_result_get_int64(res, 0, 1);
+	pwd = db_result_get_value(res, 0, 2);
+	LOG("account: id = %d, name = `%s`", id, accname);
+	LOG("> premend = %lld", premend);
+	LOG("> password = %s", pwd);
+	db_result_clear(res);
+
+	res = db_load_account_charlist(id);
+	if(res == NULL){
+		LOG_ERROR("failed to load charlist");
+		return;
+	}
+	nrows = db_result_nrows(res);
+	if(nrows > 0){
+		for(int i = 0; i < nrows; i += 1)
+			LOG("> character #%d = `%s`", i, db_result_get_value(res, i, 0));
 	}else{
-		kpl_strncpy(acc->charlist,
-			sizeof(acc->charlist),
-			PQgetvalue(res, 0, 0));
-		for(int i = 1; i < ntuples; i += 1){
-			kpl_strncat_n(acc->charlist,
-				sizeof(acc->charlist),
-				";", PQgetvalue(res, i, 0), NULL);
-		}
+		LOG("> character list empty");
 	}
-	PQclear(res);
-	return true;
+	db_result_clear(res);
 }
 
 /*

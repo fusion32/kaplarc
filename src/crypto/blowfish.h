@@ -1,6 +1,6 @@
-#ifndef CRYPTO_BLOWFISH_H_
-#define CRYPTO_BLOWFISH_H_
-#include "../def.h"
+#ifndef KAPLAR_CRYPTO_BLOWFISH_H_
+#define KAPLAR_CRYPTO_BLOWFISH_H_ 1
+#include "../common.h"
 struct blowfish_ctx{
 	uint32 P[16 + 2];
 	uint32 S[4 * 256];
@@ -22,4 +22,4 @@ void blowfish_cbc_decode(struct blowfish_ctx *b, uint8 *iv, uint8 *data, size_t 
 // this helper function is useful for implementing bcrypt
 void blowfish_ecb_encode_n(struct blowfish_ctx *b, int n, uint8 *data, size_t len);
 
-#endif //CRYPTO_BLOWFISH_H_
+#endif //KAPLAR_CRYPTO_BLOWFISH_H_

@@ -2,7 +2,7 @@
 // Adler32, by Mark Adler
 //
 
-#include "hash.h"
+#include "common.h"
 
 #define BASE 65521U
 #define NMAX 5552

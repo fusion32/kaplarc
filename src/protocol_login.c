@@ -1,35 +1,10 @@
 #include "buffer_util.h"
 #include "config.h"
 #include "game.h"
-#include "hash.h"
 #include "packed_data.h"
 #include "tibia_rsa.h"
 #include "server/server.h"
 #include "crypto/xtea.h"
-
-/* LOGIN OUTPUT BUFFER */
-#define LOGIN_HANDLE_SIZE sizeof(login_handle_t)
-#define LOGIN_BUFFER_SIZE 1024
-typedef union{
-	struct{
-		uint32 connection;
-		uint32 xtea[4];
-	};
-	uint8 output_buffer[LOGIN_BUFFER_SIZE];
-} login_handle_t;
-
-
-struct login_protocol_handle{
-	uint32 connection;
-	uint32 output_length;
-	void *output_buffer;
-};
-
-struct game_protocol_handle{
-	uint32 connection;
-	uint32 output_lengths[2];
-	void *output_buffers[2];
-};
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
@@ -95,8 +70,8 @@ static protocol_status_t on_write(uint32 connection, void *handle){
 
 static protocol_status_t on_recv_message(uint32 connection,
 		void *handle, uint8 *data, uint32 datalen){
-	// no op
-	return PROTO_OK;
+	// should not receive additional messages
+	return PROTO_ABORT;
 }
 
 static protocol_status_t on_recv_first_message(uint32 connection,
@@ -134,8 +109,8 @@ static protocol_status_t on_recv_first_message(uint32 connection,
 	// decoded + 0 == xtea key (16 bytes)
 	// decoded + 16 == accname length (2 bytes)
 	// decoded + 18 == accname data (<= 30 bytes)
-	// decoded + 18 + V == password length (2 bytes)
-	// decoded + 20 + V == password data (<= 30 bytes)
+	// decoded + 18 + X == password length (2 bytes)
+	// decoded + 20 + X == password data (<= 30 bytes)
 	if(decoded_len != 127)
 		// this value seems to be constant and the bytes after
 		// the password are just padding bytes

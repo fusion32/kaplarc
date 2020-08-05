@@ -1,6 +1,6 @@
-#ifndef SERVER_PROTOCOL_H_
-#define SERVER_PROTOCOL_H_
-#include "../def.h"
+#ifndef KAPLAR_SERVER_PROTOCOL_H_
+#define KAPLAR_SERVER_PROTOCOL_H_ 1
+#include "../common.h"
 
 typedef enum protocol_status{
 	// default behaviour, the connection will keep going
@@ -29,9 +29,6 @@ struct protocol{
 	 */
 	bool (*identify)(uint8 *data, uint32 datalen);
 
-	/* the maximum output buffer size for the protocol*/
-	uint32 output_buffer_size;
-
 	/* protocols will interact with the server through
 	 * the use of these handles
 	 */
@@ -48,4 +45,4 @@ struct protocol{
 		void *handle, uint8 *data, uint32 datalen);
 };
 
-#endif //PROTOCOL_H_
+#endif //KAPLAR_SERVER_PROTOCOL_H_

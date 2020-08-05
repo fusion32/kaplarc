@@ -1,7 +1,7 @@
 #ifndef KAPLAR_OUTBUF_H_
 #define KAPLAR_OUTBUF_H_ 1
 
-#include "def.h"
+#include "common.h"
 
 // outbuf interface
 //	NOTES:
@@ -12,7 +12,7 @@
 //	they must be manually managed.
 //	- acquire and release are thread safe.
 
-#define MAX_IDLE_OUTBUFS 1024
+#define MAX_IDLE_OUTBUFS 2048
 #define MAX_OUTBUF_LEN (16384 - 2*sizeof(void*))
 struct outbuf{
 	struct outbuf *next;
@@ -24,4 +24,4 @@ void outbuf_shutdown(void);
 struct outbuf *outbuf_acquire(void);
 void outbuf_release(struct outbuf *buf);
 
-#endif // KAPLAR_OUTBUF_H_
+#endif //KAPLAR_OUTBUF_H_

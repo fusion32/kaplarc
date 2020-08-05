@@ -1,6 +1,5 @@
 #include "iocp.h"
 #include "../log.h"
-#include "../system.h"
 
 #ifdef PLATFORM_WINDOWS
 
@@ -141,7 +140,7 @@ void server_internal_work(void){
 
 	while(!interrupt){
 		// timeout check
-		now = sys_tick_count();
+		now = kpl_clock_monotonic_msec();
 		if(next_timeout_check <= now){
 			connmgr_timeout_check();
 			next_timeout_check = now + TIMEOUT_INTERVAL;

@@ -1,7 +1,7 @@
 // REMAKE
 #if 0
 
-#include "../def.h"
+#include "../common.h"
 #include "../log.h"
 #include "../crypto/rsa.h"
 

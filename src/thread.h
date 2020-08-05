@@ -1,9 +1,7 @@
-#ifndef THREAD_H_
-#define THREAD_H_
+#ifndef KAPLAR_THREAD_H_
+#define KAPLAR_THREAD_H_ 1
 
-//@TODO: make so mutex_*, and condvar_* functions cannot fail
-
-#include "def.h"
+#include "common.h"
 
 // macro wrappers
 static INLINE void return_void(int ret){
@@ -72,4 +70,4 @@ int __condvar_timedwait(convar_t *c, mutex_t *m, long msec);
 
 #endif
 
-#endif //THREAD_H_
+#endif //KAPLAR_THREAD_H_

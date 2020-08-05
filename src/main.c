@@ -21,14 +21,14 @@
 */
 
 #include "config.h"
-#include "def.h"
+#include "common.h"
 #include "log.h"
 #include "game.h"
 #include "outbuf.h"
 #include "tibia_rsa.h"
 
 #include "server/server.h"
-#include "db/pgsql.h"
+#include "db/database.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,16 +73,16 @@ int main(int argc, char **argv){
 	// init worker threads
 	// @TODO
 
-#if 1
+#if 0
 	game_run();
 #else
-	init_system("pgsql", pgsql_init, pgsql_shutdown);
-
-	struct db_result_account_login acc;
-	ASSERT(pgsql_load_account_login("admin", &acc));
-	LOG("acc: {'%s', '%s', '%llu', '%s'}",
-		"admin", acc.password,
-		acc.premend, acc.charlist);
+	init_system("database", db_init, db_shutdown);
+	LOG("====================");
+	db_print_account("admin");
+	LOG("====================");
+	db_print_account("acctest");
+	LOG("====================");
+	db_print_account("emptytest");
 	getchar();
 #endif
 	return 0;

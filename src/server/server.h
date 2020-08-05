@@ -1,7 +1,7 @@
-#ifndef SERVER_SERVER_H_
-#define SERVER_SERVER_H_
+#ifndef KAPLAR_SERVER_SERVER_H_
+#define KAPLAR_SERVER_SERVER_H_ 1
 
-#include "../def.h"
+#include "../common.h"
 #include "protocol.h"
 
 // server interface
@@ -15,4 +15,4 @@ void connection_close(uint32 uid);
 void connection_abort(uint32 uid);
 bool connection_send(uint32 uid, uint8 *data, uint32 datalen);
 
-#endif //SERVER_SERVER_H_
+#endif //KAPLAR_SERVER_SERVER_H_

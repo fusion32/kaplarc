@@ -1,9 +1,9 @@
 
 // @REVIEW: this whole reader thing might be unnecessary
 
-#ifndef PACKED_DATA_H_
-#define PACKED_DATA_H_
-#include "def.h"
+#ifndef KAPLAR_PACKED_DATA_H_
+#define KAPLAR_PACKED_DATA_H_ 1
+#include "common.h"
 
 struct data_reader{
 	uint8 *ptr;
@@ -46,4 +46,4 @@ void data_write_u32(struct data_writer *writer, uint32 val);
 void data_write_str(struct data_writer *writer, const char *s);
 void data_write_lstr(struct data_writer *writer, const char *s, int len);
 
-#endif //PACKED_DATA_H_
+#endif //KAPLAR_PACKED_DATA_H_

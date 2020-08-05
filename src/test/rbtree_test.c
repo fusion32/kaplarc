@@ -1,4 +1,4 @@
-#include "../def.h"
+#include "../common.h"
 #ifdef BUILD_TEST
 
 #include "../log.h"
@@ -27,7 +27,7 @@ static struct test_node nodes[MAX_NODES];
 
 static int check_black_height(struct rbnode *n, int cur){
 	int left, right;
-	if(n == NULL || n->color == 1)
+	if(n == NULL || n->color == RBNODE_BLACK)
 		cur += 1;
 
 	if(n != NULL){
@@ -50,7 +50,7 @@ static int check_black_height(struct rbnode *n, int cur){
 
 static int check_red_red(struct rbnode *n, int parent_color){
 	if(n != NULL){
-		if(n->color == 0 && parent_color == 0)
+		if(n->color == RBNODE_RED && parent_color == RBNODE_RED)
 			return -1;
 		// propagate error
 		if(check_red_red(n->left, n->color) < 0)

@@ -1,6 +1,6 @@
-#ifndef CRYPTO_RSA_H_
-#define CRYPTO_RSA_H_
-#include "../def.h"
+#ifndef KAPLAR_CRYPTO_RSA_H_
+#define KAPLAR_CRYPTO_RSA_H_ 1
+#include "../common.h"
 #include <gmp.h>
 
 struct rsa_ctx{
@@ -17,4 +17,4 @@ bool rsa_setkey(struct rsa_ctx *r, const char *p, const char *q, const char *e);
 void rsa_encode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *outlen);
 void rsa_decode(struct rsa_ctx *r, uint8 *data, size_t len, size_t *outlen);
 
-#endif //CRYPTO_RSA_H_
+#endif //KAPLAR_CRYPTO_RSA_H_

@@ -1,4 +1,4 @@
-#include "../def.h"
+#include "../common.h"
 #include "random.h"
 
 #if defined(PLATFORM_WINDOWS)

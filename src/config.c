@@ -1,11 +1,5 @@
 #include "config.h"
-#include "def.h"
 #include "log.h"
-#include "hash.h"
-
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <lua.h>
 #include <lauxlib.h>

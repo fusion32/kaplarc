@@ -2,11 +2,6 @@
 #include "buffer_util.h"
 #include "server/server.h"
 
-/* DOUBLE BUFFERING INDICES */
-// in both cases, game_idx = 1 - other_idx
-static int net_idx = 0;
-//static int database_idx = 0;
-
 // @REVISIT:
 //	- should the input buffer size be in the config?
 //	(would require dynamic allocation)
@@ -14,12 +9,19 @@ static int net_idx = 0;
 
 /* LOGIN/PLAYER INPUT (NET -> GAME) */
 #define NET_INPUT_BUFFER_SIZE (4 * 1024 * 1024) // 4MB
-static int net_input_bufptr[2];
+static int net_idx = 0;
+static uint32 net_input_bufptr[2];
 static uint8 net_input_buffer[2][NET_INPUT_BUFFER_SIZE];
 
+/* LOGIN REQUESTS */
+#include "thread.h"
+struct login_request{
+	uint32 connection;
+	uint32 xtea[4];
+	char accname[32];
+	char password[32];
+};
 
-// THESE SHOULD BE CALLED ONLY FROM THE NET THREAD
-// (@TODO: add documentation on how the threads work and interact)
 
 //	Input that contain strings or any variable length array should
 // be checked for consistency before being added to the input buffer
@@ -31,13 +33,14 @@ static uint8 net_input_buffer[2][NET_INPUT_BUFFER_SIZE];
 //		u32: command handle (eg: connection for login commands, player for player commands, etc...)
 //		u8 x input length: command data
 
+// THIS SHOULD BE CALLED FROM THE NETWORK THREAD ONLY
 bool game_add_net_input(uint16 command, uint32 command_handle, uint8 *data, uint16 datalen){
 	uint8 *buffer;
 	int idx = net_idx;
-	int bufptr = net_input_bufptr[idx];
+	uint32 bufptr = net_input_bufptr[idx];
 	uint16 input_len = 8 + datalen;
 	if((bufptr + input_len) >= NET_INPUT_BUFFER_SIZE){
-		LOG_ERROR("game_add_player_input: player input buffer overflow");
+		LOG_ERROR("game_add_net_input: net input buffer overflow");
 		return false;
 	}
 	// encode data into the current input buffer
@@ -51,123 +54,155 @@ bool game_add_net_input(uint16 command, uint32 command_handle, uint8 *data, uint
 	return true;
 }
 
-// THESE SHOULD BE CALLED ONLY FROM THE GAME THREAD
-// (@TODO: add documentation on how the threads work and interact)
-#if 0
-void game_consume_input(void){
-	int idx = 1 - net_idx;
-	int i, len = net_input_bufptr[idx];
-	uint8 *buffer = &net_input_buffer[idx][0];
-
-	i = 0;
-	while(i < len){
-		// @TODO: parse all messages and properly handle them
-		return;
-	}
+#if 1
+static INLINE uint16 decode_tibia_string(uint8 *data, char *outstr, uint16 maxlen){
+	uint16 len = decode_u16_le(data);
+	uint16 copy_len;
+	DEBUG_ASSERT(maxlen > 0);
+	//if(maxlen > 0){
+		if(len > 0){
+			copy_len = len >= maxlen ? maxlen - 1 : len;
+			memcpy(outstr, data + 2, copy_len);
+			outstr[copy_len] = 0;
+		}else{
+			outstr[0] = 0;
+		}
+	//}
+	return len + 2;
 }
 #endif
 
-/*
+static void game_consume_net_input(void){
+	int idx = 1 - net_idx;
+	uint32 len = net_input_bufptr[idx];
+	uint8 *buffer = &net_input_buffer[idx][0];
 
-VER1 - incoming packets are piped into a game input buffer
+	// command info
+	uint16 input_len;
+	uint16 command;
+	uint32 command_handle;
+	uint8 *command_data;
 
-		We expect that all clients send at least one packet
-	per network frame but having more than maybe 5 or more is
-	extremely unlikely as these are simply input commands from
-	the client.
-		We intend to set the update rate to 30Hz (it could
-	be higher) so having more than 5 * 30 = 150 inputs per sec
-	coming from the client is unrealistic and in the end, VER1
-	might be the better approach.
-		Of course this doesn't apply to the output as there
-	may be alot of output in a given time.
+	while(len >= 8){ // commands are at least 8 bytes
+		input_len = decode_u16_le(buffer + 0);
+		DEBUG_ASSERT(input_len <= len && input_len >= 8);
+		command = decode_u16_le(buffer + 2);
+		command_handle = decode_u32_le(buffer + 4);
+		command_data = buffer + 8;
 
-	@TODO: add some network statistics build option
+		if(command == CMD_ACCOUNT_LOGIN){
+			uint32 xtea[4];
+			char accname[32];
+			char password[32];
+			uint16 A; // accumulator
 
-VER2 - incoming packets are piped into a per connection input buffer
+			xtea[0] = decode_u32_le(command_data + 0);
+			xtea[1] = decode_u32_le(command_data + 4);
+			xtea[2] = decode_u32_le(command_data + 8);
+			xtea[3] = decode_u32_le(command_data + 12);
 
-		In the best case scenario, all connections will send/recv
-	packets to the server in a single network frame so we'd need to
-	iterate over them in some way or another. Then iterating over them
-	in a single step instead of hopping around is better for cache
-	locality IF we expect a high amount of messages to be received in
-	a single network frame which is unrealistic (see VER1).
+			A = decode_tibia_string(command_data + 16, accname, 32);
+			A += decode_tibia_string(command_data + 16 + A, password, 32);
 
-login event: (into the login protocol input buffer) (ver1)
-	0xAAAAAAAA	== connection
-	data: (variable length)
-		[accname len][accname data]	== accname string
-		[password len][password data]	== password string
+			LOG("xtea = {%08X, %08X, %08X, %08X}",
+				decode_u32_le(command_data + 0),
+				decode_u32_le(command_data + 4),
+				decode_u32_le(command_data + 8),
+				decode_u32_le(command_data + 12));
+			LOG("accname = '%s', password = '%s'", accname, password);
+		}
 
-login event: (into the game protocol input buffer) (ver2) <====
-	0xAAAAAAAA	== connection
-	data: (variable length)
-		[0xFF]				== an event id not used by the game protocol
-		[0xFF]				== an event id to identify the event
-		[accname len][accname data]	== accname string
-		[password len][password data]	== password string
-
-player common event: (into the game protocol input buffer)
-	0xAAAAAAAA	== connection
-	data:
-		[0x??]	== event id
-
-*/
+		DEBUG_LOG("net input: len = %u, command = %u, command_handle = %u",
+			(unsigned)input_len, (unsigned)command, (unsigned)command_handle);
+		buffer += input_len;
+		len -= input_len;
+	}
+}
 
 bool game_init(void){
+	net_input_bufptr[0] = 0;
+	net_input_bufptr[1] = 0;
 	return true;
 }
 
 void game_shutdown(void){
 }
 
-static void server_sync_routine(void *arg){
-	// 1 - iterate over PLAYERS and if they have a non null
-	// outbuf, send it through the connection
+static void game_server_sync_routine(void *arg){
+	// 1 - iterate over LOGIN RESOLVES and send it
+	/*
+	for(resolve in login_resolves){
+		protocol_login_send(resolve.connection, resolve.output);
+	}
+	*/
 
-	// 2 - swap the input buffers
+	// 2 - iterate over PLAYERS and if they have an outbuf, send it
+	/* METHOD 1
+	{ // OUTSIDE THE SYNC ROUTINE
+		struct outbuf *output;
+		struct{
+			uint32 connection;
+			struct outbuf *output;
+		} output_list[MAX_PLAYERS];
+		int num_output = 0;
+		for(player in players){
+			output = player.output;
+			if(output != NULL){
+				output_list[num_output].connection = player.connection;
+				output_list[num_output].output = output;
+				num_output += 1;
+			}
+		}
+	}
 
-	// 3 - return
+	{ // NOW INSIDE THE SYNC ROUTINE
+		for(int i = 0; i < num_output; i += 1){
+			connection_send(output_list[i].connection,
+				output_list[i].output->data,
+				output_list[i].output->datalen);
+		}
+	}
+	*/
+	/* METHOD 2
+	for(player in players){
+		protocol_game_send(player);
+	}
 
-	LOG("hello");
+	*/
+
+	// 3 - swap the input buffers
+	net_idx = 1 - net_idx;
+	net_input_bufptr[net_idx] = 0;
 }
 
-#ifdef PLATFORM_WINDOWS
+// frame interval in milliseconds:
+//	16 is ~60fps
+//	33 is ~30fps
+//	66 is ~15fps
+#define GAME_FRAME_INTERVAL 33
+
 void game_run(void){
+	int64 frame_start;
+	int64 frame_end;
+	int64 next_frame;
 	while(1){
-		server_sync(server_sync_routine, NULL);
-		Sleep(1000);
+		// calculate frame times so each frame takes the
+		// same time to complete (in a perfect scenario)
+		frame_start = kpl_clock_monotonic_msec();
+		next_frame = frame_start + GAME_FRAME_INTERVAL;
+
+		// do work
+		server_sync(game_server_sync_routine, NULL);
+		game_consume_net_input();
+
+		// stall until the next frame if we finished too early
+		frame_end = kpl_clock_monotonic_msec();
+		if(frame_end < next_frame)
+			kpl_sleep_msec(next_frame - frame_end);
+		DEBUG_LOG("game frame running time: %lld", frame_end - frame_start);
+		DEBUG_LOG("game frame idle time: %lld", next_frame - frame_end);
 	}
 }
-#endif
-
-
-/*
-NETWORK <-> GAME (I didn't include the database interaction but i'm thinking of something similar)
-
-1 -	Network messages from both the login and game protocol are piped
-	into the game input buffer (this is double buffered).
-
-2 -	At the beggining of the game frame, the game input buffers are
-	swapped and the buffer owned by the game thread is then parsed
-	to update player state as well as issuing output and script events.
-
-NOTE -	My previous idea was to have multiple of these double buffered
-	input buffers (one per event type). It could improve the i-cache
-	but it would worsen the d-cache plus the added complexity which
-	would be overwhelming.
-
-3 -	After parsing all input, the game state `ticks` (this could happen
-	before but we need to have an order set) effectively updating the
-	map, the monsters, the combat, etc etc. This will also issue output
-	and script events.
-
-4 -	Sort all script events by event type and execute them all. This may
-	also issue output events.
-
-5 -	Sort all output events and send them to the network thread (somehow,
-	still need thinking).
-*/
 
 /* EVENT LIST
 	DATABASE_OUT:

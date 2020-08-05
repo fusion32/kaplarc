@@ -1,7 +1,7 @@
-#ifndef SERVER_IOCP_H_
-#define SERVER_IOCP_H_ 1
+#ifndef KAPLAR_SERVER_IOCP_H_
+#define KAPLAR_SERVER_IOCP_H_ 1
 
-#include "../def.h"
+#include "../common.h"
 
 #ifdef PLATFORM_WINDOWS
 #include "server.h"
@@ -55,4 +55,4 @@ void server_internal_work(void);
 void server_internal_interrupt(void);
 
 #endif //PLATFORM_WINDOWS
-#endif //SERVER_IOCP_H_
+#endif //KAPLAR_SERVER_IOCP_H_

@@ -1,13 +1,13 @@
-#ifndef DEF_H_
-#define DEF_H_
+#ifndef KAPLAR_COMMON_H_
+#define KAPLAR_COMMON_H_ 1
 
 // stdlib base
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 // always enable assert
 #ifdef NDEBUG
@@ -28,9 +28,6 @@ typedef int64_t		int64;
 typedef uint64_t	uint64;
 typedef uintptr_t	uintptr;
 typedef ptrdiff_t	ptrdiff;
-
-// memory allocator (require types)
-//#include "mem/mem.h"
 
 // @REMOVE
 #define PLATFORM_WINDOWS 1
@@ -57,7 +54,7 @@ typedef ptrdiff_t	ptrdiff;
 
 // compiler settings
 #if defined(_MSC_VER)
-#	include<intrin.h>
+#	include <intrin.h>
 #	define INLINE __forceinline
 #	define _CLZ32(x) ((int)__lzcnt(x))
 #	define _CLZ64(x) ((int)__lzcnt64(x))
@@ -105,47 +102,42 @@ typedef ptrdiff_t	ptrdiff;
 #define MIN(x, y)		((x < y) ? (x) : (y))
 #define MAX(x, y)		((x > y) ? (x) : (y))
 
-// string copy
-//	- dst is a char buffer of size dstlen
-//	- src must be a valid nul-terminated string
-static INLINE
-void kpl_strncpy(char *dst, size_t dstsize, const char *src){
-	size_t cpylen = strlen(src);
-	if(cpylen >= dstsize)
-		cpylen = dstsize - 1;
-	memcpy(dst, src, cpylen);
-	dst[cpylen] = 0x00;
-}
+// adler32.c
+// -----------------------------------------------
+uint32 adler32(const uint8 *buf, size_t len);
 
-// string cat
-//	- dst must be a valid nul-terminated string
-//	- dstsize is the size of dst in memory
-//	- src must be a valid nul-terminated string
-static INLINE
-void kpl_strncat(char *dst, size_t dstsize, const char *src){
-	// if dst is a valid nul-terminated string,
-	// dstsize - dstlen cannot underflow
-	size_t dstlen = strlen(dst);
-	kpl_strncpy(dst + dstlen, dstsize - dstlen, src);
-}
+// murmur2.c
+// -----------------------------------------------
+uint32 murmur2_32(const uint8 *data, size_t len, uint32 seed);
 
-// string cat n
-//	- dst and dstsize are the same as in string cat
-//	- ... is a NULL-terminated list of strings to
-//	  concatenate
-static INLINE
-void kpl_strncat_n(char *dst, size_t dstsize, ...){
-	const char *src;
-	va_list ap;
+// mem_arena.c
+// -----------------------------------------------
+#define MEM_PTR_ALIGNMENT sizeof(void*)
+#define MEM_PTR_ALIGNMENT_MASK (sizeof(void*) - 1)
+struct mem_arena{
+	size_t block_size;
+	struct mem_arena_block *head;
+};
+#define MEM_ARENA_INIT(s) {.block_size = (s), .head = NULL}
+void mem_arena_cleanup(struct mem_arena *arena);
+void *mem_arena_alloc(struct mem_arena *arena, size_t size);
+void mem_arena_rollback(struct mem_arena *arena);
+void mem_arena_reset(struct mem_arena *arena);
 
-	va_start(ap, dstsize);
-	while(1){
-		src = va_arg(ap, const char*);
-		if(src == NULL)
-			break;
-		kpl_strncat(dst, dstsize, src);
-	}
-	va_end(ap);
-}
+// common.c
+// -----------------------------------------------
+// system wrappers
+int64 kpl_clock_monotonic_msec(void);
+void kpl_sleep_msec(int64 ms);
+int kpl_cpu_count(void);
+void kpl_abort(const char *fmt, ...);
+// stdlib wrappers and replacements
+void *kpl_malloc(size_t size);
+void *kpl_realloc(void *ptr, size_t size);
+void kpl_free(void *ptr);
+void kpl_strncpy(char *dst, size_t dstsize, const char *src);
+void kpl_strncat(char *dst, size_t dstsize, const char *src);
+void kpl_strncat_n(char *dst, size_t dstsize, ...);
 
-#endif //DEF_H_
+
+#endif //KAPLAR_SYSTEM_H_

@@ -1,9 +1,4 @@
 #include "log.h"
-#include "def.h"
-#include "system.h"
-
-#include <stdarg.h>
-#include <string.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -41,11 +36,11 @@ void log_to_stdout(void){
 void log_add(const char *tag, const char *fmt, ...){
 	va_list ap;
 	va_start(ap, fmt);
-	log_add1(tag, fmt, ap);
+	log_addv(tag, fmt, ap);
 	va_end(ap);
 }
 
-void log_add1(const char *tag, const char *fmt, va_list ap){
+void log_addv(const char *tag, const char *fmt, va_list ap){
 	time_t now;
 	struct tm *timeptr;
 	char timestr[32];

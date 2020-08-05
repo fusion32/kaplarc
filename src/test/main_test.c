@@ -1,4 +1,4 @@
-#include "../def.h"
+#include "../common.h"
 #ifdef BUILD_TEST
 
 #include "../log.h"

@@ -14,17 +14,11 @@
     <Filter Include="Source Files\server">
       <UniqueIdentifier>{44f0fa6b-c11c-42c0-943a-0e0d21658b22}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\mem">
-      <UniqueIdentifier>{842b1cef-0d51-4297-aeff-bdeb4232822c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\db">
       <UniqueIdentifier>{d46a0817-da52-4ca7-9b12-d50631510422}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\system.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -79,9 +73,6 @@
     <ClCompile Include="..\src\test\main_test.c">
       <Filter>Source Files\test</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\test\slab_test.c">
-      <Filter>Source Files\test</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\adler32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -121,21 +112,6 @@
     <ClCompile Include="..\src\server\epoll_server.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mem\slab_cache.c">
-      <Filter>Source Files\mem</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\mem\slab.c">
-      <Filter>Source Files\mem</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\mem\arena.c">
-      <Filter>Source Files\mem</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\mem\mem.c">
-      <Filter>Source Files\mem</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\test\slab_cache_test.c">
-      <Filter>Source Files\test</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\db\pgsql.c">
       <Filter>Source Files\db</Filter>
     </ClCompile>
@@ -145,15 +121,18 @@
     <ClCompile Include="..\src\outbuf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\common.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mem_arena.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\database.c">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\def.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\log.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\system.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\crypto\rsa.h">
@@ -189,9 +168,6 @@
     <ClInclude Include="..\src\rbtree.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\hash.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\tibia_rsa.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -207,23 +183,17 @@
     <ClInclude Include="..\src\server\protocol.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\mem\mem.h">
-      <Filter>Source Files\mem</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\mem\slab.h">
-      <Filter>Source Files\mem</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\db\db_types.h">
-      <Filter>Source Files\db</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\db\pgsql.h">
-      <Filter>Source Files\db</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\server\server.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
     <ClInclude Include="..\src\outbuf.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\db\database.h">
+      <Filter>Source Files\db</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

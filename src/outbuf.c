@@ -1,5 +1,4 @@
 #include "outbuf.h"
-#include "system.h"
 #include "thread.h"
 
 /* outbuf list control */
@@ -27,7 +26,7 @@ struct outbuf *server_outbuf_acquire(void){
 	}
 	mutex_unlock(&outbuf_mtx);
 	if(buf == NULL)
-		buf = sys_malloc(sizeof(struct outbuf));
+		buf = kpl_malloc(sizeof(struct outbuf));
 	return buf;
 }
 
@@ -41,5 +40,5 @@ void server_outbuf_release(struct outbuf *buf){
 	}
 	mutex_unlock(&outbuf_mtx);
 	if(buf != NULL)
-		sys_free(buf);
+		kpl_free(buf);
 }

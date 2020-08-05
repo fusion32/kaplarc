@@ -1,7 +1,7 @@
-#ifndef ENDIAN_H_
-#define ENDIAN_H_
+#ifndef KAPLAR_ENDIAN_H_
+#define KAPLAR_ENDIAN_H_ 1
 
-#include "def.h"
+#include "common.h"
 
 static INLINE uint16 swap_u16(uint16 x){
 	return (x & 0xFF00) >> 8
@@ -52,4 +52,4 @@ static INLINE uint64 swap_u64(uint64 x){
 #define u64_cpu_to_le(x)	(x)
 #endif //ARCH_BIG_ENDIAN
 
-#endif //ENDIAN_H_
+#endif //KAPLAR_ENDIAN_H_
