@@ -1,3 +1,6 @@
+
+// @TODO: these macros are awful
+
 #ifndef KAPLAR_THREAD_H_
 #define KAPLAR_THREAD_H_ 1
 

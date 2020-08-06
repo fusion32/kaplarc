@@ -61,7 +61,7 @@ int main(int argc, char **argv){
 	init_system("tibia_rsa", tibia_rsa_init, tibia_rsa_shutdown);
 
 	// init database thread
-	// @TODO
+	init_system("database", db_init, db_shutdown);
 
 	// init network thread
 	extern struct protocol protocol_echo;
@@ -76,7 +76,6 @@ int main(int argc, char **argv){
 #if 0
 	game_run();
 #else
-	init_system("database", db_init, db_shutdown);
 	LOG("====================");
 	db_print_account("admin");
 	LOG("====================");
