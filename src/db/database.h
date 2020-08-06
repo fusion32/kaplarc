@@ -25,7 +25,7 @@ typedef union{
 } db_load_key_t;
 typedef void db_result_t;
 typedef void(*db_load_callback_t)(void *udata, uint32 load_op,
-	db_load_key_t *key, db_result_t *res);
+	db_load_key_t key, db_result_t *res);
 
 #if 0
 //@TODO
