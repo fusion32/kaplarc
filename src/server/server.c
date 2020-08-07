@@ -45,7 +45,7 @@ bool server_init(void){
 	sync_arg = NULL;
 	mutex_init(&mtx);
 	condvar_init(&sync_cv);
-	if(thread_create(&thr, server_thread, NULL) != 0){
+	if(thread_init(&thr, server_thread, NULL) != 0){
 		mutex_destroy(&mtx);
 		server_internal_shutdown();
 		return false;

@@ -89,25 +89,25 @@ void db_internal_connection_close(void){
 }
 
 // db result interface
-INLINE int db_result_nrows(db_result_t *res){
+int db_result_nrows(db_result_t *res){
 	return PQntuples(res);
 }
-INLINE int32 db_result_get_int32(db_result_t *res, int row, int field){
+int32 db_result_get_int32(db_result_t *res, int row, int field){
 	return decode_u32_be(PQgetvalue(res, row, field));
 }
-INLINE int64 db_result_get_int64(db_result_t *res, int row, int field){
+int64 db_result_get_int64(db_result_t *res, int row, int field){
 	return decode_u64_be(PQgetvalue(res, row, field));
 }
-INLINE float db_result_get_float(db_result_t *res, int row, int field){
+float db_result_get_float(db_result_t *res, int row, int field){
 	return decode_f32_be(PQgetvalue(res, row, field));
 }
-INLINE double db_result_get_double(db_result_t *res, int row, int field){
+double db_result_get_double(db_result_t *res, int row, int field){
 	return decode_f64_be(PQgetvalue(res, row, field));
 }
-INLINE const char *db_result_get_value(db_result_t *res, int row, int field){
+const char *db_result_get_value(db_result_t *res, int row, int field){
 	return PQgetvalue(res, row, field);
 }
-INLINE void db_result_clear(db_result_t *res){
+void db_result_clear(db_result_t *res){
 	PQclear(res);
 }
 

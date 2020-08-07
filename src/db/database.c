@@ -78,7 +78,7 @@ bool db_init(void){
 	running = true;
 	mutex_init(&mtx);
 	condvar_init(&cv);
-	if(thread_create(&thr, db_thread, NULL) != 0){
+	if(thread_init(&thr, db_thread, NULL) != 0){
 		mutex_destroy(&mtx);
 		db_internal_connection_close();
 		return false;
