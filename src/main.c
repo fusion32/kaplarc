@@ -73,7 +73,7 @@ int main(int argc, char **argv){
 	// init worker threads
 	// @TODO
 
-#if 0
+#if 1
 	game_run();
 #else
 	LOG("====================");

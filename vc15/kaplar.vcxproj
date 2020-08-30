@@ -23,11 +23,11 @@
     <ClCompile Include="..\src\db\database.c" />
     <ClCompile Include="..\src\db\pgsql.c" />
     <ClCompile Include="..\src\game.c" />
+    <ClCompile Include="..\src\game_input.c" />
     <ClCompile Include="..\src\mem_arena.c" />
     <ClCompile Include="..\src\murmur2.c" />
     <ClCompile Include="..\src\otdata.c" />
     <ClCompile Include="..\src\outbuf.c" />
-    <ClCompile Include="..\src\packed_data.c" />
     <ClCompile Include="..\src\protocol_echo.c" />
     <ClCompile Include="..\src\protocol_game.c" />
     <ClCompile Include="..\src\protocol_login.c" />
@@ -61,7 +61,6 @@
     <ClInclude Include="..\src\db\database.h" />
     <ClInclude Include="..\src\game.h" />
     <ClInclude Include="..\src\outbuf.h" />
-    <ClInclude Include="..\src\packed_data.h" />
     <ClInclude Include="..\src\rbtree.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\crypto\random.h" />

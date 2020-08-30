@@ -42,32 +42,27 @@ struct conn_ctl{
 	int32 rdwr_count;
 	int32 pending_work;
 	struct protocol *proto;
-	void *proto_handle;
-};
+	void *udata;
 
-struct conn_input_ctl{
+	// input ctl
 	struct async_ov read_ov;
-	uint32 input_len;
-	uint8 input_buffer[CONN_INPUT_BUFFER_SIZE];
-};
-
-struct conn_output_ctl{
+	uint32 bodylen;
+	// output ctl
 	struct async_ov write_ov;
-	uint32 datalen;
-	uint8 *data;
+	uint32 output_len;
+	uint8 *output_data;
+
+	// the connection address will be only used when we add IP
+	// bans and the sort but for now lets just leave it away
+	//struct sockaddr_in addr;
 };
 
 /* Connection List */
 static struct conn_ctl ctl[MAX_CONNECTIONS];
-static struct conn_input_ctl input_ctl[MAX_CONNECTIONS];
-static struct conn_output_ctl output_ctl[MAX_CONNECTIONS];
-// the connection address will be only used when we add IP
-// bans and the sort but for now lets just leave it away
-//static struct sockaddr_in conn_addr[MAX_CONNECTIONS];
+static uint8 input_buf[MAX_CONNECTIONS][CONN_INPUT_BUFFER_SIZE];
 
 static uint16 freelist = UINT16_MAX;
 static uint16 next_unused_slot = 0;
-
 
 // NOTE: (FOR ALL CONNECTIONS SLOTS UNDER `next_unused_slot`)
 //	When a connection is INUSE, it's `uid` field has the
@@ -76,6 +71,8 @@ static uint16 next_unused_slot = 0;
 // slot counter and the slot position of the next item on the
 // freelist.
 
+// NOTE: there is some insight on connection uids on the file
+// 'docs/problems/connection_uid.txt'
 static struct conn_ctl *internal_alloc(void){
 	uint16 slot;
 	struct conn_ctl *c;
@@ -103,8 +100,7 @@ static void internal_free(struct conn_ctl *c){
 }
 
 #define CONN_CTL(uid)		(&ctl[uid & 0xFFFF])
-#define CONN_INPUT_CTL(c)	(&input_ctl[(c)->uid & 0xFFFF])
-#define CONN_OUTPUT_CTL(c)	(&output_ctl[(c)->uid & 0xFFFF])
+#define CONN_INPUT_BUF(c)	(input_buf[(c)->uid & 0xFFFF])
 
 /* STATIC FWD DECL */
 static void internal_dispatch_on_close(struct conn_ctl *c);
@@ -115,12 +111,14 @@ static protocol_status_t internal_dispatch_on_write(struct conn_ctl *c);
 static void internal_on_read_length(void *data, DWORD err, DWORD transferred);
 static void internal_on_read_body(void *data, DWORD err, DWORD transferred);
 static void internal_on_write(void *data, DWORD err, DWORD transferred);
-static bool internal_start_async_read(struct conn_ctl *c, struct conn_input_ctl *in,
+static bool internal_start_async_read(struct conn_ctl *c,
+		uint8 *buffer, uint32 readlen,
 		void (*callback)(void*, DWORD, DWORD));
-static void internal_async_read(struct conn_ctl *c, struct conn_input_ctl *in,
+static void internal_async_read(struct conn_ctl *c,
+		uint8 *buffer, uint32 readlen,
 		void (*callback)(void*, DWORD, DWORD));
-static bool internal_start_async_write(struct conn_ctl *c, struct conn_output_ctl *out);
-static void internal_async_write(struct conn_ctl *c, struct conn_output_ctl *out);
+static bool internal_start_async_write(struct conn_ctl *c);
+static void internal_async_write(struct conn_ctl *c);
 static void internal_close_operation(struct conn_ctl *c);
 static void internal_start_close_operation(struct conn_ctl *c, bool abort);
 static void internal_close(struct conn_ctl *c);
@@ -130,9 +128,7 @@ static void internal_abort(struct conn_ctl *c);
 static INLINE
 void internal_dispatch_on_close(struct conn_ctl *c){
 	if(c->proto != NULL){
-		c->proto->on_close(c->uid, c->proto_handle);
-		c->proto->destroy_handle(c->uid, c->proto_handle);
-		c->proto_handle = NULL;
+		c->proto->on_close(c->uid);
 		c->proto = NULL;
 	}
 }
@@ -141,23 +137,23 @@ static INLINE protocol_status_t
 internal_dispatch_on_connect(struct conn_ctl *c){
 	// the connection was just made so:
 	//	c->proto == NULL
-	// and	c->proto_handle == service
+	// and	c->udata == service
 	DEBUG_ASSERT(c->proto == NULL);
-	DEBUG_ASSERT(c->proto_handle != NULL);
-	struct service *svc = c->proto_handle;
+	DEBUG_ASSERT(c->udata != NULL);
+	struct service *svc = c->udata;
 	if(!service_sends_first(svc))
 		return PROTO_OK;
 	c->proto = service_first_protocol(svc);
 	DEBUG_ASSERT(c->proto != NULL);
-	if(!c->proto->create_handle(c->uid, &c->proto_handle))
+	if(!c->proto->on_assign_protocol(c->uid))
 		return PROTO_ABORT;
-	return c->proto->on_connect(c->uid, c->proto_handle);
+	return c->proto->on_connect(c->uid);
 }
 
 static INLINE protocol_status_t
 internal_dispatch_on_write(struct conn_ctl *c){
 	DEBUG_ASSERT(c->proto != NULL);
-	return c->proto->on_write(c->uid, c->proto_handle);
+	return c->proto->on_write(c->uid);
 }
 
 static INLINE protocol_status_t
@@ -165,26 +161,24 @@ internal_dispatch_on_recv_message(struct conn_ctl *c, uint8 *data, uint32 datale
 	// select protocol if this is the first message
 	if(c->proto == NULL){
 		// if	c->proto == NULL
-		// then	c->proto_handle == service
-		DEBUG_ASSERT(c->proto_handle != NULL);
-		c->proto = service_select_protocol(c->proto_handle, data, datalen);
-		if(!c->proto || !c->proto->create_handle(c->uid, &c->proto_handle))
+		// then	c->udata == service
+		DEBUG_ASSERT(c->udata != NULL);
+		c->proto = service_select_protocol(c->udata, data, datalen);
+		if(!c->proto || !c->proto->on_assign_protocol(c->uid))
 			return PROTO_ABORT;
 	}
 	// dispatch message
 	if(!(c->flags & CONN_FIRST_MSG)){
 		c->flags |= CONN_FIRST_MSG;
-		return c->proto->on_recv_first_message(
-			c->uid, c->proto_handle, data, datalen);
+		return c->proto->on_recv_first_message(c->uid, data, datalen);
 	}
-	return c->proto->on_recv_message(
-		c->uid, c->proto_handle, data, datalen);
+	return c->proto->on_recv_message(c->uid, data, datalen);
 }
 
 static void internal_on_read_length(void *data, DWORD err, DWORD transferred){
 	struct conn_ctl *c = data;
-	struct conn_input_ctl *in = CONN_INPUT_CTL(c);
-	uint16 body_length;
+	uint8 *buf = CONN_INPUT_BUF(c);
+	uint16 bodylen;
 
 	// decrease pending work
 	c->pending_work -= 1;
@@ -199,7 +193,7 @@ static void internal_on_read_length(void *data, DWORD err, DWORD transferred){
 	// handle connection errors
 	if(err != NOERROR){
 		// retry operation
-		internal_async_read(c, in, internal_on_read_length);
+		internal_async_read(c, buf, 2, internal_on_read_length);
 		return;
 	}
 
@@ -220,22 +214,22 @@ static void internal_on_read_length(void *data, DWORD err, DWORD transferred){
 	}
 
 	// decode body length
-	body_length = decode_u16_le(in->input_buffer);
+	bodylen = decode_u16_le(buf);
 
 	// assert that body_length isn't zero or overflows the input buffer
-	if(body_length > CONN_INPUT_BUFFER_SIZE || body_length == 0){
+	if(bodylen > CONN_INPUT_BUFFER_SIZE || bodylen == 0){
 		internal_abort(c);
 		return;
 	}
 
 	// chain body read
-	in->input_len = body_length;
-	internal_async_read(c, in, internal_on_read_body);
+	c->bodylen = bodylen;
+	internal_async_read(c, buf, bodylen, internal_on_read_body);
 }
 
 static void internal_on_read_body(void *data, DWORD err, DWORD transferred){
 	struct conn_ctl *c = data;
-	struct conn_input_ctl *in = CONN_INPUT_CTL(c);
+	uint8 *buf = CONN_INPUT_BUF(c);
 
 	// decrease pending work
 	c->pending_work -= 1;
@@ -252,7 +246,7 @@ static void internal_on_read_body(void *data, DWORD err, DWORD transferred){
 	// handle connection errors
 	if(err != NOERROR){
 		// retry operation
-		internal_async_read(c, in, internal_on_read_body);
+		internal_async_read(c, buf, c->bodylen, internal_on_read_body);
 		return;
 	}
 
@@ -263,7 +257,7 @@ static void internal_on_read_body(void *data, DWORD err, DWORD transferred){
 	}
 
 	// this should not happen
-	if(in->input_len != transferred){
+	if(c->bodylen != transferred){
 		DEBUG_ASSERT(0 &&
 			"WS ERROR: read operation completed with"
 			" a transferred amount diferent from the"
@@ -273,8 +267,7 @@ static void internal_on_read_body(void *data, DWORD err, DWORD transferred){
 	}
 
 	// dispatch message to protocol
-	switch(internal_dispatch_on_recv_message(c,
-		in->input_buffer, in->input_len)){
+	switch(internal_dispatch_on_recv_message(c, buf, c->bodylen)){
 	case PROTO_OK: break;
 	case PROTO_STOP_READING: return;
 	case PROTO_CLOSE:
@@ -287,13 +280,11 @@ static void internal_on_read_body(void *data, DWORD err, DWORD transferred){
 	}
 
 	// chain next message read
-	in->input_len = 2;
-	internal_async_read(c, in, internal_on_read_length);
+	internal_async_read(c, buf, 2, internal_on_read_length);
 }
 
 static void internal_on_write(void *data, DWORD err, DWORD transferred){
 	struct conn_ctl *c = data;
-	struct conn_output_ctl *out = CONN_OUTPUT_CTL(c);
 
 	// decrease pending work
 	c->pending_work -= 1;
@@ -310,7 +301,7 @@ static void internal_on_write(void *data, DWORD err, DWORD transferred){
 	// handle connection errors
 	if(err != NOERROR){
 		// retry operation
-		internal_async_write(c, out);
+		internal_async_write(c);
 		return;
 	}
 
@@ -321,7 +312,7 @@ static void internal_on_write(void *data, DWORD err, DWORD transferred){
 	}
 
 	// this should not happen
-	if(out->datalen != transferred){
+	if(c->output_len != transferred){
 		DEBUG_ASSERT(0 &&
 			"WS ERROR: write operation completed with"
 			" a transferred amount diferent from the"
@@ -349,29 +340,31 @@ static void internal_on_write(void *data, DWORD err, DWORD transferred){
 	}
 }
 
-static bool internal_start_async_read(struct conn_ctl *c, struct conn_input_ctl *in,
+// NOTE: it's implicit that `buffer` can hold at least `readlen` bytes
+static bool internal_start_async_read(struct conn_ctl *c,
+		uint8 *buffer, uint32 readlen,
 		void (*callback)(void*, DWORD, DWORD)){
 	WSABUF wsabuf;
 	DWORD error, flags;
 	int ret;
 	// prepare buffer
-	wsabuf.len = in->input_len;
-	wsabuf.buf = in->input_buffer;
+	wsabuf.len = readlen;
+	wsabuf.buf = buffer;
 	// prepare overlapped
-	memset(&in->read_ov.ov, 0, sizeof(OVERLAPPED));
-	in->read_ov.s = c->s;
-	in->read_ov.complete = callback;
-	in->read_ov.data = c;
+	memset(&c->read_ov.ov, 0, sizeof(OVERLAPPED));
+	c->read_ov.s = c->s;
+	c->read_ov.complete = callback;
+	c->read_ov.data = c;
 	// dispatch to OS
 	// MSG_WAITALL ensures that the amount requested is
 	// received before queuing a completion socket
 	flags = MSG_WAITALL;
 	ret = WSARecv(c->s, &wsabuf, 1, NULL,
-		&flags, &in->read_ov.ov, NULL);
+		&flags, &c->read_ov.ov, NULL);
 	if(ret == SOCKET_ERROR){
 		error = WSAGetLastError();
 		if(error != WSA_IO_PENDING){
-			LOG_ERROR("connection_start_async_read:"
+			LOG_ERROR("internal_start_async_read:"
 				" WSARecv failed (error = %d)", error);
 			return false;
 		}
@@ -379,40 +372,40 @@ static bool internal_start_async_read(struct conn_ctl *c, struct conn_input_ctl 
 	c->pending_work += 1;
 	return true;
 }
-
-static void internal_async_read(struct conn_ctl *c, struct conn_input_ctl *in,
+static void internal_async_read(struct conn_ctl *c,
+		uint8 *buffer, uint32 readlen,
 		void (*callback)(void*, DWORD, DWORD)){
 	DEBUG_ASSERT(c != NULL);
-	DEBUG_ASSERT(in != NULL && in->input_len > 0);
+	DEBUG_ASSERT(buffer != NULL && readlen > 0);
 	DEBUG_ASSERT(callback != NULL);
 	for(int i = 0; i < CONN_OP_RETRIES_BEFORE_CLOSING; i += 1){
-		if(internal_start_async_read(c, in, callback))
+		if(internal_start_async_read(c, buffer, readlen, callback))
 			return;
-		DEBUG_LOG("connection_async_read: failed to"
+		DEBUG_LOG("internal_async_read: failed to"
 			" start read operation (try %d)", i);
 	}
-	DEBUG_LOG("connection_async_read: failed to start"
+	DEBUG_LOG("internal_async_read: failed to start"
 		" read operation after %d tries...",
 		CONN_OP_RETRIES_BEFORE_CLOSING);
-	DEBUG_LOG("connection_async_read: aborting connection...");
+	DEBUG_LOG("internal_async_read: aborting connection...");
 	internal_abort(c);
 }
 
-static bool internal_start_async_write(struct conn_ctl *c, struct conn_output_ctl *out){
+static bool internal_start_async_write(struct conn_ctl *c){
 	WSABUF wsabuf;
 	DWORD error;
 	int ret;
 	// prepare buffer
-	wsabuf.len = out->datalen;
-	wsabuf.buf = out->data;
+	wsabuf.len = c->output_len;
+	wsabuf.buf = c->output_data;
 	// prepare overlapped
-	memset(&out->write_ov.ov, 0, sizeof(OVERLAPPED));
-	out->write_ov.s = c->s;
-	out->write_ov.complete = internal_on_write;
-	out->write_ov.data = c;
+	memset(&c->write_ov.ov, 0, sizeof(OVERLAPPED));
+	c->write_ov.s = c->s;
+	c->write_ov.complete = internal_on_write;
+	c->write_ov.data = c;
 	// dispatch to OS
 	ret = WSASend(c->s, &wsabuf, 1, NULL,
-		0, &out->write_ov.ov, NULL);
+		0, &c->write_ov.ov, NULL);
 	if(ret == SOCKET_ERROR){
 		error = WSAGetLastError();
 		if(error != WSA_IO_PENDING){
@@ -426,11 +419,10 @@ static bool internal_start_async_write(struct conn_ctl *c, struct conn_output_ct
 	return true;
 }
 
-static void internal_async_write(struct conn_ctl *c, struct conn_output_ctl *out){
+static void internal_async_write(struct conn_ctl *c){
 	DEBUG_ASSERT(c != NULL);
-	DEBUG_ASSERT(out != NULL);
 	for(int i = 0; i < CONN_OP_RETRIES_BEFORE_CLOSING; i += 1){
-		if(internal_start_async_write(c, out))
+		if(internal_start_async_write(c))
 			return;
 		DEBUG_LOG("connection_async_write: failed to"
 			" start write operation (try %d)", i);
@@ -465,8 +457,7 @@ static void internal_start_close_operation(struct conn_ctl *c, bool abort){
 		}else{
 			// cancel only the read operation and let the
 			// write operation complete
-			struct conn_input_ctl *in = CONN_INPUT_CTL(c);
-			CancelIoEx((HANDLE)c->s, &in->read_ov.ov);
+			CancelIoEx((HANDLE)c->s, &c->read_ov.ov);
 		}
 	}
 }
@@ -514,7 +505,7 @@ void connmgr_start_connection(SOCKET s,
 	DEBUG_ASSERT(s != INVALID_SOCKET);
 	DEBUG_ASSERT(svc != NULL);
 	struct conn_ctl *c = internal_alloc();
-	struct conn_input_ctl *in = CONN_INPUT_CTL(c);
+	uint8 *buf;
 
 	// connection control
 	DEBUG_ASSERT(!(c->flags & CONN_INUSE));
@@ -523,7 +514,7 @@ void connmgr_start_connection(SOCKET s,
 	c->rdwr_count = 1; // don't timeout a new connection too soon
 	c->pending_work = 0;
 	c->proto = NULL;
-	c->proto_handle = svc;
+	c->udata = svc; // udata will hold the service until a protocol is assigned
 
 	// this only works for sends_first protocols, and will
 	// create the protocol and notify it of the connection
@@ -542,8 +533,8 @@ void connmgr_start_connection(SOCKET s,
 	}
 
 	// start receiving messages from the connection
-	in->input_len = 2;
-	if(!internal_start_async_read(c, in, internal_on_read_length))
+	buf = CONN_INPUT_BUF(c);
+	if(!internal_start_async_read(c, buf, 2, internal_on_read_length))
 		// if the first attempt to start a connection read fails,
 		// just abort the connection
 		internal_abort(c);
@@ -561,9 +552,15 @@ void connection_abort(uint32 uid){
 		internal_abort(c);
 }
 
+void **connection_userdata(uint32 uid){
+	struct conn_ctl *c = CONN_CTL(uid);
+	if(c->uid == uid)
+		return &c->udata;
+	return NULL;
+}
+
 bool connection_send(uint32 uid, uint8 *data, uint32 datalen){
 	struct conn_ctl *c = CONN_CTL(uid);
-	struct conn_output_ctl *out;
 	if(c->uid != uid){
 		DEBUG_LOG("connection_send: using invalid connection uid (%lu)", uid);
 		return false;
@@ -574,10 +571,9 @@ bool connection_send(uint32 uid, uint8 *data, uint32 datalen){
 		return false;
 	}
 
-	out = CONN_OUTPUT_CTL(c);
-	out->datalen = datalen;
-	out->data = data;
-	return internal_start_async_write(c, out);
+	c->output_data = data;
+	c->output_len = datalen;
+	return internal_start_async_write(c);
 }
 
 #endif //PLATFORM_WINDOWS

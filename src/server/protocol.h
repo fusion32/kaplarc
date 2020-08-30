@@ -29,20 +29,16 @@ struct protocol{
 	 */
 	bool (*identify)(uint8 *data, uint32 datalen);
 
-	/* protocols will interact with the server through
-	 * the use of these handles
+	/* events related to the protocol
+	 * (`on_connect` is the only optional callback as
+	 * it needs `sends_first` to be true)
 	 */
-	bool (*create_handle)(uint32 conn, void **handle);
-	void (*destroy_handle)(uint32 conn, void *handle);
-
-	/* events related to the protocol */
-	void (*on_close)(uint32 conn, void *handle);
-	protocol_status_t (*on_connect)(uint32 conn, void *handle);
-	protocol_status_t (*on_write)(uint32 conn, void *handle);
-	protocol_status_t (*on_recv_message)(uint32 conn,
-		void *handle, uint8 *data, uint32 datalen);
-	protocol_status_t (*on_recv_first_message)(uint32 conn,
-		void *handle, uint8 *data, uint32 datalen);
+	bool (*on_assign_protocol)(uint32 conn);
+	void (*on_close)(uint32 conn);
+	protocol_status_t (*on_connect)(uint32 conn);
+	protocol_status_t (*on_write)(uint32 conn);
+	protocol_status_t (*on_recv_message)(uint32 conn, uint8 *data, uint32 datalen);
+	protocol_status_t (*on_recv_first_message)(uint32 conn, uint8 *data, uint32 datalen);
 };
 
 #endif //KAPLAR_SERVER_PROTOCOL_H_

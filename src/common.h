@@ -29,6 +29,11 @@ typedef uint64_t	uint64;
 typedef uintptr_t	uintptr;
 typedef ptrdiff_t	ptrdiff;
 
+// client version
+#define TIBIA_CLIENT_VERSION_MIN 860
+#define TIBIA_CLIENT_VERSION_MAX 860
+#define TIBIA_CLIENT_VERSION_STR "8.60"
+
 // @REMOVE
 #define PLATFORM_WINDOWS 1
 #define ARCH_BIG_ENDIAN 0

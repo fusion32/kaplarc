@@ -1,4 +1,5 @@
 #include "outbuf.h"
+#include "buffer_util.h"
 #include "thread.h"
 
 /* outbuf list control */
@@ -41,4 +42,39 @@ void server_outbuf_release(struct outbuf *buf){
 	mutex_unlock(&outbuf_mtx);
 	if(buf != NULL)
 		kpl_free(buf);
+}
+
+/* write functions */
+
+#define DEBUG_CHECK_SIZE(buf, size) \
+	DEBUG_ASSERT(((buf)->ptr - (buf)->base) <= (MAX_OUTBUF_LEN - (size)))
+
+void outbuf_write_byte(struct outbuf *buf, uint8 val){
+	DEBUG_CHECK_SIZE(buf, 1);
+	encode_u8(buf->ptr, val);
+	buf->ptr += 1;
+}
+
+void outbuf_write_u16(struct outbuf *buf, uint16 val){
+	DEBUG_CHECK_SIZE(buf, 2);
+	encode_u16_le(buf->ptr, val);
+	buf->ptr += 2;
+}
+
+void outbuf_write_u32(struct outbuf *buf, uint32 val){
+	DEBUG_CHECK_SIZE(buf, 4);
+	encode_u32_le(buf->ptr, val);
+	buf->ptr += 4;
+}
+
+void outbuf_write_str(struct outbuf *buf, const char *s){
+	outbuf_write_lstr(buf, s, (int)strlen(s));
+}
+
+void outbuf_write_lstr(struct outbuf *buf, const char *s, int len){
+	int total = len + 2;
+	DEBUG_CHECK_SIZE(buf, total);
+	encode_u16_le(buf->ptr, (uint16)len);
+	if(len > 0) memcpy(buf->ptr + 2, s, len);
+	buf->ptr += total;
 }

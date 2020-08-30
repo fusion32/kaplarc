@@ -23,7 +23,12 @@ void db_internal_connection_close(void);
 // init/shutdown
 bool db_init(void);
 void db_shutdown(void);
-bool db_add_task(void (*fp)(void*), void *udata);
+
+// lstore is up to 256 bytes of data that will be
+// internally stored for when the task is executed
+#define DB_TASK_MAX_LOCAL_STORAGE 256
+bool db_add_task(void (*fp)(void*, size_t),
+	void *lstore, size_t lstore_size);
 
 // db result interface
 int db_result_nrows(db_result_t *res);

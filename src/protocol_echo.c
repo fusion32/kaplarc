@@ -4,7 +4,6 @@
 #include <string.h>
 
 /* PROTOCOL HANDLE */
-#define ECHO_HANDLE_SIZE sizeof(struct echo_handle)
 #define ECHO_BUFFER_SIZE (1024 - sizeof(bool))
 struct echo_handle{
 	bool output_ready;
@@ -13,24 +12,19 @@ struct echo_handle{
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
-static bool create_handle(uint32 c, void **handle);
-static void destroy_handle(uint32 c, void *handle);
-static void on_close(uint32 c, void *handle);
-static protocol_status_t on_connect(uint32 c, void *handle);
-static protocol_status_t on_write(uint32 c, void *handle);
-static protocol_status_t on_recv_message(uint32 c,
-	void *handle, uint8 *data, uint32 datalen);
-static protocol_status_t on_recv_first_message(uint32 c,
-	void *handle, uint8 *data, uint32 datalen);
+static bool on_assign_protocol(uint32 c);
+static void on_close(uint32 c);
+static protocol_status_t on_write(uint32 c);
+static protocol_status_t on_recv_message(uint32 c, uint8 *data, uint32 datalen);
+static protocol_status_t on_recv_first_message(uint32 c, uint8 *data, uint32 datalen);
 struct protocol protocol_echo = {
 	.name =				"ECHO",
 	.sends_first =			false,
 	.identify =			identify,
 
-	.create_handle =		create_handle,
-	.destroy_handle =		destroy_handle,
+	.on_assign_protocol =		on_assign_protocol,
 	.on_close =			on_close,
-	.on_connect =			on_connect,
+	.on_connect =			NULL,
 	.on_write =			on_write,
 	.on_recv_message =		on_recv_message,
 	.on_recv_first_message =	on_recv_first_message,
@@ -43,24 +37,15 @@ static bool identify(uint8 *data, uint32 datalen){
 		data[2] == 'H' && data[3] == 'O';
 }
 
-static bool create_handle(uint32 c, void **handle){
-	struct echo_handle *h = kpl_malloc(ECHO_HANDLE_SIZE);
+static bool on_assign_protocol(uint32 c){
+	struct echo_handle *h = kpl_malloc(sizeof(struct echo_handle));
 	h->output_ready = true;
-	*handle = h;
+	*connection_userdata(c) = h;
 	return true;
 }
 
-static void destroy_handle(uint32 c, void *handle){
-	kpl_free(handle);
-}
-
-static void on_close(uint32 c, void *handle){
-	// no op
-}
-
-static protocol_status_t on_connect(uint32 c, void *handle){
-	// no op
-	return PROTO_OK;
+static void on_close(uint32 c){
+	kpl_free(*connection_userdata(c));
 }
 
 static protocol_status_t on_write(uint32 c, void *handle){
@@ -69,9 +54,8 @@ static protocol_status_t on_write(uint32 c, void *handle){
 	return PROTO_OK;
 }
 
-static protocol_status_t on_recv_message(uint32 c,
-		void *handle, uint8 *data, uint32 datalen){
-	struct echo_handle *h = handle;
+static protocol_status_t on_recv_message(uint32 c, uint8 *data, uint32 datalen){
+	struct echo_handle *h = *connection_userdata(c);
 	uint32 output_length;
 	if(h->output_ready){
 		output_length = MIN(datalen, ECHO_BUFFER_SIZE - 2);
@@ -83,8 +67,7 @@ static protocol_status_t on_recv_message(uint32 c,
 	return PROTO_OK;
 }
 
-static protocol_status_t on_recv_first_message(uint32 c,
-		void *handle, uint8 *data, uint32 datalen){
-	// skip protocol identifier
-	return on_recv_message(c, handle, data+4, datalen-4);
+static protocol_status_t on_recv_first_message(uint32 c, uint8 *data, uint32 datalen){
+	// skip protocol identifier and parse as a regular message
+	return on_recv_message(c, data+4, datalen-4);
 }

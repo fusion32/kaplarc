@@ -1,38 +1,33 @@
 #include "buffer_util.h"
 #include "config.h"
-#include "game.h"
-#include "packed_data.h"
+#include "outbuf.h"
 #include "tibia_rsa.h"
 #include "server/server.h"
 #include "crypto/xtea.h"
+#include "db/database.h"
 
 /* PROTOCOL DECL */
 static bool identify(uint8 *data, uint32 datalen);
-static bool create_handle(uint32 connection, void **handle);
-static void destroy_handle(uint32 connection, void *handle);
-static void on_close(uint32 connection, void *handle);
-static protocol_status_t on_connect(uint32 connection, void *handle);
-static protocol_status_t on_write(uint32 connection, void *handle);
-static protocol_status_t on_recv_message(uint32 connection,
-	void *handle, uint8 *data, uint32 datalen);
-static protocol_status_t on_recv_first_message(uint32 connection,
-	void *handle, uint8 *data, uint32 datalen);
+static bool on_assign_protocol(uint32 c);
+static void on_close(uint32 c);
+static protocol_status_t on_write(uint32 c);
+static protocol_status_t on_recv_message(uint32 c, uint8 *data, uint32 datalen);
+static protocol_status_t on_recv_first_message(uint32 c, uint8 *data, uint32 datalen);
 struct protocol protocol_login = {
 	.name = "login",
 	.sends_first = false,
 	.identify = identify,
 
-	.create_handle = create_handle,
-	.destroy_handle = destroy_handle,
+	.on_assign_protocol = on_assign_protocol,
 	.on_close = on_close,
-	.on_connect = on_connect,
+	.on_connect = NULL,
 	.on_write = on_write,
 	.on_recv_message = on_recv_message,
 	.on_recv_first_message = on_recv_first_message,
 };
 
 /* IMPL START */
-bool identify(uint8 *data, uint32 datalen){
+static bool identify(uint8 *data, uint32 datalen){
 	// @NOTE: messages without checksum will use
 	// the old login protocol
 	uint32 checksum;
@@ -43,48 +38,55 @@ bool identify(uint8 *data, uint32 datalen){
 		&& data[4] == 0x01;
 }
 
-static bool create_handle(uint32 connection, void **handle){
-	// no op
+static bool on_assign_protocol(uint32 c){
+	*connection_userdata(c) = NULL;
 	return true;
 }
 
-static void destroy_handle(uint32 connection, void *handle){
-	// no op
-}
-
-static void on_close(uint32 connection, void *handle){
-	// no op
+static void on_close(uint32 c){
 	DEBUG_LOG("protocol_login: on_close");
+
+	// make sure the outbuf is released in case of a write error
+	void **udata = connection_userdata(c);
+	struct outbuf *buf = *udata;
+	if(buf != NULL){
+		outbuf_release(buf);
+		*udata = NULL;
+	}
 }
 
-static protocol_status_t on_connect(uint32 connection, void *handle){
-	// no op
-	return PROTO_OK;
-}
-
-static protocol_status_t on_write(uint32 connection, void *handle){
-	// close protocol after the disconnect message or
-	// character list has been sent
+static protocol_status_t on_write(uint32 c){
+	void **udata = connection_userdata(c);
+	struct outbuf *buf = *udata;
+	DEBUG_ASSERT(buf != NULL);
+	outbuf_release(buf);
+	*udata = NULL;
 	return PROTO_CLOSE;
 }
 
-static protocol_status_t on_recv_message(uint32 connection,
-		void *handle, uint8 *data, uint32 datalen){
-	// should not receive additional messages
-	return PROTO_ABORT;
+static protocol_status_t on_recv_message(uint32 c, uint8 *data, uint32 datalen){
+	return PROTO_ABORT; // should no happen
 }
 
-static protocol_status_t on_recv_first_message(uint32 connection,
-		void *handle, uint8 *data, uint32 datalen){
+struct login_data{
+	uint32 connection;
+	uint32 xtea[4];
+	char accname[32];
+	char password[32];
+};
+
+//static void internal_outbuf
+static void internal_send_disconnect(struct login_data *login, const char *message);
+static void resolve_login(void *lstore, size_t lstore_size);
+
+static protocol_status_t on_recv_first_message(uint32 c, uint8 *data, uint32 datalen){
+	struct login_data login = { .connection = c };
 	uint8 *decoded;
 	size_t decoded_len;
-	uint16 accname_len;
-	uint16 password_len;
-	uint16 version;
+	uint16 version, A;
 
 	// data + 0 == checksum (4 bytes)	|-> verified at the `identify` function
 	// data + 4 == protocol id (1 bytes)	|
-
 	// data + 5 == client os (2 bytes)
 	// data + 7 == client version (2 bytes)
 	// data + 9 == tibia .dat, .spr, .pic checksum (12 bytes)
@@ -96,9 +98,10 @@ static protocol_status_t on_recv_first_message(uint32 connection,
 	}
 
 	version = decode_u16_le(data + 7);
-	// version <= 760 didn't have checksum so this shouldn't
-	// happen unless its a purposely malformed message
-	if(version <= 760)
+	// version <= 760 didn't have RSA + XTEA encryption
+	// version <= 822 didn't have checksum
+	// shouldn't happen unless it's a purposely malformed message
+	if(version <= 822)
 		return PROTO_CLOSE;
 
 	// rsa decode
@@ -111,59 +114,122 @@ static protocol_status_t on_recv_first_message(uint32 connection,
 	// decoded + 18 == accname data (<= 30 bytes)
 	// decoded + 18 + X == password length (2 bytes)
 	// decoded + 20 + X == password data (<= 30 bytes)
+	// decoded + 16 == accname (A bytes)
+	// decoded + 16 + A == password (B bytes)
 	if(decoded_len != 127)
 		// this value seems to be constant and the bytes after
 		// the password are just padding bytes
 		return PROTO_CLOSE;
 
-	// @NOTE: the client doesn't allow for accname or password
-	// to be larger than 30 bytes so we don't need to send a
-	// disconnect message if the login message is bad
+	login.xtea[0] = decode_u32_le(decoded + 0);
+	login.xtea[1] = decode_u32_le(decoded + 4);
+	login.xtea[2] = decode_u32_le(decoded + 8);
+	login.xtea[3] = decode_u32_le(decoded + 12);
 
-	// check if accname is valid
-	accname_len = decode_u16_le(decoded + 16);
-	if(accname_len > 30)
+	if(version < TIBIA_CLIENT_VERSION_MIN || version > TIBIA_CLIENT_VERSION_MAX){
+		// send_disconnect
 		return PROTO_CLOSE;
+	}
 
-	// check if password is valid
-	password_len = decode_u16_le(decoded + 18 + accname_len);
-	if(password_len > 30)
-		return PROTO_CLOSE;
+	// the client doesn't allow for accname or password to be
+	// larger than 30 bytes so we don't need to send a disconnect
+	// message if the login message is bad
+	A = decode_tibia_string(decoded + 16, login.accname, sizeof(login.accname));
+	if(A > 32) return PROTO_CLOSE;
+	A = decode_tibia_string(decoded + 16 + A, login.password, sizeof(login.password));
+	if(A > 32) return PROTO_CLOSE;
 
-	DEBUG_LOG("xtea = {%08X, %08X, %08X, %08X}",
-		decode_u32_le(decoded + 0), decode_u32_le(decoded + 4),
-		decode_u32_le(decoded + 8), decode_u32_le(decoded + 12));
-	DEBUG_LOG("account name = `%.*s`", accname_len, (decoded + 18));
-	DEBUG_LOG("account password = `%.*s`",
-		password_len, (decoded + 20 + accname_len));
-
-
-	// send login request to the game thread and stop reading
-	// (in the worst case it is timed out)
-	game_add_net_input(CMD_ACCOUNT_LOGIN, connection,
-		decoded, (20 + accname_len + password_len));
+	// send login request to the database thread and stop reading
+	db_add_task(resolve_login, &login, sizeof(login));
 	return PROTO_STOP_READING;
 }
 
-static void writer_begin(struct data_writer *writer){
-	DEBUG_ASSERT(writer != NULL);
-	// skip 8 bytes:
+static void resolve_login(void *lstore, size_t lstore_size){
+	//@TODO: i forgot i can't do a connection_send from outside the
+	// net thread so we need to send a request to the game thread
+	// or add some synchronization for parallel connection_sends
+
+	DEBUG_ASSERT(lstore_size == sizeof(struct login_data));
+	struct login_data *login = lstore;
+	struct outbuf *buf;
+	db_result_t *res;
+	int32 accid;
+	int64 premend;
+	const char *pwd;
+	int nrows;
+
+
+	if(login->accname[0] == 0){
+		// "Invalid account name."
+		return;
+	}
+
+	// validate login
+	res = db_load_account_info(login->accname);
+	if(res == NULL){
+		// "Account name or password is not correct."
+		return;
+	}
+	DEBUG_ASSERT(db_result_nrows(res) == 1); // PARANOID
+	accid = db_result_get_int32(res, 0, DB_RESULT_ACCOUNT_INFO_ID);
+	premend = db_result_get_int64(res, 0, DB_RESULT_ACCOUNT_INFO_PREMEND);
+	pwd = db_result_get_value(res, 0, DB_RESULT_ACCOUNT_INFO_PASSWORD);
+	//if(!(check_password)){
+		// "Account name or password is not correct."
+		// db_result_clear(res);
+	//}
+	db_result_clear(res);
+
+	// @TODO: CHECK IF ACC BANNED
+	// @TODO: CHECK IF IP BANNED
+
+	// load charlist
+	res = db_load_account_charlist(accid);
+	if(res == NULL){
+		// "Internal error."
+		return;
+	}
+
+	// send charlist message
+	nrows = db_result_nrows(res);
+	buf = outbuf_acquire();
+	internal_outbuf_prepare(buf);
+	// motd
+	outbuf_write_byte(buf, 0x14);
+	outbuf_write_str(&buf, config_get("motd"));
+	// charlist
+	outbuf_write_byte(buf, 0x64);
+	outbuf_write_byte(buf, nrows);
+	for(int i = 0; i < nrows; i += 1){
+		outbuf_write_str(buf,
+			db_result_get_value(res, i, DBRES_CHARLIST_NAME));
+		outbuf_write_str(buf, config_get("sv_name"));
+		outbuf_write_u32(buf, 1677343); // localhost @TODO: resolve addr from config sv_addr
+		outbuf_write_u16(buf, (uint16)config_geti("sv_game_port"));
+	}
+	outbuf_write_u16(buf, 1); // @TODO: calc premdays from premend
+	// wrap outbuf
+	internal_outbuf_wrap(buf, login->xtea);
+
+	// @TODO SEND
+	outbuf_release(buf);
+}
+
+static void internal_outbuf_prepare(struct outbuf *buf){
+	// reserve 8 bytes for the header
 	//  2 bytes - message length
 	//  4 bytes - checksum
 	//  2 bytes - unencrypted length
-	writer->ptr = writer->base + 8;
+	buf->ptr = buf->base + 8;
 }
 
-static void writer_end(struct data_writer *writer, uint32 *xtea){
-	DEBUG_ASSERT(writer != NULL);
-	DEBUG_ASSERT(xtea != NULL);
-
+static void internal_outbuf_wrap(struct outbuf *buf, uint32 *xtea){
 	// NOTE1: both the message length and unencrypted
 	// length don't include their own size
 	// NOTE2: the unencrypted length is encrypted
 	// together with the data
-	uint8 *data = writer->base + 6;
-	uint32 datalen = (uint32)(writer->ptr - data);
+	uint8 *data = buf->base + 6;
+	uint32 datalen = buf->ptr - buf->base;
 	uint32 checksum;
 	int padding = (8 - (datalen & 7)) & 7;
 
@@ -172,83 +238,51 @@ static void writer_end(struct data_writer *writer, uint32 *xtea){
 	// add padding for xtea encoding
 	datalen += padding;
 	while(padding-- > 0)
-		data_write_byte(writer, 0x33);
+		outbuf_write_byte(buf, 0x33);
 	// xtea encode
 	xtea_encode(xtea, data, datalen);
 
 	// calc checksum
 	checksum = adler32(data, datalen);
 	// set message length (datalen + 6 - 2)
-	encode_u16_le(writer->base, datalen+4);
+	encode_u16_le(buf->base, datalen+4);
 	// set checksum
-	encode_u32_le(writer->base+2, checksum);
+	encode_u32_le(buf->base+2, checksum);
 }
 
-#if 0
-static void send_disconnect(uint32 connection, uint32 *xtea, const char *message){
-	// get output buffer
-	uint16 messagelen = (uint16)strlen(message);
-	uint8 *outbuffer;
+static void internal_outbuf_write_disconnect(struct outbuf *buf, const char *message){
+	// prepare outbuf
+	internal_outbuf_prepare(buf);
 
-	/*
-	data_write_byte(&writer, 0x0A);
-	data_write_str(&writer, "hello");
-	*/
-	encode_u8(outbuffer + 8, 0x0A);
-	encode_u16_le(outbuffer + 9, messagelen);
-	memcpy(outbuffer + 11, message, messagelen);
-
-
-
-	// connection_send
-
-	struct data_writer writer;
-	// get output buffer, setup writer
-	data_write_byte(&writer, 0x0A);
-	data_write_str(&writer, message);
-	writer_end(&writer, xtea);
-	// send buffer
+	// add disconnect message
+	outbuf_write_byte(buf, 0x0A);
+	outbuf_write_str(buf, message);
 }
 
-static void login_resolve(void *handle){
-	login_handle_t *h = handle;
-	struct data_writer writer;
-	struct account acc;
-	uint32 xtea[4];
-
-	// copy data to the stack
-	memcpy(&xtea[0], &h->xtea[0], sizeof(h->xtea));
-	memcpy(&acc, &h->account, sizeof(h->account));
-
-	// send disconnect message
-	data_writer_init(&writer, h->buffer, LOGIN_BUFFER_SIZE);
-	writer_begin(&writer);
-
-	/*
-	data_write_byte(&writer, 0x0A);
-	data_write_str(&writer, "hello");
-	*/
-
-	// @TODO: with the account information, send a request to the database thread
-	// and wait for the data to be available before sending the character list
-	// or login error (this will avoid stalling the network thread, in which
-	// protocol handles run on, while waiting for the database read)
-
-	// motd
-	data_write_byte(&writer, 0x14);
-	data_write_str(&writer, "1\nhello");
-	// character list
-	data_write_byte(&writer, 0x64);
-	data_write_byte(&writer, 1);
-	data_write_str(&writer, "Harambe");
-	data_write_str(&writer, "Isara");
-	data_write_u32(&writer, 16777343); // localhost
-	data_write_u16(&writer, 7171);
-	data_write_u16(&writer, 1);
-
-	writer_end(&writer, xtea);
-	ASSERT(connection_send(c, writer.base,
-		(uint32)(writer.ptr - writer.base)));
-	return PROTO_CLOSE;
+void protocol_login_outbuf_charlist_write_character(struct outbuf *buf, const char *name){
+	outbuf_write_str(buf, name);
+	outbuf_write_str(buf, config_get("sv_name"));
+	//outbuf_write_u32(buf, config_get());
+	outbuf_write_u32(buf, 16777343); // localhost
+	outbuf_write_u16(buf, (uint16)config_geti("sv_game_port"));
 }
-#endif // 0
+
+void protocol_login_outbuf_charlist_end(struct outbuf *buf, uint16 premdays){
+	// charlist end
+	outbuf_write_u16(buf, premdays);
+}
+
+bool protocol_login_send(uint32 connection, uint32 *xtea, struct outbuf *buf){
+	void **udata = connection_userdata(connection);
+	if(udata == NULL) // connection already dead
+		return;
+	internal_outbuf_wrap(buf, xtea);
+	connection_send(connection, buf->base, buf->ptr - buf->base);
+
+	// this is necessary so we are able to release the
+	// outbuf inside on_write after the write is complete
+	// (note that there should only ever be one send operation
+	// on the login protocol and we assume that in here)
+	DEBUG_ASSERT(*udata == NULL);
+	*udata = buf;
+}

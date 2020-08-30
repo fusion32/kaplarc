@@ -91,9 +91,6 @@
     <ClCompile Include="..\src\otdata.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\packed_data.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\protocol_game.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -129,6 +126,9 @@
     </ClCompile>
     <ClCompile Include="..\src\db\database.c">
       <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_input.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -172,9 +172,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\game.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\packed_data.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\server\iocp.h">

@@ -207,4 +207,19 @@ static INLINE double decode_f64_le(uint8 *data){
 	return val;
 }
 
+static INLINE uint16 decode_tibia_string(uint8 *data, char *outstr, uint16 maxlen){
+	uint16 len = decode_u16_le(data);
+	uint16 copy_len;
+	if(maxlen > 0 && outstr != NULL){
+		if(len > 0){
+			copy_len = len >= maxlen ? maxlen - 1 : len;
+			memcpy(outstr, data + 2, copy_len);
+			outstr[copy_len] = 0;
+		}else{
+			outstr[0] = 0;
+		}
+	}
+	return len + 2;
+}
+
 #endif //KAPLAR_BUFFER_UTIL_H_
