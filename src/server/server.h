@@ -15,7 +15,7 @@ void connection_close(uint32 uid);
 void connection_abort(uint32 uid);
 // `connection_userdata` will not fail while the connection is alive
 // so it can't fail when used inside the protocol callbacks but might
-// if used elsewhere returning NULL in that case.
+// if used elsewhere returning NULL in that case
 void **connection_userdata(uint32 uid);
 bool connection_send(uint32 uid, uint8 *data, uint32 datalen);
 

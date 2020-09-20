@@ -11,7 +11,11 @@
 #define RBT_REMOVE(t, n)		rbt_remove((t), RBNODE(n))
 #define RBT_MIN(node_type, t)		((node_type*)rbt_min((t)))
 #define RBT_FIND(node_type, t, n)	((node_type*)rbt_find((t), RBNODE(n)))
-#define RBT_INITIALIZER(cmp)		(struct rbtree){NULL, NULL, cmp}
+#ifdef RBTREE_CACHED_MIN
+#	define RBT_INITIALIZER(cmp)	(struct rbtree){NULL, NULL, cmp}
+#else
+#	define RBT_INITIALIZER(cmp)	(struct rbtree){NULL, cmp}
+#endif
 
 #define RBNODE_RED 0
 #define RBNODE_BLACK 1

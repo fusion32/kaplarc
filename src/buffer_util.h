@@ -222,4 +222,28 @@ static INLINE uint16 decode_tibia_string(uint8 *data, char *outstr, uint16 maxle
 	return len + 2;
 }
 
+#if ARCH_BIG_ENDIAN
+#define encode_u16	encode_u16_be
+#define decode_u16	decode_u16_be
+#define encode_u32	encode_u32_be
+#define decode_u32	decode_u32_be
+#define encode_u64	encode_u64_be
+#define decode_u64	decode_u64_be
+#define encode_f32	encode_f32_be
+#define decode_f32	decode_f32_be
+#define encode_f64	encode_f64_be
+#define decode_f64	decode_f64_be
+#else //ARCH_BIG_ENDIAN
+#define encode_u16	encode_u16_le
+#define decode_u16	decode_u16_le
+#define encode_u32	encode_u32_le
+#define decode_u32	decode_u32_le
+#define encode_u64	encode_u64_le
+#define decode_u64	decode_u64_le
+#define encode_f32	encode_f32_le
+#define decode_f32	decode_f32_le
+#define encode_f64	encode_f64_le
+#define decode_f64	decode_f64_le
+#endif //ARCH_BIG_ENDIAN
+
 #endif //KAPLAR_BUFFER_UTIL_H_

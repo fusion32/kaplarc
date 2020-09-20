@@ -127,7 +127,7 @@
     <ClCompile Include="..\src\db\database.c">
       <Filter>Source Files\db</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game_input.c">
+    <ClCompile Include="..\src\game1.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -191,6 +191,9 @@
     </ClInclude>
     <ClInclude Include="..\src\db\database.h">
       <Filter>Source Files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ringbuffer.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,101 +1,62 @@
+// @NOTE: think about this after doing protocol_login
+
+#if 0
+
 #include "game.h"
 #include "buffer_util.h"
 
 
-// @REVISIT:
-//	- should the input buffer size be in the config?
-//	(would require dynamic allocation)
-//	- should the input buffer grow (in blocks)?
-
-/* LOGIN/PLAYER INPUT (NET -> GAME) */
-#define NET_INPUT_BUFFER_SIZE (4 * 1024 * 1024) // 4MB
-static int net_idx = 0;
-static uint32 net_input_bufptr[2];
-static uint8 net_input_buffer[2][NET_INPUT_BUFFER_SIZE];
-
-/* LOGIN REQUESTS */
-struct login_request{
-	uint32 connection;
-	uint32 xtea[4];
-	char accname[32];
-	char password[32];
-};
+/* PLAYER INPUT (NET -> GAME) */
+#define PLAYER_INPUT_BUFFER_SIZE (4 * 1024 * 1024) // 4MB
+static int player_input_back_idx = 0;
+static uint32 player_input_bufptr[2];
+static uint8 player_input_buffer[2][PLAYER_INPUT_BUFFER_SIZE];
 
 
 //	Input that contain strings or any variable length array should
 // be checked for consistency before being added to the input buffer
 // or it could happen that an artificial message could break something.
 
-//	INPUT LAYOUT
-//		u16: input length
-//		u16: command
-//		u32: command handle (eg: connection for login commands, player for player commands, etc...)
-//		u8 x input length: command data
-
 // THIS SHOULD BE CALLED FROM THE NETWORK THREAD ONLY
-bool game_add_net_input(uint16 command, uint32 command_handle, uint8 *data, uint16 datalen){
+bool game_add_player_command(uint16 command, uint32 player, uint8 *data, uint16 datalen){
 	uint8 *buffer;
-	int idx = net_idx;
-	uint32 bufptr = net_input_bufptr[idx];
-	uint16 input_len = 8 + datalen;
-	if((bufptr + input_len) >= NET_INPUT_BUFFER_SIZE){
-		LOG_ERROR("game_add_net_input: net input buffer overflow");
+	int idx = player_input_back_idx;
+	uint32 bufptr = player_input_bufptr[idx];
+	uint16 cmd_len = 8 + datalen;
+	if((bufptr + cmd_len) >= PLAYER_INPUT_BUFFER_SIZE){
+		LOG_ERROR("game_add_player_command: player input buffer overflow");
 		return false;
 	}
-	// encode data into the current input buffer
-	buffer = &net_input_buffer[idx][bufptr];
-	encode_u16_le(buffer + 0, input_len);
-	encode_u16_le(buffer + 2, command);
-	encode_u32_le(buffer + 4, command_handle);
+	// encode command data
+	buffer = &player_input_buffer[idx][bufptr];
+	encode_u16(buffer + 0, cmd_len);
+	encode_u16(buffer + 2, command);
+	encode_u32(buffer + 4, player);
 	memcpy(buffer + 8, data, datalen);
-	// advance the current buffer pointer
-	net_input_bufptr[idx] += input_len;
+	// advance bufptr
+	player_input_bufptr[idx] += cmd_len;
 	return true;
 }
 
-static void cmd_account_login(uint32 connection, uint8 *data){
-	uint32 xtea[4];
-	char accname[32];
-	char password[32];
-	uint16 A;
+void game_consume_net_input(void){
+	int idx = 1 - player_input_back_idx;
+	uint32 len = player_input_bufptr[idx];
+	uint8 *buffer = &player_input_buffer[idx][0];
 
-	xtea[0] = decode_u32_le(data + 0);
-	xtea[1] = decode_u32_le(data + 4);
-	xtea[2] = decode_u32_le(data + 8);
-	xtea[3] = decode_u32_le(data + 12);
-
-	A = decode_tibia_string(data + 16, accname, 32);
-	A += decode_tibia_string(data + 16 + A, password, 32);
-
-	LOG("cmd_account_login:");
-	LOG("xtea = {%08X, %08X, %08X, %08X}",
-		xtea[0], xtea[1], xtea[2], xtea[3]);
-	LOG("accname = '%s', password = '%s'", accname, password);
-}
-
-static void game_consume_net_input(void){
-	int idx = 1 - net_idx;
-	uint32 len = net_input_bufptr[idx];
-	uint8 *buffer = &net_input_buffer[idx][0];
-
-	// command info
-	uint16 input_len;
-	uint16 command;
-	uint32 command_handle;
-	uint8 *command_data;
+	// command data
+	uint16 cmd_len;
+	uint16 cmd_ident;
+	uint32 cmd_player;
+	uint8 *cmd_data;
 
 	while(len >= 8){ // commands are at least 8 bytes
-		input_len = decode_u16_le(buffer + 0);
-		DEBUG_ASSERT(input_len <= len && input_len >= 8);
-		command = decode_u16_le(buffer + 2);
-		command_handle = decode_u32_le(buffer + 4);
-		command_data = buffer + 8;
+		cmd_len = decode_u16(buffer + 0);
+		DEBUG_ASSERT(cmd_len <= len && cmd_len >= 8);
+		cmd_ident = decode_u16(buffer + 2);
+		cmd_player = decode_u32(buffer + 4);
+		cmd_data = buffer + 8;
 
-		switch(command){
-		case CMD_ACCOUNT_LOGIN:
-			cmd_account_login(command_handle, command_data);
-			break;
-		case CMD_PLAYER_LOGIN:
+		switch(cmd_ident){
 		case CMD_PLAYER_LOGOUT:
 		case CMD_PLAYER_KEEP_ALIVE:
 		case CMD_PLAYER_AUTO_WALK:
@@ -166,29 +127,17 @@ static void game_consume_net_input(void){
 			break;
 		}
 
-		DEBUG_LOG("net input: len = %u, command = %u, command_handle = %u",
-			(unsigned)input_len, (unsigned)command, (unsigned)command_handle);
-		buffer += input_len;
-		len -= input_len;
+		DEBUG_LOG("player input: len = %u, command = %u, player = %u",
+			(unsigned)cmd_len, (unsigned)cmd_ident, (unsigned)cmd_player);
+		buffer += cmd_len;
+		len -= cmd_len;
 	}
 }
 
 /* EVENT LIST
-	DATABASE_OUT:
-	NETWORK_OUT:
-		- TODO
-
-	DATABASE_IN:
-		- db_result_account_login
-		- db_result_player_login
-		- ... (TODO)
-
 	NETWORK_IN:
 	(lets assume for now that a string is a nul-terminated
 	allocated string so we'll can use a single pointer)
-		- account_login (16 bytes)
-			* string: accname
-			* string: password
 		- player_login (24 bytes)
 			* string: accname
 			* string: password
@@ -396,3 +345,4 @@ static void game_consume_net_input(void){
 		- player_common_event (0 bytes)
 */
 
+#endif

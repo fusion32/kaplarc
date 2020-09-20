@@ -1,60 +1,50 @@
+// @TODO: this should be called something else because
+// right now it is managing important systems but not
+// managing any gameplay itself
+
 #include "game.h"
+#include "ringbuffer.h"
+#include "server/server.h"
+#include "thread.h"
+
+static mutex_t nettasks_mtx;
+DECL_TASK_RINGBUFFER(nettasks, 1024)
 
 
 bool game_init(void){
-	net_input_bufptr[0] = 0;
-	net_input_bufptr[1] = 0;
+	mutex_init(&nettasks_mtx);
 	return true;
 }
 
 void game_shutdown(void){
+	mutex_destroy(&nettasks_mtx);
+}
+
+bool game_add_net_task(void (*fp)(void*), void *arg){
+	struct task *task;
+	mutex_lock(&nettasks_mtx);
+	if(RINGBUFFER_FULL(nettasks)){
+		mutex_unlock(&nettasks_mtx);
+		return false;
+	}
+	task = RINGBUFFER_UNCHECKED_PUSH(nettasks);
+	task->fp = fp;
+	task->arg = arg;
+	mutex_unlock(&nettasks_mtx);
+	return true;
 }
 
 static void game_server_sync_routine(void *arg){
-	// 1 - iterate over LOGIN RESOLVES and send it
-	/*
-	for(resolve in login_resolves){
-		protocol_login_send(resolve.connection, resolve.output);
+	// TODO: this might cause unwanted contention but will work for now (IMPORTANT)
+	struct task *task;
+	mutex_lock(&nettasks_mtx);
+	while(!RINGBUFFER_EMPTY(nettasks)){
+		task = RINGBUFFER_UNCHECKED_POP(nettasks);
+		task->fp(task->arg);
 	}
-	*/
+	mutex_unlock(&nettasks_mtx);
 
-	// 2 - iterate over PLAYERS and if they have an outbuf, send it
-	/* METHOD 1
-	{ // OUTSIDE THE SYNC ROUTINE
-		struct outbuf *output;
-		struct{
-			uint32 connection;
-			struct outbuf *output;
-		} output_list[MAX_PLAYERS];
-		int num_output = 0;
-		for(player in players){
-			output = player.output;
-			if(output != NULL){
-				output_list[num_output].connection = player.connection;
-				output_list[num_output].output = output;
-				num_output += 1;
-			}
-		}
-	}
-
-	{ // NOW INSIDE THE SYNC ROUTINE
-		for(int i = 0; i < num_output; i += 1){
-			connection_send(output_list[i].connection,
-				output_list[i].output->data,
-				output_list[i].output->datalen);
-		}
-	}
-	*/
-	/* METHOD 2
-	for(player in players){
-		protocol_game_send(player);
-	}
-
-	*/
-
-	// 3 - swap the input buffers
-	net_idx = 1 - net_idx;
-	net_input_bufptr[net_idx] = 0;
+	// @TODO: handle player i/o separately
 }
 
 // frame interval in milliseconds:
@@ -94,7 +84,6 @@ void game_run(void){
 
 		// do work
 		server_sync(game_server_sync_routine, NULL);
-		game_consume_net_input();
 
 		// stall until the next frame if we finished too early
 		frame_end = kpl_clock_monotonic_msec();

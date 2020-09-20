@@ -22,8 +22,7 @@ void mem_arena_cleanup(struct mem_arena *arena){
 static
 struct mem_arena_block *mem_arena_block_create(size_t block_size){
 	struct mem_arena_block *blk;
-	if(block_size & MEM_PTR_ALIGNMENT_MASK)
-		block_size = (block_size + MEM_PTR_ALIGNMENT) & ~MEM_PTR_ALIGNMENT_MASK;
+	PTR_ALIGN(block_size);
 	blk = kpl_malloc(sizeof(struct mem_arena_block) + block_size);
 	blk->next_block = NULL;
 	blk->mem_prev = NULL;
@@ -47,8 +46,7 @@ void *mem_arena_alloc(struct mem_arena *arena, size_t size){
 	struct mem_arena_block *blk;
 	void *ptr;
 	// pointer align size
-	if(size & MEM_PTR_ALIGNMENT_MASK)
-		size = (size + MEM_PTR_ALIGNMENT) & ~MEM_PTR_ALIGNMENT_MASK;
+	PTR_ALIGN(size);
 	// disallow allocations larger than half the block's size
 	if(size > arena->block_size/2)
 		return NULL;

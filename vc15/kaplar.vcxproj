@@ -23,7 +23,7 @@
     <ClCompile Include="..\src\db\database.c" />
     <ClCompile Include="..\src\db\pgsql.c" />
     <ClCompile Include="..\src\game.c" />
-    <ClCompile Include="..\src\game_input.c" />
+    <ClCompile Include="..\src\game1.c" />
     <ClCompile Include="..\src\mem_arena.c" />
     <ClCompile Include="..\src\murmur2.c" />
     <ClCompile Include="..\src\otdata.c" />
@@ -71,6 +71,7 @@
     <ClInclude Include="..\src\crypto\xtea.h" />
     <ClInclude Include="..\src\endian.h" />
     <ClInclude Include="..\src\log.h" />
+    <ClInclude Include="..\src\ringbuffer.h" />
     <ClInclude Include="..\src\server\iocp.h" />
     <ClInclude Include="..\src\server\protocol.h" />
     <ClInclude Include="..\src\server\server.h" />

@@ -8,11 +8,7 @@
 
 static INLINE
 uint32 __decode_u32(const void *data){
-#if ARCH_BIG_ENDIAN
-	return decode_u32_be((void*)data);
-#else
-	return decode_u32_le((void*)data);
-#endif
+	return decode_u32((void*)data);
 }
 
 // murmur2_32 hash

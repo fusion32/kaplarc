@@ -23,12 +23,7 @@ void db_internal_connection_close(void);
 // init/shutdown
 bool db_init(void);
 void db_shutdown(void);
-
-// lstore is up to 256 bytes of data that will be
-// internally stored for when the task is executed
-#define DB_TASK_MAX_LOCAL_STORAGE 256
-bool db_add_task(void (*fp)(void*, size_t),
-	void *lstore, size_t lstore_size);
+bool db_add_task(void (*fp)(void*), void *arg);
 
 // db result interface
 int db_result_nrows(db_result_t *res);
@@ -40,9 +35,12 @@ const char *db_result_get_value(db_result_t *res, int row, int field);
 void db_result_clear(db_result_t *res);
 
 // account loading functions
-#define DB_RESULT_ACCOUNT_INFO_ID	0
-#define DB_RESULT_ACCOUNT_INFO_PREMEND	1
-#define DB_RESULT_ACCOUNT_INFO_PASSWORD	2
+#define DBRES_ACC_INFO_ID		0
+#define DBRES_ACC_INFO_PREMEND		1
+#define DBRES_ACC_INFO_PASSWORD		2
+
+#define DBRES_ACC_CHARLIST_NAME		0
+
 db_result_t *db_load_account_info(const char *name);
 db_result_t *db_load_account_charlist(int32 account_id);
 

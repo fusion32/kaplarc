@@ -1,5 +1,6 @@
 #define DB_INTERNAL 1
 #include "database.h"
+#include "../ringbuffer.h"
 #include "../thread.h"
 
 static bool running;
@@ -7,44 +8,12 @@ static thread_t thr;
 static mutex_t mtx;
 static condvar_t cv;
 
-struct db_task{
-	void (*fp)(void*, size_t);
-	size_t lstore_size;
-	uint8 lstore[DB_TASK_MAX_LOCAL_STORAGE];
-};
-#define MAX_QUEUED_TASKS 1024
-#if !IS_POWER_OF_TWO(MAX_QUEUED_TASKS)
-#	error "MAX_QUEUED_TASKS must be a power of two."
-#endif
-#define TASKS_BITMASK (MAX_QUEUED_TASKS - 1)
-
-static struct db_task tasks[MAX_QUEUED_TASKS];
-static uint32 readpos = 0;
-static uint32 writepos = 0;
-
-static INLINE bool tasks_empty(void){
-	return readpos == writepos;
-}
-static INLINE bool tasks_full(void){
-	return (writepos - readpos) >= MAX_QUEUED_TASKS;
-}
-// NOTE: push and pop don't check if the ring is full or empty
-static INLINE void tasks_push(void (*fp)(void*), void *lstore, size_t lstore_size){
-	uint32 idx = writepos++ & TASKS_BITMASK;
-	tasks[idx].fp = fp;
-	tasks[idx].lstore_size = lstore_size;
-	if(lstore != NULL)
-		memcpy(tasks[idx].lstore, lstore, lstore_size);
-}
-static INLINE struct db_task *tasks_pop(void){
-	return &tasks[readpos++ & TASKS_BITMASK];
-}
+DECL_TASK_RINGBUFFER(dbtasks, 1024)
 
 static void *db_thread(void *unused){
-	struct db_task *next;
+	struct task *next;
 	void (*fp)(void*);
-	size_t lstore_size;
-	uint8 lstore[DB_TASK_MAX_LOCAL_STORAGE];
+	void *arg;
 
 	while(1){
 		mutex_lock(&mtx);
@@ -54,22 +23,21 @@ static void *db_thread(void *unused){
 			break;
 		}
 		// wait for task
-		if(tasks_empty()){
+		if(RINGBUFFER_EMPTY(dbtasks)){
 			condvar_wait(&cv, &mtx);
-			if(!running || tasks_empty()){
+			if(!running || RINGBUFFER_EMPTY(dbtasks)){
 				mutex_unlock(&mtx);
 				continue;
 			}
 		}
 		// pop task
-		next = tasks_pop();
+		next = RINGBUFFER_UNCHECKED_POP(dbtasks);
 		fp = next->fp;
-		lstore_size = next->lstore_size;
-		memcpy(lstore, next->lstore, lstore_size);
+		arg = next->arg;
 		mutex_unlock(&mtx);
 
 		// execute task
-		fp(lstore, lstore_size);
+		fp(arg);
 	}
 	return NULL;
 }
@@ -104,18 +72,18 @@ void db_shutdown(void){
 	db_internal_connection_close();
 }
 
-bool db_add_task(void (*fp)(void*, size_t), void *lstore, size_t lstore_size){
+bool db_add_task(void (*fp)(void*), void *arg){
+	struct task *task;
 	mutex_lock(&mtx);
-	if(tasks_full() || lstore_size > DB_TASK_MAX_LOCAL_STORAGE){
+	if(RINGBUFFER_FULL(dbtasks)){
 		mutex_unlock(&mtx);
-		if(tasks_full())
-			DEBUG_LOG("db_add_task: task ringbuffer is full");
-		if(lstore_size > DB_TASK_MAX_LOCAL_STORAGE)
-			DEBUG_LOG("db_add_task: lstore_size is limited to %d",
-				DB_TASK_MAX_LOCAL_STORAGE);
+		DEBUG_LOG("db_add_task: task ringbuffer is full");
 		return false;
 	}
-	tasks_push(fp, lstore, lstore_size);
+	task = RINGBUFFER_UNCHECKED_PUSH(dbtasks);
+	task->fp = fp;
+	task->arg = arg;
+	condvar_signal(&cv);
 	mutex_unlock(&mtx);
 	return true;
 }

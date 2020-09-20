@@ -57,7 +57,7 @@ void server_shutdown(void){
 	mutex_lock(&mtx);
 	running = false;
 	server_internal_interrupt();
-	// sync_fp = NULL;
+	sync_fp = NULL;
 	condvar_broadcast(&sync_cv);
 	mutex_unlock(&mtx);
 	thread_join(&thr, NULL);

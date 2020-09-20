@@ -61,11 +61,11 @@ bool db_internal_connect(void){
 
 	conn = PQconnectdbParams(k, v, 0);
 	if(conn == NULL){
-		LOG_ERROR("db_connect: failed to create connection handle");
+		LOG_ERROR("pgsql_connect: failed to create connection handle");
 		return false;
 	}
 	if(PQstatus(conn) != CONNECTION_OK){
-		LOG_ERROR("db_connect: %s", PQerrorMessage(conn));
+		LOG_ERROR("pgsql_connect: %s", PQerrorMessage(conn));
 		conn = NULL;
 		return false;
 	}
@@ -76,7 +76,7 @@ bool db_internal_connection_reset(void){
 	DEBUG_ASSERT(conn != NULL);
 	PQreset(conn);
 	if(PQstatus(conn) != CONNECTION_OK){
-		LOG_ERROR("db_connection_reset: %s", PQerrorMessage(conn));
+		LOG_ERROR("pgsql_connection_reset: %s", PQerrorMessage(conn));
 		return false;
 	}
 	return true;
@@ -124,7 +124,7 @@ db_result_t *db_load_account_info(const char *accname){
 		/*paramFormats = */	NULL,
 		/*resultFormat = */	1);
 	if(res == NULL || PQresultStatus(res) != PGRES_TUPLES_OK){
-		LOG_ERROR("db_load_account_info: %s", PQerrorMessage(conn));
+		LOG_ERROR("pgsql_load_account_info: %s", PQerrorMessage(conn));
 		if(res != NULL)
 			PQclear(res);
 		return NULL;
@@ -151,7 +151,7 @@ db_result_t *db_load_account_charlist(int32 account_id){
 		/*paramFormats = */	&param_format,
 		/*resultFormat = */	1);
 	if(res == NULL || PQresultStatus(res) != PGRES_TUPLES_OK){
-		LOG_ERROR("db_load_account_charlist: %s", PQerrorMessage(conn));
+		LOG_ERROR("pgsql_load_account_charlist: %s", PQerrorMessage(conn));
 		if(res != NULL)
 			PQclear(res);
 		return NULL;

@@ -8,14 +8,11 @@
 bool game_init(void);
 void game_shutdown(void);
 void game_run(void);
+bool game_add_net_task(void (*fp)(void*), void *arg);
 
 
 // game_input.c
 // -----------------------------------------------
-// LOGIN PROTOCOL
-#define CMD_ACCOUNT_LOGIN			0x0101	// MADE UP FOR PARSING
-// GAME PROTOCOL
-#define CMD_PLAYER_LOGIN			0x0001	// MADE UP FOR PARSING
 #define CMD_PLAYER_LOGOUT			0x0014
 #define CMD_PLAYER_KEEP_ALIVE			0x001E
 #define CMD_PLAYER_AUTO_WALK			0x0064
@@ -83,7 +80,7 @@ void game_run(void);
 #define CMD_PLAYER_QUESTLINE_REQUEST		0x00F1
 //#define PLAYER_VIOLATION_REPORT		0x00F2
 
-bool game_add_net_input(uint16 command, uint32 command_handle, uint8 *data, uint16 datalen);
+bool game_add_player_command(uint16 command, uint32 command_handle, uint8 *data, uint16 datalen);
 
 
 #endif //KAPLAR_GAME_H

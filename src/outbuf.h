@@ -19,11 +19,14 @@ struct outbuf{
 	uint8 *ptr;
 	uint8 base[MAX_OUTBUF_LEN];
 };
+
 bool outbuf_init(void);
 void outbuf_shutdown(void);
 struct outbuf *outbuf_acquire(void);
 void outbuf_release(struct outbuf *buf);
 
+#define outbuf_data(buf) ((uint8*)&(buf)->base[0])
+#define outbuf_len(buf) ((uint32)((buf)->ptr - (buf)->base))
 void outbuf_write_byte(struct outbuf *buf, uint8 val);
 void outbuf_write_u16(struct outbuf *buf, uint16 val);
 void outbuf_write_u32(struct outbuf *buf, uint32 val);

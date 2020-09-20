@@ -10,26 +10,6 @@ struct echo_handle{
 	uint8 output_buffer[ECHO_BUFFER_SIZE];
 };
 
-/* PROTOCOL DECL */
-static bool identify(uint8 *data, uint32 datalen);
-static bool on_assign_protocol(uint32 c);
-static void on_close(uint32 c);
-static protocol_status_t on_write(uint32 c);
-static protocol_status_t on_recv_message(uint32 c, uint8 *data, uint32 datalen);
-static protocol_status_t on_recv_first_message(uint32 c, uint8 *data, uint32 datalen);
-struct protocol protocol_echo = {
-	.name =				"ECHO",
-	.sends_first =			false,
-	.identify =			identify,
-
-	.on_assign_protocol =		on_assign_protocol,
-	.on_close =			on_close,
-	.on_connect =			NULL,
-	.on_write =			on_write,
-	.on_recv_message =		on_recv_message,
-	.on_recv_first_message =	on_recv_first_message,
-};
-
 /* IMPL START */
 static bool identify(uint8 *data, uint32 datalen){
 	return datalen >= 4 &&
@@ -48,8 +28,8 @@ static void on_close(uint32 c){
 	kpl_free(*connection_userdata(c));
 }
 
-static protocol_status_t on_write(uint32 c, void *handle){
-	struct echo_handle *h = handle;
+static protocol_status_t on_write(uint32 c){
+	struct echo_handle *h = *connection_userdata(c);
 	h->output_ready = true;
 	return PROTO_OK;
 }
@@ -71,3 +51,17 @@ static protocol_status_t on_recv_first_message(uint32 c, uint8 *data, uint32 dat
 	// skip protocol identifier and parse as a regular message
 	return on_recv_message(c, data+4, datalen-4);
 }
+
+/* PROTOCOL DECL */
+struct protocol protocol_echo = {
+	.name =				"ECHO",
+	.sends_first =			false,
+	.identify =			identify,
+
+	.on_assign_protocol =		on_assign_protocol,
+	.on_close =			on_close,
+	.on_connect =			NULL,
+	.on_write =			on_write,
+	.on_recv_message =		on_recv_message,
+	.on_recv_first_message =	on_recv_first_message,
+};

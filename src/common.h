@@ -103,9 +103,17 @@ typedef ptrdiff_t	ptrdiff;
 // common macros
 #define ARRAY_SIZE(a)		(sizeof(a)/sizeof((a)[0]))
 #define OFFSET_POINTER(ptr, x)	((void*)(((char*)(ptr)) + (x)))
-#define IS_POWER_OF_TWO(x)	((x != 0) && ((x & (x - 1)) == 0))
+#define IS_POWER_OF_TWO(x)	(((x) != 0) && (((x) & ((x) - 1)) == 0))
 #define MIN(x, y)		((x < y) ? (x) : (y))
 #define MAX(x, y)		((x > y) ? (x) : (y))
+
+#define PTR_ALIGNMENT		sizeof(void*)
+#define PTR_ALIGNMENT_MASK	(sizeof(void*)-1)
+#define IS_PTR_ALIGNED(x)	(((x) & PTR_ALIGNMENT_MASK) == 0)
+#define PTR_ALIGN(x)								\
+	do{	if((x) & PTR_ALIGNMENT_MASK)					\
+			(x) = ((x) + PTR_ALIGNMENT) & ~PTR_ALIGNMENT_MASK;	\
+	}while(0)
 
 // adler32.c
 // -----------------------------------------------
@@ -117,8 +125,6 @@ uint32 murmur2_32(const uint8 *data, size_t len, uint32 seed);
 
 // mem_arena.c
 // -----------------------------------------------
-#define MEM_PTR_ALIGNMENT sizeof(void*)
-#define MEM_PTR_ALIGNMENT_MASK (sizeof(void*) - 1)
 struct mem_arena{
 	size_t block_size;
 	struct mem_arena_block *head;
