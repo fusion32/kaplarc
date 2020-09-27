@@ -7,7 +7,8 @@
 // server interface
 bool server_init(void);
 void server_shutdown(void);
-void server_sync(void (*fp)(void*), void *arg);
+void server_sync(void (*sync_fp)(void*), void *sync_arg,
+		void (*maintenance_fp)(void*), void *maintenance_arg);
 bool svcmgr_add_protocol(struct protocol *protocol, int port);
 
 // connection interface

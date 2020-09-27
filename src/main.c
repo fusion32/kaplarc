@@ -56,7 +56,6 @@ int main(int argc, char **argv){
 		LOG_WARNING("running with default config");
 
 	// init support systems
-	//init_system("mem", mem_init, mem_shutdown);
 	init_system("outbuf", outbuf_init, outbuf_shutdown);
 	init_system("tibia_rsa", tibia_rsa_init, tibia_rsa_shutdown);
 

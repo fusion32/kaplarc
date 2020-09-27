@@ -9,7 +9,7 @@
 /* PLAYER INPUT (NET -> GAME) */
 #define PLAYER_INPUT_BUFFER_SIZE (4 * 1024 * 1024) // 4MB
 static int player_input_back_idx = 0;
-static uint32 player_input_bufptr[2];
+static uint32 player_input_bufptr[2] = {0, 0};
 static uint8 player_input_buffer[2][PLAYER_INPUT_BUFFER_SIZE];
 
 

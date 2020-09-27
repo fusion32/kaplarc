@@ -20,14 +20,14 @@ static void *db_thread(void *unused){
 		// check if still running
 		if(!running){
 			mutex_unlock(&mtx);
-			break;
+			return NULL;
 		}
 		// wait for task
-		if(RINGBUFFER_EMPTY(dbtasks)){
+		while(RINGBUFFER_EMPTY(dbtasks)){
 			condvar_wait(&cv, &mtx);
-			if(!running || RINGBUFFER_EMPTY(dbtasks)){
+			if(!running){
 				mutex_unlock(&mtx);
-				continue;
+				return NULL;
 			}
 		}
 		// pop task
@@ -39,7 +39,7 @@ static void *db_thread(void *unused){
 		// execute task
 		fp(arg);
 	}
-	return NULL;
+	//return NULL;
 }
 
 bool db_init(void){

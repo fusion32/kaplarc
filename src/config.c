@@ -92,7 +92,7 @@ static void config_var_set_value(struct config_var *var,
 	var->value[vallen] = 0; // add nul-terminator
 }
 
-void __parse_argv(const char *argv, size_t *keylen,
+static void parse_argv(const char *argv, size_t *keylen,
 		const char **val, size_t *vallen){
 	const char *p;
 	// parse key until nul-terminator or equal-sign
@@ -135,7 +135,7 @@ void config_init(int argc, char **argv){
 	// parse cmdline
 	for(i = 1; i < argc; i += 1){
 		key = argv[i];
-		__parse_argv(key, &keylen, &val, &vallen);
+		parse_argv(key, &keylen, &val, &vallen);
 		if(keylen == 0)
 			continue;
 		var = config_var_find(key, keylen);
@@ -190,6 +190,19 @@ bool config_load_from_path(const char *path){
 		}
 		lua_pop(L, 1);
 	}
+
+	/*
+	// NOTE: without any luaopen_* functions the only thing on
+	// the global scope are config variables
+	lua_pushnil(L);
+	while(lua_next(L, LUA_GLOBALSINDEX) != 0){
+		LOG("%s = %s",
+			lua_tostring(L, -2),
+			lua_tostring(L, -1));
+		lua_pop(L, 1);
+	}
+	*/
+
 	lua_close(L);
 	return true;
 }
