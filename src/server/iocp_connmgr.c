@@ -204,14 +204,7 @@ static void internal_on_read_length(void *data, DWORD err, DWORD transferred){
 	}
 
 	// this should not happen
-	if(transferred != 2){
-		DEBUG_ASSERT(0 &&
-			"WS ERROR: read operation completed with"
-			" a transferred amount diferent from the"
-			" requested amount");
-		internal_abort(c);
-		return;
-	}
+	DEBUG_ASSERT(transferred == 2);
 
 	// decode body length
 	bodylen = decode_u16_le(buf);
@@ -257,14 +250,7 @@ static void internal_on_read_body(void *data, DWORD err, DWORD transferred){
 	}
 
 	// this should not happen
-	if(c->bodylen != transferred){
-		DEBUG_ASSERT(0 &&
-			"WS ERROR: read operation completed with"
-			" a transferred amount diferent from the"
-			" requested amount");
-		internal_abort(c);
-		return;
-	}
+	DEBUG_ASSERT(c->bodylen == transferred);
 
 	// dispatch message to protocol
 	switch(internal_dispatch_on_recv_message(c, buf, c->bodylen)){
@@ -312,14 +298,7 @@ static void internal_on_write(void *data, DWORD err, DWORD transferred){
 	}
 
 	// this should not happen
-	if(c->output_len != transferred){
-		DEBUG_ASSERT(0 &&
-			"WS ERROR: write operation completed with"
-			" a transferred amount diferent from the"
-			" requested amount");
-		internal_abort(c);
-		return;
-	}
+	DEBUG_ASSERT(c->output_len == transferred);
 
 	// output operation has completed
 	c->flags &= ~CONN_OUTPUT_IN_PROGRESS;

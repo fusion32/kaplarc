@@ -6,8 +6,8 @@
 static bool running;
 static thread_t thr;
 static mutex_t mtx;
-static condvar_t cv;
-
+static condvar_t rb_full;
+static condvar_t rb_empty;
 DECL_TASK_RINGBUFFER(dbtasks, 1024)
 
 static void *db_thread(void *unused){
@@ -24,12 +24,16 @@ static void *db_thread(void *unused){
 		}
 		// wait for task
 		while(RINGBUFFER_EMPTY(dbtasks)){
-			condvar_wait(&cv, &mtx);
+			condvar_wait(&rb_empty, &mtx);
 			if(!running){
 				mutex_unlock(&mtx);
 				return NULL;
 			}
 		}
+		// signal any thread that might be waiting
+		// for the ringbuffer to have room
+		if(RINGBUFFER_FULL(dbtasks))
+			condvar_signal(&rb_full);
 		// pop task
 		next = RINGBUFFER_UNCHECKED_POP(dbtasks);
 		fp = next->fp;
@@ -39,7 +43,7 @@ static void *db_thread(void *unused){
 		// execute task
 		fp(arg);
 	}
-	//return NULL;
+	return NULL;
 }
 
 bool db_init(void){
@@ -51,7 +55,8 @@ bool db_init(void){
 	// create db thread
 	running = true;
 	mutex_init(&mtx);
-	condvar_init(&cv);
+	condvar_init(&rb_full);
+	condvar_init(&rb_empty);
 	if(thread_init(&thr, db_thread, NULL) != 0){
 		mutex_destroy(&mtx);
 		db_internal_connection_close();
@@ -64,7 +69,8 @@ void db_shutdown(void){
 	// join database thread
 	mutex_lock(&mtx);
 	running = false;
-	condvar_broadcast(&cv);
+	condvar_broadcast(&rb_full);
+	condvar_broadcast(&rb_empty);
 	mutex_unlock(&mtx);
 	thread_join(&thr, NULL);
 
@@ -75,15 +81,25 @@ void db_shutdown(void){
 bool db_add_task(void (*fp)(void*), void *arg){
 	struct task *task;
 	mutex_lock(&mtx);
-	if(RINGBUFFER_FULL(dbtasks)){
+	if(!running){
 		mutex_unlock(&mtx);
-		DEBUG_LOG("db_add_task: task ringbuffer is full");
 		return false;
 	}
+	// wait for ringbuffer to have room
+	while(RINGBUFFER_FULL(dbtasks)){
+		DEBUG_LOG("db_add_task: task ringbuffer is full");
+		condvar_wait(&rb_full, &mtx);
+		if(!running){
+			mutex_unlock(&mtx);
+			return false;
+		}
+	}
+	// signal database thread that there's work to be done
+	if(RINGBUFFER_EMPTY(dbtasks))
+		condvar_signal(&rb_empty);
 	task = RINGBUFFER_UNCHECKED_PUSH(dbtasks);
 	task->fp = fp;
 	task->arg = arg;
-	condvar_signal(&cv);
 	mutex_unlock(&mtx);
 	return true;
 }

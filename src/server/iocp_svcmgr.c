@@ -24,16 +24,16 @@ static struct service services[MAX_SERVER_SERVICES];
 static struct iocp_ctx *ctx = &server_ctx;
 
 /* STATIC FWD DECL */
-static SOCKET __create_iocp_socket(void);
+static SOCKET internal_create_iocp_socket(void);
 static void service_on_accept(void *data, DWORD err, DWORD transferred);
 static bool service_start_async_accept(struct service *svc);
 static void service_async_accept(struct service *svc);
 static bool service_open(struct service *svc);
-static void __service_close(struct service *svc);
+static void internal_service_close(struct service *svc);
 static void service_start_closing(struct service *svc);
 
 /* IMPL START */
-static SOCKET __create_iocp_socket(void){
+static SOCKET internal_create_iocp_socket(void){
 	// @TODO: using the socket as the COMPLETION_KEY when binding
 	// the socket to the iocp will make the COMPLETION_KEY from
 	// the OVERLAPPED_ENTRY be the socket and save us some (minimal)
@@ -65,7 +65,7 @@ static void service_on_accept(void *data, DWORD err, DWORD transferred){
 		closesocket(s); // close new socket
 		// close service if this was the last pending work
 		if(svc->pending_work == 0)
-			__service_close(svc);
+			internal_service_close(svc);
 		return;
 	}
 
@@ -97,7 +97,7 @@ static bool service_start_async_accept(struct service *svc){
 	DWORD error, transferred;
 	BOOL ret;
 
-	s = __create_iocp_socket();
+	s = internal_create_iocp_socket();
 	if(s == INVALID_SOCKET){
 		LOG_ERROR("service_start_async_accept:"
 			" failed to create socket");
@@ -141,7 +141,7 @@ static void service_async_accept(struct service *svc){
 	if(svc->pending_work != 0)
 		return;
 	LOG_ERROR("service_async_accept: trying to reopen service...");
-	__service_close(svc);
+	internal_service_close(svc);
 	if(!service_open(svc)){
 		LOG_ERROR("service_async_accept: reopen failed");
 		LOG_ERROR("service_async_accept: service is now out");
@@ -156,7 +156,7 @@ static bool service_open(struct service *svc){
 		return true;
 	}
 
-	s = __create_iocp_socket();
+	s = internal_create_iocp_socket();
 	if(s == INVALID_SOCKET){
 		LOG_ERROR("service_open: failed to create socket");
 		return false;
@@ -189,7 +189,7 @@ static bool service_open(struct service *svc){
 	return true;
 }
 
-static void __service_close(struct service *svc){
+static void internal_service_close(struct service *svc){
 	DEBUG_ASSERT(svc != NULL);
 	DEBUG_ASSERT(svc->s != INVALID_SOCKET);
 	closesocket(svc->s);
@@ -203,7 +203,7 @@ static void service_start_closing(struct service *svc){
 	// closed here, else it'll be closed when all pending work
 	// has been processed
 	if(svc->pending_work == 0){
-		__service_close(svc);
+		internal_service_close(svc);
 	}else{
 		svc->closing = true;
 		CancelIoEx((HANDLE)svc->s, NULL);
@@ -220,13 +220,13 @@ bool svcmgr_init(void){
 
 	// shutdown initialized services
 fail:	for(i -= 1; i >= 0; i -= 1)
-		__service_close(&services[i]);
+		internal_service_close(&services[i]);
 	return false;
 }
 
 void svcmgr_shutdown(void){
 	for(int i = 0; i < num_services; i += 1)
-		__service_close(&services[i]);
+		internal_service_close(&services[i]);
 }
 
 bool svcmgr_add_protocol(struct protocol *protocol, int port){

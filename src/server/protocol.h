@@ -16,6 +16,16 @@ typedef enum protocol_status{
 } protocol_status_t;
 
 struct protocol{
+	/* NOTES: */
+	/* `identify` is optional and won't be used if sends_first == true */
+	/* `on_connect` is optional and won't be used if sends_first == false */
+	/* `on_write` will only be called if the write succeeds. If theres a
+	 * write error, the server will try to resend the message a few more
+	 * times before dropping the connection. Any userdata associated with
+	 * writes should be handled inside the `on_close` callback as well in
+	 * case of write failures.
+	 */
+
 	/* name of the protocol: used for debugging */
 	char *name;
 	/* sends the first message: cannot be coupled
@@ -29,10 +39,7 @@ struct protocol{
 	 */
 	bool (*identify)(uint8 *data, uint32 datalen);
 
-	/* events related to the protocol
-	 * (`on_connect` is the only optional callback as
-	 * it needs `sends_first` to be true)
-	 */
+	/* events related to the protocol */
 	bool (*on_assign_protocol)(uint32 conn);
 	void (*on_close)(uint32 conn);
 	protocol_status_t (*on_connect)(uint32 conn);

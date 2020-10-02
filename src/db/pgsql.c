@@ -111,6 +111,14 @@ void db_result_clear(db_result_t *res){
 	PQclear(res);
 }
 
+#define PGSQL_VALIDATE_RESULT_OR_RETURN_NULL(res)			\
+	if((res) == NULL || PQresultStatus(res) != PGRES_TUPLES_OK){	\
+		LOG_ERROR(__FUNCTION__ ": %s", PQerrorMessage(conn));	\
+		if((res) != NULL)					\
+			PQclear(res);					\
+		return NULL;						\
+	}
+
 db_result_t *db_load_account_info(const char *accname){
 	PGresult *res;
 	res = PQexecParams(conn,
@@ -123,12 +131,7 @@ db_result_t *db_load_account_info(const char *accname){
 		/*paramLengths = */	NULL,
 		/*paramFormats = */	NULL,
 		/*resultFormat = */	1);
-	if(res == NULL || PQresultStatus(res) != PGRES_TUPLES_OK){
-		LOG_ERROR("pgsql_load_account_info: %s", PQerrorMessage(conn));
-		if(res != NULL)
-			PQclear(res);
-		return NULL;
-	}
+	PGSQL_VALIDATE_RESULT_OR_RETURN_NULL(res);
 	return res;
 }
 
@@ -150,46 +153,8 @@ db_result_t *db_load_account_charlist(int32 account_id){
 		/*paramLengths = */	&param_length,
 		/*paramFormats = */	&param_format,
 		/*resultFormat = */	1);
-	if(res == NULL || PQresultStatus(res) != PGRES_TUPLES_OK){
-		LOG_ERROR("pgsql_load_account_charlist: %s", PQerrorMessage(conn));
-		if(res != NULL)
-			PQclear(res);
-		return NULL;
-	}
+	PGSQL_VALIDATE_RESULT_OR_RETURN_NULL(res);
 	return res;
-}
-
-void db_print_account(const char *accname){
-	int32 id;
-	int64 premend;
-	const char *pwd;
-	int nrows;
-	db_result_t *res = db_load_account_info(accname);
-	if(res == NULL){
-		LOG_ERROR("failed to load account");
-		return;
-	}
-	id = db_result_get_int32(res, 0, 0);
-	premend = db_result_get_int64(res, 0, 1);
-	pwd = db_result_get_value(res, 0, 2);
-	LOG("account: id = %d, name = `%s`", id, accname);
-	LOG("> premend = %lld", premend);
-	LOG("> password = %s", pwd);
-	db_result_clear(res);
-
-	res = db_load_account_charlist(id);
-	if(res == NULL){
-		LOG_ERROR("failed to load charlist");
-		return;
-	}
-	nrows = db_result_nrows(res);
-	if(nrows > 0){
-		for(int i = 0; i < nrows; i += 1)
-			LOG("> character #%d = `%s`", i, db_result_get_value(res, i, 0));
-	}else{
-		LOG("> character list empty");
-	}
-	db_result_clear(res);
 }
 
 /*
@@ -211,3 +176,18 @@ bool pgsql_load_player(const char *name, struct db_result_player *player){
 }
 */
 
+db_result_t *db_load_player(const char *charname){
+	PGresult *res;
+	res = PQexecParams(conn,
+		"SELECT player_id, account_id"
+		" FROM players"
+		" WHERE lower(name) = $1",
+		/*nParams = */		1,
+		/*paramTypes = */	NULL,
+		/*paramValues = */	&charname,
+		/*paramLengths = */	NULL,
+		/*paramFormats = */	NULL,
+		/*resultFormat = */	1);
+	PGSQL_VALIDATE_RESULT_OR_RETURN_NULL(res);
+	return res;
+}

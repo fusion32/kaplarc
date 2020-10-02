@@ -18,7 +18,7 @@
  *	00	LENGTH
  *	02	BODY
  *
- * LOGIN BODY STRUCTURE
+ * ACCOUNT LOGIN BODY STRUCTURE
  *	00	ADLER32 CHECKSUM
  *	04	PROTOCOL ID
  *	05	CLIENT OS
@@ -28,8 +28,23 @@
  *
  *	RSA ENCODED DATA (after DECODING)
  *		00	XTEA KEY
- *		16	ACCOUNT NAME	(A bytes where A < 32)
- *		16 + A	PASSWORD	(B bytes where B < 32)
+ *		16	ACCOUNT NAME	(A bytes where A < 32, S = A)
+ *		16 + S	PASSWORD	(B bytes where B < 32, S += B)
+ *
+ * PLAYER LOGIN BODY STRUCTURE
+ *	00	ADLER32 CHECKSUM
+ *	04	LEGACY PROTOCOL ID
+ *	05	CLIENT OS
+ *	07	CLIENT VERSION
+ *	09	RSA ENCODED DATA
+ *
+ *	RSA ENCODED DATA (after DECODING)
+ *		00	XTEA KEY
+ *		16	GAMEMASTER FLAG (?)
+ *		17	ACCOUNT NAME	(A bytes where A < 32, S = A)
+ *		17 + S	CHARACTER NAME	(B bytes where B < 32, S += B)
+ *		17 + S	PASSWORD	(C bytes where C < 32, S += C)
+ *		17 + S	CHALLENGE REPLY (?)
  *
  * COMMON BODY STRUCTURE
  *	00	ADLER32 CHECKSUM
@@ -50,9 +65,16 @@
 #include "crypto/xtea.h"
 #include "db/database.h"
 
+/* LIFETIME OF `login_info`
+ *	Any of the functions that take `struct login_info` as a parameter
+ *	WILL take ownership of it. The structure lifetime starts at
+ *	`on_recv_first_message` and ends at `internal_resolve_login`
+ *	regardless. The path may change but this should always be the case.
+ */
+
 struct login_info{
-	uint32 connection;
 	struct outbuf *output;
+	uint32 connection;
 	uint32 xtea[4];
 	char accname[32];
 	char password[32];
@@ -98,6 +120,8 @@ static void internal_resolve_login(void *arg){
 			outbuf_release(login->output);
 		}
 	}
+	// clear password to be extra safe
+	memset(login->password, 0, sizeof(login->password));
 	// always release the login data here
 	kpl_free(login);
 }
@@ -118,7 +142,7 @@ static void internal_send_disconnect(struct login_info *login, const char *messa
 
 static void send_disconnect(struct login_info *login, const char *message){
 	build_disconnect_message(login, message);
-	game_add_net_task(internal_resolve_login, login);
+	game_add_server_task(internal_resolve_login, login);
 }
 
 static void database_resolve_login(void *udata){
@@ -178,13 +202,13 @@ static void database_resolve_login(void *udata){
 		outbuf_write_str(buf,
 			db_result_get_value(res, i, DBRES_ACC_CHARLIST_NAME));
 		outbuf_write_str(buf, config_get("sv_name"));
-		outbuf_write_u32(buf, 1677343); // (localhost) @TODO: resolve addr from config sv_addr
+		outbuf_write_u32(buf, 16777343); // (localhost) @TODO: resolve addr from config sv_addr
 		outbuf_write_u16(buf, (uint16)config_geti("sv_game_port"));
 	}
 	outbuf_write_u16(buf, 1); // @TODO: calc premdays from premend = days_until(premend)
 	outbuf_wrap(buf, login->xtea);
 	db_result_clear(res);
-	game_add_net_task(internal_resolve_login, login);
+	game_add_server_task(internal_resolve_login, login);
 }
 
 /* PROTOCOL IMPL */
@@ -265,7 +289,6 @@ static protocol_status_t on_recv_first_message(uint32 c, uint8 *data, uint32 dat
 	login->xtea[3] = decode_u32_le(decoded + 12);
 
 	if(version < TIBIA_CLIENT_VERSION_MIN || version > TIBIA_CLIENT_VERSION_MAX){
-		// send_disconnect
 		internal_send_disconnect(login, "This server requires client"
 			" version " TIBIA_CLIENT_VERSION_STR ".");
 		return PROTO_CLOSE;

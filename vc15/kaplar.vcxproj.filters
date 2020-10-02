@@ -85,9 +85,6 @@
     <ClCompile Include="..\src\tibia_rsa.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\otdata.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -128,6 +125,9 @@
       <Filter>Source Files\db</Filter>
     </ClCompile>
     <ClCompile Include="..\src\game1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -171,9 +171,6 @@
     <ClInclude Include="..\src\tibia_rsa.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\game.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\server\iocp.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
@@ -193,6 +190,9 @@
       <Filter>Source Files\db</Filter>
     </ClInclude>
     <ClInclude Include="..\src\ringbuffer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

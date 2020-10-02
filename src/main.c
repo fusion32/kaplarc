@@ -1,25 +1,3 @@
-/*
-
-  Server Diagram:
-   ____________      ___________
-  |            | => |           |
-  | NET THREAD | => | DB THREAD |
-  |____________| => |___________|
-      /\  ||           /\  ||
-      ||  \/           ||  \/
-   _____________________________
-  |                             |
-  |         GAME THREAD         |
-  |_____________________________|
-            /\    ||
-            ||    \/
-   _____________________________
-  |                             |
-  |        WORKER THREADS       |
-  |_____________________________|
-
-*/
-
 #include "config.h"
 #include "common.h"
 #include "log.h"
@@ -46,7 +24,7 @@ init_system(const char *name,
 }
 
 #ifdef BUILD_TEST
-int kaplar_main(int argc, char **argv){
+int kpl_main(int argc, char **argv){
 #else // BUILD_TEST
 int main(int argc, char **argv){
 #endif // BUILD_TEST
@@ -65,24 +43,15 @@ int main(int argc, char **argv){
 	// init network thread
 	extern struct protocol protocol_echo;
 	extern struct protocol protocol_login;
+	extern struct protocol protocol_game;
 	svcmgr_add_protocol(&protocol_echo, config_geti("sv_echo_port"));
 	svcmgr_add_protocol(&protocol_login, config_geti("sv_login_port"));
+	svcmgr_add_protocol(&protocol_game, config_geti("sv_game_port"));
 	init_system("server", server_init, server_shutdown);
 
-	// init worker threads
-	// @TODO
-
-#if 1
+	// init and run game thread
 	init_system("game", game_init, game_shutdown);
+	LOG("server running...");
 	game_run();
-#else
-	LOG("====================");
-	db_print_account("admin");
-	LOG("====================");
-	db_print_account("acctest");
-	LOG("====================");
-	db_print_account("emptytest");
-	getchar();
-#endif
 	return 0;
 }

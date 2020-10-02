@@ -34,21 +34,19 @@ double db_result_get_double(db_result_t *res, int row, int field);
 const char *db_result_get_value(db_result_t *res, int row, int field);
 void db_result_clear(db_result_t *res);
 
-// account loading functions
+// database loading functions
+
 #define DBRES_ACC_INFO_ID		0
 #define DBRES_ACC_INFO_PREMEND		1
 #define DBRES_ACC_INFO_PASSWORD		2
+db_result_t *db_load_account_info(const char *name);
 
 #define DBRES_ACC_CHARLIST_NAME		0
-
-db_result_t *db_load_account_info(const char *name);
 db_result_t *db_load_account_charlist(int32 account_id);
 
-void db_print_account(const char *name);
+#define DBRES_PLAYER_ID			0
+#define DBRES_PLAYER_ACCOUNT_ID		1
+db_result_t *db_load_player(const char *charname);
 
-// player loading functions
-
-
-// storing functions
 
 #endif //KAPLAR_DB_DATABASE_H_

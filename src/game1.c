@@ -1,4 +1,3 @@
-// @NOTE: think about this after doing protocol_login
 
 #if 0
 
