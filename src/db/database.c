@@ -5,6 +5,7 @@
 
 static bool running;
 static thread_t thr;
+
 static mutex_t mtx;
 static condvar_t rb_full;
 static condvar_t rb_empty;

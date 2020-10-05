@@ -30,9 +30,9 @@
 
 // connection flags
 #define CONN_INUSE			0x01
-#define CONN_CLOSING			0x04
-#define CONN_FIRST_MSG			0x08
-#define CONN_OUTPUT_IN_PROGRESS		0x10
+#define CONN_CLOSING			0x02
+#define CONN_FIRST_MSG			0x04
+#define CONN_OUTPUT_IN_PROGRESS		0x08
 
 struct conn_ctl{
 	uint32 uid;
@@ -88,6 +88,7 @@ static struct conn_ctl *internal_alloc(void){
 		c = &ctl[slot];
 	}
 	c->uid = ((c->uid + 0x00010000) & 0xFFFF0000) | (uint32)slot;
+	c->flags = CONN_INUSE;
 	return c;
 }
 static void internal_free(struct conn_ctl *c){
@@ -487,8 +488,6 @@ void connmgr_start_connection(SOCKET s,
 	uint8 *buf;
 
 	// connection control
-	DEBUG_ASSERT(!(c->flags & CONN_INUSE));
-	c->flags = CONN_INUSE;
 	c->s = s;
 	c->rdwr_count = 1; // don't timeout a new connection too soon
 	c->pending_work = 0;

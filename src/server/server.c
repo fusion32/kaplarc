@@ -11,16 +11,13 @@ void server_internal_interrupt(void);
 static thread_t thr;
 static mutex_t mtx;
 static bool running;
-static condvar_t sync_cv;
-static void (*sv_sync_fp)(void*);
-static void *sv_sync_arg;
-static void (*sv_maintenance_fp)(void*);
-static void *sv_maintenance_arg;
+static void (*task_fp)(void*);
+static void *task_arg;
 
 /* IMPL START */
 void *server_thread(void *unused){
-	void (*maintenance_fp)(void*);
-	void *maintenance_arg;
+	void (*fp)(void*);
+	void *arg;
 
 	while(1){
 		mutex_lock(&mtx);
@@ -29,21 +26,15 @@ void *server_thread(void *unused){
 			mutex_unlock(&mtx);
 			break;
 		}
-		// execute sync function
-		if(sv_sync_fp != NULL){
-			sv_sync_fp(sv_sync_arg);
-			sv_sync_fp = NULL;
-			condvar_signal(&sync_cv);
-		}
 		// we need to read these values inside the lock
-		maintenance_fp = sv_maintenance_fp;
-		maintenance_arg = sv_maintenance_arg;
-		sv_maintenance_fp = NULL;
+		fp = task_fp;
+		arg = task_arg;
+		task_fp = NULL;
 		mutex_unlock(&mtx);
 
 		// execute server task
-		if(maintenance_fp != NULL)
-			maintenance_fp(sv_maintenance_arg);
+		if(fp != NULL)
+			fp(arg);
 
 		// consume net i/o
 		server_internal_work();
@@ -55,10 +46,8 @@ bool server_init(void){
 	if(!server_internal_init())
 		return false;
 	running = true;
-	sv_sync_fp = NULL;
-	sv_maintenance_fp = NULL;
+	task_fp = NULL;
 	mutex_init(&mtx);
-	condvar_init(&sync_cv);
 	if(thread_init(&thr, server_thread, NULL) != 0){
 		mutex_destroy(&mtx);
 		server_internal_shutdown();
@@ -71,28 +60,22 @@ void server_shutdown(void){
 	mutex_lock(&mtx);
 	running = false;
 	server_internal_interrupt();
-	condvar_broadcast(&sync_cv);
 	mutex_unlock(&mtx);
 	thread_join(&thr, NULL);
 
-	condvar_destroy(&sync_cv);
 	mutex_destroy(&mtx);
 	server_internal_shutdown();
 }
 
-void server_sync(void (*sync_fp)(void*), void *sync_arg,
-		void (*maintenance_fp)(void*), void *maintenance_arg){
+void server_exec(void (*fp)(void*), void *arg){
 	mutex_lock(&mtx);
-	DEBUG_ASSERT(sv_sync_fp == NULL);
+	DEBUG_ASSERT(task_fp == NULL);
 	if(!running){
 		mutex_unlock(&mtx);
 		return;
 	}
-	sv_sync_fp = sync_fp;
-	sv_sync_arg = sync_arg;
-	sv_maintenance_fp = maintenance_fp;
-	sv_maintenance_arg = maintenance_arg;
+	task_fp = fp;
+	task_arg = arg;
 	server_internal_interrupt();
-	condvar_wait(&sync_cv, &mtx);
 	mutex_unlock(&mtx);
 }
