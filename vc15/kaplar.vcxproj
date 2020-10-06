@@ -75,7 +75,6 @@
     <ClInclude Include="..\src\crypto\xtea.h" />
     <ClInclude Include="..\src\endian.h" />
     <ClInclude Include="..\src\log.h" />
-    <ClInclude Include="..\src\ringbuffer.h" />
     <ClInclude Include="..\src\server\iocp.h" />
     <ClInclude Include="..\src\server\protocol.h" />
     <ClInclude Include="..\src\server\server.h" />

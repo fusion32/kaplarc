@@ -3,6 +3,7 @@
 struct task_dbuffer{
 	mutex_t write_lock;
 	condvar_t buffer_full;
+	bool active;
 	int write_idx;
 	uint32 max_tasks;
 	uint32 count[2];
@@ -13,6 +14,7 @@ struct task_dbuffer *task_dbuffer_create(uint32 max_tasks){
 	struct task_dbuffer *db = kpl_malloc(sizeof(struct task_dbuffer));
 	mutex_init(&db->write_lock);
 	condvar_init(&db->buffer_full);
+	db->active = true;
 	db->write_idx = 0;
 	db->max_tasks = max_tasks;
 	db->count[0] = 0;
@@ -37,13 +39,13 @@ bool task_dbuffer_add(struct task_dbuffer *db, void (*fp)(void*), void *arg){
 	mutex_lock(&db->write_lock);
 	idx = db->write_idx;
 	count = db->count[idx];
-	if(count >= db->max_tasks){
+	while(count >= db->max_tasks && db->active){
 		condvar_wait(&db->buffer_full, &db->write_lock);
 		count = db->count[idx];
-		if(count >= db->max_tasks){
-			mutex_unlock(&db->write_lock);
-			return false;
-		}
+	}
+	if(!db->active){
+		mutex_unlock(&db->write_lock);
+		return false;
 	}
 	task = &db->buffer[idx][count];
 	task->fp = fp;
@@ -81,8 +83,9 @@ void task_dbuffer_swap_and_run(struct task_dbuffer *db){
 	}
 }
 
-void task_dbuffer_wake_all(struct task_dbuffer *db){
+void task_dbuffer_set_inactive(struct task_dbuffer *db){
 	mutex_lock(&db->write_lock);
+	db->active = false;
 	condvar_broadcast(&db->buffer_full);
 	mutex_unlock(&db->write_lock);
 }
